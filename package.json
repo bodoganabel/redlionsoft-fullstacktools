@@ -1,0 +1,24 @@
+{
+  "name": "redlionsoft-fullstacktools",
+  "description": "Highly opinionated toolkit for developing fullstack MVP-s quickly and efficiently at Redlionsoft",
+  "version": "0.0.1",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup index.ts --format cjs,esm --dts",
+    "release": "pnpm run build && changeset publish",
+    "lint": "tsc"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.5",
+    "tsup": "^6.5.0",
+    "typescript": "^4.9.4"
+  },
+  "author": "Abel Bodogan",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bodoganabel/redlionsoft-fullstacktools/issues"
+  },
+  "homepage": "https://github.com/bodoganabel/redlionsoft-fullstacktools#readme"
+}
