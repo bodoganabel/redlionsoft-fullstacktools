@@ -1,7 +1,7 @@
 {
   "name": "@redlionsoft/fullstacktools",
   "description": "Highly opinionated toolkit for developing fullstack MVP-s quickly and efficiently at Redlionsoft",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -9,12 +9,14 @@
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
+    "addversion": "changeset",
     "build": "tsup index.ts --format cjs,esm --dts",
     "release": "pnpm run build && changeset publish",
     "lint": "tsc"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.5",
+    "@types/node": "^20.14.7",
     "tsup": "^6.5.0",
     "typescript": "^4.9.4"
   },
@@ -23,5 +25,9 @@
   "bugs": {
     "url": "https://github.com/bodoganabel/redlionsoft-fullstacktools/issues"
   },
-  "homepage": "https://github.com/bodoganabel/redlionsoft-fullstacktools#readme"
+  "homepage": "https://github.com/bodoganabel/redlionsoft-fullstacktools#readme",
+  "dependencies": {
+    "@types/mongodb": "^4.0.7",
+    "mongodb": "^6.7.0"
+  }
 }
