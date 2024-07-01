@@ -1,16 +1,36 @@
 {
-  "name": "@redlionsoft/fullstacktools",
   "description": "Highly opinionated toolkit for developing fullstack MVP-s quickly and efficiently at Redlionsoft",
-  "version": "0.0.6",
+  "version": "0.1.1",
+  "name": "@redlionsoft/fullstacktools",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "exports": {
+    "./backend": {
+      "import": "./dist/backend/index.js",
+      "require": "./dist/backend/index.js",
+      "types": "./dist/backend/index.d.ts"
+    },
+    "./frontend": {
+      "import": "./dist/frontend/index.js",
+      "require": "./dist/frontend/index.js",
+      "types": "./dist/frontend/index.d.ts"
+    },
+    "./common": {
+      "import": "./dist/common/index.js",
+      "require": "./dist/common/index.js",
+      "types": "./dist/common/index.d.ts"
+    }
+  },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
     "addversion": "changeset",
-    "build": "tsup index.ts --format cjs,esm --dts",
+    "build:backend": "tsc --project backend/tsconfig.json && tsup backend/index.ts --format cjs,esm --target esnext --dts --outDir dist/backend",
+    "build:frontend": "tsc --project frontend/tsconfig.json && tsup frontend/index.ts --format cjs,esm --target esnext --dts --outDir dist/frontend",
+    "build:common": "tsc --project common/tsconfig.json && tsup common/index.ts --format cjs,esm --target esnext --dts --outDir dist/common",
+    "build": "npm run build:backend && npm run build:frontend && npm run build:common",
     "release": "pnpm run build && changeset publish",
     "lint": "tsc"
   },
