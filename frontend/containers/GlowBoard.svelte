@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { onMount } from "svelte";
+
     export let background = "#333";
     export let hoverColor = "#0f0";
     export let width = "100%";
@@ -16,13 +18,14 @@
         card.style.setProperty("--x", `${x}px`);
         card.style.setProperty("--y", `${y}px`);
     }
+
 </script>
 
 <div class={"container " + classesContainer} style={"width: " + width + "; height: " + height}>
     <!-- svelte-ignore a11y-no-static-element-interactions -->
     <div
         class={"card " + classesCard}
-        style="--clr: {hoverColor}; --background: {background};"
+        style="--clr: {hoverColor}; --background: {background}; --glowWidth: {glowWidth}; --glowHeight: {glowHeight};"
         bind:this={card}
         on:mousemove={handleMouseMove}
     >
@@ -51,8 +54,8 @@
         left: var(--x);
         transform: translate(-50%, -50%);
         background: radial-gradient(var(--clr), transparent, transparent);
-        width: 700px;
-        height: 700px;
+        width: var(--glowWidth);
+        height: var(--glowHeight);
         opacity: 0;
         transition: 0.5s, top 0s, left 0s;
         pointer-events: none; /* Ensure the glow does not block interactions */
