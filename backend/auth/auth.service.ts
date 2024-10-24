@@ -5,6 +5,10 @@ import bcrypt from 'bcrypt';
 import { JWT } from '../../common/utilities/jwt'
 import { delay } from '../../common/utilities/general'
 
+/* Use this class as your login service in the backend at your app.
+Good example: signaltuzfal /auth/login/+server.ts 2024.10.25 */
+
+
 /* 
 * Has email and password properties, which are required (i.e., cannot be null or undefined)
 * Can have any additional properties with string keys and values of any type 
@@ -12,7 +16,7 @@ import { delay } from '../../common/utilities/general'
 type TBareMinimumUserType = { email: string, password: string } & { [key: string]: any };
 
 
-export class AuthServer<
+export class AuthService<
     TUserServer extends TBareMinimumUserType, TUserClient> {
     private jwt: JWT;
     private usersCollection;
