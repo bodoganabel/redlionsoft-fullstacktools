@@ -39,9 +39,11 @@
     "@skeletonlabs/skeleton": "^2.10.1",
     "@skeletonlabs/tw-plugin": "^0.4.0",
     "@sveltejs/kit": "^2.7.2",
+    "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^20.14.7",
     "tsup": "^6.5.0",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "@types/bcrypt": "^5.0.2"
   },
   "author": "Abel Bodogan",
   "license": "MIT",
@@ -51,6 +53,9 @@
   "homepage": "https://github.com/bodoganabel/redlionsoft-fullstacktools#readme",
   "dependencies": {
     "@types/mongodb": "^4.0.7",
+    "bcrypt": "^5.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "jwt-decode": "^4.0.0",
     "mongodb": "^6.7.0",
     "svelte": "^4.2.18",
     "svelte-preprocess": "^6.0.1"
