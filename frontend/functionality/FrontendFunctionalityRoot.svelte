@@ -1,5 +1,9 @@
 <script lang="ts">
-    import ModalRoot from "./modal/ModalRoot.svelte";
+    import PopupRoot from "./popup/PopupRoot.svelte";
+    import ToastRoot from "./toast/ToastRoot.svelte";
 </script>
 
-<ModalRoot />
+<!-- svelte-ignore missing-declaration -->
+<ToastRoot />
+<!-- svelte-ignore missing-declaration -->
+<PopupRoot />
