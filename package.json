@@ -1,6 +1,6 @@
 {
   "description": "Highly opinionated toolkit for developing fullstack MVP-s quickly and efficiently at Redlionsoft",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "name": "@redlionsoft/fullstacktools",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
