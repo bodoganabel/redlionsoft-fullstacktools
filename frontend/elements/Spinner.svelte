@@ -1,12 +1,9 @@
 <script lang="ts">
-	import { ProgressRadial } from '@skeletonlabs/skeleton';
-	export let size = 'w-full';
+	import { ProgressRadial } from "@skeletonlabs/skeleton";
+	export let size = "w-full";
 	export let stroke = 140;
+	export let meter = "stroke-primary-500";
+	export let track = "stroke-primary-500/30";
 </script>
 
-<ProgressRadial
-	stroke={stroke}
-	meter="stroke-primary-500"
-	track="stroke-primary-500/30"
-	width={size}
-/>
+<ProgressRadial {stroke} {meter} {track} width={size} />
