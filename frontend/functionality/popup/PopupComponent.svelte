@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount, SvelteComponent } from "svelte";
+    import { SvelteComponent } from "svelte";
     import { removePopup } from "./popup-logic";
     export let id: string;
     export let title: string;

@@ -16,7 +16,16 @@
     "module": "ESNext",
     "noEmit": true,
     /* If your code runs in the DOM: */
-    "lib": ["es2022", "dom", "dom.iterable"],
-    "outDir": "dist/backend"
+    "lib": [
+      "es2022",
+      "dom",
+      "dom.iterable"
+    ],
+    "outDir": "dist/backend",
+    "paths": {
+      "$src/*": [
+        "./src/*"
+      ]
+    }
   }
 }

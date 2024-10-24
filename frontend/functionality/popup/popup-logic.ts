@@ -6,7 +6,7 @@ export interface IPopup {
     id: string;
     title?: string;
     message?: string;
-    component?: typeof SvelteComponent | undefined;
+    component?: typeof SvelteComponent | undefined | any; // Typescript fails when passing svelte component. Use any svelte component here. 
     componentProps?: Record<string, any>;
     isOutsideClickClose?: boolean;
     onClose?: () => void;
