@@ -13,7 +13,7 @@ Good example: signaltuzfal /auth/login/+server.ts 2024.10.25 */
 * Has email and password properties, which are required (i.e., cannot be null or undefined)
 * Can have any additional properties with string keys and values of any type 
 */
-type TBareMinimumUserType = { email: string, password: string } & { [key: string]: any };
+type TBareMinimumUserType = { email: string, password: string, permissions: string[] } & { [key: string]: any };
 
 
 export class AuthService<
@@ -138,5 +138,23 @@ export class AuthService<
             }
         }
         return null;
+    }
+
+    public async hasPermissions(clientUser: TUserClient | null, permissions: string[]): Promise<boolean> {
+        if (clientUser === null || clientUser === undefined) { return false }
+        try {
+            const serverUser = await this.usersCollection.findOne({
+                email: (clientUser as any).email,
+                permissions: { $all: permissions }
+            });
+
+            if (serverUser !== null) {
+                return true;
+            }
+
+        } catch (error) {
+            return false;
+        }
+        return false;
     }
 }
