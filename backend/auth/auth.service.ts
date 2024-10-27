@@ -1,5 +1,5 @@
 
-import type { Collection, OptionalUnlessRequiredId } from 'mongodb';
+import type { Collection, OptionalUnlessRequiredId, WithId } from 'mongodb';
 import { type Cookies, type RequestEvent } from "@sveltejs/kit";
 import bcrypt from 'bcrypt';
 import { JWT } from '../../common/utilities/jwt'
@@ -125,8 +125,8 @@ export class AuthService<
 
 
     /* Call this from hooks/handle */
-    public getUserFromCookie(event: RequestEvent) {
-        const authCookie = event.cookies.get('auth');
+    public getClientUserFromCookies(cookies: Cookies) {
+        const authCookie = cookies.get('auth');
         if (authCookie) {
             try {
                 const decodedUser: TUserClient = this.jwt.decode(authCookie) as TUserClient;
@@ -140,21 +140,22 @@ export class AuthService<
         return null;
     }
 
-    public async hasPermissions(clientUser: TUserClient | null, permissions: string[]): Promise<boolean> {
-        if (clientUser === null || clientUser === undefined) { return false }
-        try {
-            const serverUser = await this.usersCollection.findOne({
-                email: (clientUser as any).email,
-                permissions: { $all: permissions }
-            });
+    private async getServerUser(clientUser: TUserClient): Promise<WithId<TUserServer> | null> {
+        return await this.usersCollection.findOne({ email: (clientUser as any).email } as TUserServer);
+    }
 
-            if (serverUser !== null) {
-                return true;
-            }
+    async getServerUserFromCookies(cookies: Cookies): Promise<WithId<TUserServer> | null> {
+        const clientUser = this.getClientUserFromCookies(cookies);
+        if (clientUser === null) return null;
+        return await this.getServerUser(clientUser);
+    }
 
-        } catch (error) {
+
+    public async hasPermissions(serverUser: TUserServer | null, permissions: string[]): Promise<boolean> {
+        if (serverUser === null) { return false }
+        if (typeof serverUser.permissions !== "object") {
             return false;
         }
-        return false;
+        return permissions.every(permission => serverUser.permissions.includes(permission));
     }
 }
