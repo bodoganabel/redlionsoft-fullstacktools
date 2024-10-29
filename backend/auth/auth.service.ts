@@ -144,7 +144,7 @@ export class AuthService<
         return await this.usersCollection.findOne({ email: (clientUser as any).email } as TUserServer);
     }
 
-    async getServerUserFromCookies(cookies: Cookies): Promise<WithId<TUserServer> | null> {
+    public async getServerUserFromCookies(cookies: Cookies): Promise<WithId<TUserServer> | null> {
         const clientUser = this.getClientUserFromCookies(cookies);
         if (clientUser === null) return null;
         return await this.getServerUser(clientUser);
