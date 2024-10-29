@@ -52,9 +52,29 @@ export enum EToastTypes {
     WARNING = 'warning',
     ERROR = 'error',
 }
+
+// Set ttl 0 for non-expiring toast
 export function toast(message: string, type: EToastTypes, ttl = 4000, onClick = () => { }) {
     const toastId = createToast({
         message, type, ttl, onClick,
     });
     return toastId;
+}
+
+// Below ports are saving brainpower when thinking of the type of the toast
+
+export function toastError(message: string, ttl = 4000, onClick = () => { }) {
+    toast(message, EToastTypes.ERROR, ttl, onClick);
+}
+
+export function toastSuccess(message: string, ttl = 4000, onClick = () => { }) {
+    toast(message, EToastTypes.SUCCESS, ttl, onClick);
+}
+
+export function toastNormal(message: string, ttl = 4000, onClick = () => { }) {
+    toast(message, EToastTypes.NORMAL, ttl, onClick);
+}
+
+export function toastWarning(message: string, ttl = 4000, onClick = () => { }) {
+    toast(message, EToastTypes.NORMAL, ttl, onClick);
 }
