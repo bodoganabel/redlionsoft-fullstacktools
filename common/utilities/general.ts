@@ -9,7 +9,6 @@ export function UuidSimple() {
     return time.toString();
 }
 
-
 export function devOnly(callOnlyAtDevelopmentMode: () => any) {
     if (!isProduction()) {
         callOnlyAtDevelopmentMode();
