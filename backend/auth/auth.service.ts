@@ -57,7 +57,6 @@ export class AuthService<
             ...props,
             password: await bcrypt.hash(props.password, 10),
             created_at: new Date(),
-
         };
 
         try {
@@ -92,7 +91,7 @@ export class AuthService<
 
             // Find user by email
             const user = await this.usersCollection.findOne({ email } as TUserServer);
-            if (!user) {
+            if (user === null) {
                 return { status: 401, message: 'Invalid email or password' };
             }
 
@@ -119,6 +118,7 @@ export class AuthService<
                 throw new Error("parse_serverUserTo_clientUser failed.")
             }
         } catch (error) {
+            console.log(error)
             return { status: 500, message: 'An error occurred' }
         }
     }
