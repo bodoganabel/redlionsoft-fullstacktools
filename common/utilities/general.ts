@@ -6,3 +6,8 @@ export function UuidSimple() {
     const time = new Date().getTime();
     return time.toString();
 }
+
+
+export function devOnly(callOnlyAtDevelopmentMode: () => any) {
+    callOnlyAtDevelopmentMode();
+}
