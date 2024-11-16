@@ -1,3 +1,5 @@
+import { isProduction } from "..";
+
 export function delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -9,5 +11,7 @@ export function UuidSimple() {
 
 
 export function devOnly(callOnlyAtDevelopmentMode: () => any) {
-    callOnlyAtDevelopmentMode();
+    if (!isProduction()) {
+        callOnlyAtDevelopmentMode();
+    }
 }
