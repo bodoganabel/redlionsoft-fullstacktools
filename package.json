@@ -1,63 +1,63 @@
 {
-  "description": "Highly opinionated toolkit for developing fullstack MVP-s quickly and efficiently at Redlionsoft",
-  "version": "0.2.0",
-  "name": "@redlionsoft/fullstacktools",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "exports": {
-    "./backend": {
-      "import": "./dist/backend/index.js",
-      "require": "./dist/backend/index.js",
-      "types": "./dist/backend/index.d.ts"
-    },
-    "./frontend": {
-      "import": "./dist/frontend/index.js",
-      "require": "./dist/frontend/index.js",
-      "types": "./dist/frontend/index.d.ts"
-    },
-    "./common": {
-      "import": "./dist/common/index.js",
-      "require": "./dist/common/index.js",
-      "types": "./dist/common/index.d.ts"
-    }
-  },
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/"
-  },
-  "scripts": {
-    "addversion": "changeset",
-    "build:backend": "tsc --project backend/tsconfig.json && tsup backend/index.ts --format cjs,esm --target esnext --dts --outDir dist/backend",
-    "build:frontend": "tsc --project frontend/tsconfig.json && tsup frontend/index.ts --format cjs,esm --target esnext --dts --outDir dist/frontend",
-    "build:common": "tsc --project common/tsconfig.json && tsup common/index.ts --format cjs,esm --target esnext --dts --outDir dist/common",
-    "build": "npm run build:backend && npm run build:frontend && npm run build:common",
-    "release": "pnpm run build && changeset && changeset publish",
-    "lint": "tsc"
-  },
-  "devDependencies": {
-    "@changesets/cli": "^2.27.5",
-    "@skeletonlabs/skeleton": "^2.10.1",
-    "@skeletonlabs/tw-plugin": "^0.4.0",
-    "@sveltejs/kit": "^2.7.2",
-    "@types/jsonwebtoken": "^9.0.7",
-    "@types/node": "^20.14.7",
-    "tsup": "^6.5.0",
-    "typescript": "^5.6.3",
-    "@types/bcrypt": "^5.0.2"
-  },
-  "author": "Abel Bodogan",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/bodoganabel/redlionsoft-fullstacktools/issues"
-  },
-  "homepage": "https://github.com/bodoganabel/redlionsoft-fullstacktools#readme",
-  "dependencies": {
-    "@types/mongodb": "^4.0.7",
-    "bcrypt": "^5.1.1",
-    "jsonwebtoken": "^9.0.2",
-    "jwt-decode": "^4.0.0",
-    "mongodb": "^6.7.0",
-    "svelte": "^4.2.18",
-    "svelte-preprocess": "^6.0.1"
-  }
+	"description": "Highly opinionated toolkit for developing fullstack MVP-s quickly and efficiently at Redlionsoft",
+	"version": "0.2.0",
+	"name": "@redlionsoft/fullstacktools",
+	"main": "dist/index.js",
+	"module": "dist/index.mjs",
+	"types": "dist/index.d.ts",
+	"exports": {
+		"./backend": {
+			"import": "./dist/backend/index.js",
+			"require": "./dist/backend/index.js",
+			"types": "./dist/backend/index.d.ts"
+		},
+		"./frontend": {
+			"import": "./dist/frontend/index.js",
+			"require": "./dist/frontend/index.js",
+			"types": "./dist/frontend/index.d.ts"
+		},
+		"./common": {
+			"import": "./dist/common/index.js",
+			"require": "./dist/common/index.js",
+			"types": "./dist/common/index.d.ts"
+		}
+	},
+	"publishConfig": {
+		"registry": "https://registry.npmjs.org/"
+	},
+	"scripts": {
+		"addversion": "changeset",
+		"build:backend": "tsc --showConfig && tsc --project backend/tsconfig.json && tsup backend/index.ts --config ./backend/tsup.config.ts --format cjs,esm --target esnext --dts --outDir dist/backend",
+		"build:frontend": "tsc --showConfig && tsc --project frontend/tsconfig.json && tsup frontend/index.ts --config ./frontend/tsup.config.ts --format cjs,esm --target esnext --dts --outDir dist/frontend",
+		"build:common": "tsc --showConfig && tsc --project common/tsconfig.json && tsup common/index.ts --config ./common/tsup.config.ts --format cjs,esm --target esnext --dts --outDir dist/common",
+		"build": "npm run build:backend && npm run build:frontend && npm run build:common",
+		"release": "pnpm run build && changeset && changeset publish",
+		"lint": "tsc"
+	},
+	"devDependencies": {
+		"@changesets/cli": "^2.27.5",
+		"@skeletonlabs/skeleton": "^2.10.1",
+		"@skeletonlabs/tw-plugin": "^0.4.0",
+		"@sveltejs/kit": "^2.8.1",
+		"@types/bcrypt": "^5.0.2",
+		"@types/jsonwebtoken": "^9.0.7",
+		"@types/node": "^20.14.7",
+		"tsup": "^6.7.0",
+		"typescript": "^5.6.3"
+	},
+	"author": "Abel Bodogan",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/bodoganabel/redlionsoft-fullstacktools/issues"
+	},
+	"homepage": "https://github.com/bodoganabel/redlionsoft-fullstacktools#readme",
+	"dependencies": {
+		"bcrypt": "^5.1.1",
+		"dotenv": "^16.4.5",
+		"jsonwebtoken": "^9.0.2",
+		"jwt-decode": "^4.0.0",
+		"mongodb": "^6.7.0",
+		"svelte": "^4.2.18",
+		"svelte-preprocess": "^6.0.1"
+	}
 }
