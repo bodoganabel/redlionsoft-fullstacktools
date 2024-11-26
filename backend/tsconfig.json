@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     /* Base Options: */
+    "verbatimModuleSyntax":true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "target": "es2022",
