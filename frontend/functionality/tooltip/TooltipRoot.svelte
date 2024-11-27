@@ -41,7 +41,7 @@
   class:hidden={!$tooltipStore.visible}
   on:click|stopPropagation={() => {}}
 >
-  <p>{content}</p>
+  <p>{@html content}</p>
   <div class="arrow variant-filled-primary"></div>
 </div>
 
