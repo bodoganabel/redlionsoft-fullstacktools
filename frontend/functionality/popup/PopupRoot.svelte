@@ -24,9 +24,10 @@
         isOutsideClickClose={popup.isOutsideClickClose}
         onClose={popup.onClose}
         onAccept={popup.onAccept}
-        acceptText={popup.acceptText}
-        closeText={popup.closeText}
+        acceptMessage={popup.acceptMessage}
+        closeMessage={popup.closeMessage}
       />
     {/each}
   </div>
 {/if}
+acceptHtml closeHtml acceptMessage closeMessage
