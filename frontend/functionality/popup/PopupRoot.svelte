@@ -30,4 +30,3 @@
     {/each}
   </div>
 {/if}
-acceptHtml closeHtml acceptMessage closeMessage
