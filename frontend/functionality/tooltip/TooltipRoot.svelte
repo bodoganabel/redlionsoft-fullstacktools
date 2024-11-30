@@ -92,7 +92,3 @@
   <p>{@html $tooltipStore.content}</p>
   <div class="arrow variant-filled-primary"></div>
 </div>
-
-<style>
-  /* You can extend styling here if needed */
-</style>
