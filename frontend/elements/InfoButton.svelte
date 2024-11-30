@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tooltip } from "../functionality/tooltip/tooltip.store";
-  import InfoIcon from "../icons/InfoIcon.svelte";
+  import IconInfo from "../icons/IconInfo.svelte";
 
   export let message: string;
 </script>
@@ -12,5 +12,5 @@
   }}
   class="btn-icon w-4 h-4"
 >
-  <InfoIcon></InfoIcon>
+  <IconInfo></IconInfo>
 </button>
