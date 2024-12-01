@@ -34,8 +34,11 @@
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
     <div
-      class="day p-1 flex justify-center items-center aspect-square text-center rounded-lg cursor-pointer font-semibold scale-animation"
+      class="day p-1 flex justify-center items-center aspect-square text-center rounded-lg cursor-pointer font-semibold scale-animation border-solid border-blue-700"
       style:transform={`scale(${isActive(date) ? $scale : 1})`}
+      class:border-2={date && date.toDateString() === new Date().toDateString()
+        ? "1px solid currentColor"
+        : undefined}
       class:bg-gray-200={date !== null && !isActive(date) && isSelectable(date)}
       class:dark:bg-gray-800={date !== null &&
         !isActive(date) &&
