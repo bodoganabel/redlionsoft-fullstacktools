@@ -1,6 +1,6 @@
 <script lang="ts">
   import {
-    selectedTimeZone,
+    timezoneStore,
     timeZones,
   } from "./../../functionality/timezone/timezone.store";
 </script>
@@ -9,10 +9,10 @@
   <label for="timezone" class="font-bold">Select your timezone:</label>
   <select
     id="timezone"
-    value={$selectedTimeZone}
+    value={$timezoneStore}
     class="input select mt-2"
     on:change={(e) =>
-      selectedTimeZone.set(
+      timezoneStore.set(
         // @ts-ignore
         e.target.value
       )}
@@ -23,7 +23,7 @@
       </option>
     {/each}
   </select>
-  <p class="text-sm text-gray-500">Current timezone: {$selectedTimeZone}</p>
+  <p class="text-sm text-gray-500">Current timezone: {$timezoneStore}</p>
 </div>
 
 <style>
