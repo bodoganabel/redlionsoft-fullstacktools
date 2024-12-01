@@ -65,7 +65,7 @@
     }}
   >
     {#if isFetching_login}
-      <Spinner size="w-12" stroke={8} />
+      <Spinner size="w-12" stroke={10} />
       <!-- content here -->
     {:else}
       Log in
@@ -84,7 +84,7 @@
       window.location.reload();
     }}
     >{#if isFetching_logout}
-      <Spinner size="w-12" stroke={8} />
+      <Spinner size="w-12" stroke={10} />
       <!-- content here -->
     {:else}
       Logout
