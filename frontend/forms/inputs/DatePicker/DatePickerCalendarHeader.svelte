@@ -6,7 +6,7 @@
   export let onNextMonth: () => void;
 </script>
 
-<div class="flex justify-between items-center mb-2 text-black">
+<div class="flex justify-between items-center mb-2">
   <button class="text-xl" on:click={onPrevMonth}>&lt;</button>
   <span class="font-bold">{monthNames[currentMonth]} {currentYear}</span>
   <button class="text-xl" on:click={onNextMonth}>&gt;</button>
