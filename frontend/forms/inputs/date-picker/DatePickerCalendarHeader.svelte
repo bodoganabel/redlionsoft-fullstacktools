@@ -13,7 +13,7 @@
   <button class="p-1 btn-icon text-xl w-6" on:click={onPrevMonth}
     ><IconLeftChevron /></button
   >
-  <span class="font-bold">{monthNames[currentMonth]} {currentYear}</span>
+  <span class="font-medium">{monthNames[currentMonth]} {currentYear}</span>
   <button class="p-1 btn-icon text-xl w-6" on:click={onNextMonth}
     ><IconRightChevron /></button
   >

@@ -100,7 +100,7 @@
   }
 </script>
 
-<div class="p-4 mt-2 date-picker">
+<div class="date-picker">
   <DatePickerCalendarHeader
     {monthNames}
     {currentMonth}
