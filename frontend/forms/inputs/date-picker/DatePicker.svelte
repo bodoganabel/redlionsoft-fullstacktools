@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { DateTime } from "luxon";
   import DatePickerCalendarDays from "./DatePickerCalendarDays.svelte";
   import DatePickerCalendarFooter from "./DatePickerCalendarFooter.svelte";
   import DatePickerCalendarHeader from "./DatePickerCalendarHeader.svelte";
@@ -21,14 +22,14 @@
     "December",
   ];
 
-  export let initialDate = new Date();
-  let selectedDate: Date = new Date(initialDate);
-  export let onSelect: (date: Date) => void = () => {};
-  export let minDate: Date | undefined = undefined;
+  export let initialDate: DateTime = DateTime.now();
+  let selectedDate: DateTime = initialDate;
+  export let onSelect: (date: DateTime) => void = () => {};
+  export let minDate: DateTime | undefined = undefined;
 
-  let currentMonth = selectedDate.getMonth();
-  let currentYear = selectedDate.getFullYear();
-  let dates: (Date | null)[] = [];
+  let currentMonth = selectedDate.month - 1; // Luxon's months are 1-based
+  let currentYear = selectedDate.year;
+  let dates: (DateTime | null)[] = [];
 
   $: if (selectedDate) updateCalendar();
   $: orderedWeekdays = [
@@ -36,52 +37,63 @@
     ...weekdays.slice(0, startDayOfWeek),
   ];
 
-  function onDateSelected(newDate: Date) {
-    selectedDate = new Date(newDate);
+  function onDateSelected(newDate: DateTime) {
+    selectedDate = newDate;
     onSelect(selectedDate);
     updateCalendar();
   }
 
   function setToToday() {
-    onDateSelected(new Date());
+    onDateSelected(DateTime.now());
   }
 
   function setToTomorrow() {
-    const currentDate = new Date();
-    currentDate.setDate(currentDate.getDate() + 1);
-    onDateSelected(currentDate);
+    onDateSelected(DateTime.now().plus({ days: 1 }));
   }
 
   function setToCurrentOrMinimal() {
-    onDateSelected(minDate ?? new Date());
+    onDateSelected(minDate === undefined ? DateTime.now() : minDate);
   }
 
   function prevMonth() {
-    currentMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-    currentYear += currentMonth === 11 ? -1 : 0;
+    const previousMonth = DateTime.fromObject({
+      year: currentYear,
+      month: currentMonth + 1, // 1-based month
+      day: 1,
+    }).minus({ months: 1 });
+    currentMonth = previousMonth.month - 1;
+    currentYear = previousMonth.year;
     updateCalendar();
   }
 
   function nextMonth() {
-    currentMonth = currentMonth === 11 ? 0 : currentMonth + 1;
-    currentYear += currentMonth === 0 ? 1 : 0;
+    const nextMonth = DateTime.fromObject({
+      year: currentYear,
+      month: currentMonth + 1, // 1-based month
+      day: 1,
+    }).plus({ months: 1 });
+    currentMonth = nextMonth.month - 1;
+    currentYear = nextMonth.year;
     updateCalendar();
   }
 
   function updateCalendar() {
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const firstDayOfMonth =
-      (new Date(currentYear, currentMonth, 1).getDay() - startDayOfWeek + 7) %
-      7;
+    const firstDayOfMonth = DateTime.fromObject({
+      year: currentYear,
+      month: currentMonth + 1, // Luxon's months are 1-based
+      day: 1,
+    });
+    const daysInMonth = firstDayOfMonth.daysInMonth;
+    if (daysInMonth === undefined) return;
+    const firstDayOfWeek = (firstDayOfMonth.weekday - startDayOfWeek + 7) % 7;
 
-    const totalDays = firstDayOfMonth + daysInMonth;
+    const totalDays = firstDayOfWeek + daysInMonth;
     const daysToAdd = (7 - (totalDays % 7)) % 7;
 
     dates = [
-      ...Array(firstDayOfMonth).fill(null),
-      ...Array.from(
-        { length: daysInMonth },
-        (_, i) => new Date(currentYear, currentMonth, i + 1)
+      ...Array(firstDayOfWeek).fill(null),
+      ...Array.from({ length: daysInMonth }, (_, i) =>
+        firstDayOfMonth.plus({ days: i })
       ),
       ...Array(daysToAdd).fill(null),
     ];

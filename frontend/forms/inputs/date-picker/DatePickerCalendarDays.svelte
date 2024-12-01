@@ -1,27 +1,28 @@
 <script lang="ts">
-  import { DAY } from "../../../../common/constants/time";
   import { tweened } from "svelte/motion";
   import { cubicOut } from "svelte/easing";
+  import { DateTime } from "luxon";
 
-  export let dates: (Date | null)[];
-  export let selectedDate: Date;
-  export let minDate: Date | undefined;
-  export let onDateSelect: (date: Date) => void;
+  export let dates: (DateTime | null)[];
+  export let selectedDate: DateTime;
+  export let minDate: DateTime | undefined;
+  export let onDateSelect: (date: DateTime) => void;
 
   const scale = tweened(1, { duration: 200, easing: cubicOut });
 
-  function isSelectable(date: Date | null): boolean {
+  function isSelectable(date: DateTime | null): boolean {
     if (!date) return false;
-    return date && (!minDate || date.valueOf() >= minDate.valueOf() - DAY);
+    if (minDate === undefined) return true;
+    return date >= minDate.startOf("day");
   }
 
-  function isActive(date: Date | null): boolean {
+  function isActive(date: DateTime | null): boolean {
     if (!date) return false;
-    return date && selectedDate.toDateString() === date.toDateString();
+    return selectedDate.hasSame(date, "day");
   }
 
-  async function handleClick(date: Date) {
-    if (date && isSelectable(date)) {
+  async function handleClick(date: DateTime) {
+    if (isSelectable(date)) {
       onDateSelect(date); // Trigger the callback after the animation
       await scale.set(1.05); // Scale up slightly
       await scale.set(1); // Shrink back to normal
@@ -36,7 +37,7 @@
     <div
       class="day p-1 flex justify-center items-center aspect-square text-center rounded-lg cursor-pointer font-semibold scale-animation border-solid border-blue-700"
       style:transform={`scale(${isActive(date) ? $scale : 1})`}
-      class:border-2={date && date.toDateString() === new Date().toDateString()
+      class:border-2={date && date.hasSame(DateTime.now(), "day")
         ? "1px solid currentColor"
         : undefined}
       class:bg-gray-200={date !== null && !isActive(date) && isSelectable(date)}
@@ -48,7 +49,7 @@
       class:text-white={isActive(date)}
       on:click={() => date && handleClick(date)}
     >
-      {date ? date.getDate() : ""}
+      {date ? date.day : ""}
     </div>
   {/each}
 </div>

@@ -7,7 +7,7 @@
 
 {#each availableDateTimes as availableDateTime}
   <button
-    class=""
+    class="variant-outline-primary"
     on:click={async () => {
       onSelect(availableDateTime);
     }}>{availableDateTime.toLocaleString(format)}</button
