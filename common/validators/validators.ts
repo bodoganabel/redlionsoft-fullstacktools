@@ -31,3 +31,35 @@ export const VALIDATOR_REQUIRE_STRING =
   (value: string) => {
     if (value === "") return message;
   };
+
+export const VALIDATOR_IS_FLOAT =
+  (message = "Not a valid number") =>
+  (value: string) => {
+    if (isNaN(parseFloat(value)) || !isFinite(+value)) return message;
+  };
+
+export const VALIDATOR_MIN_VALUE =
+  (minValue: number, message = "Too low") =>
+  (value: string) => {
+    const valueFloat = parseFloat(value);
+    if (valueFloat < minValue) return message;
+  };
+
+export const VALIDATOR_MAX_VALUE =
+  (maxValue: number, message = "Too high") =>
+  (value: string) => {
+    const valueFloat = parseFloat(value);
+    if (valueFloat > maxValue) return message;
+  };
+
+export const VALIDATOR_REQUIRE_NUMBER_FLOAT =
+  (message = "Required field") =>
+  (value: string) => {
+    if (isNaN(parseFloat(value))) return message;
+  };
+
+export const VALIDATOR_REQUIRE_NUMBER_DECIMAL =
+  (message = "Required field") =>
+  (value: string) => {
+    if (isNaN(parseInt(value, 10))) return message;
+  };
