@@ -7,7 +7,6 @@
   import { onDestroy, onMount } from "svelte";
 
   export let quickloginUsers: IQuickloginUser[];
-  export let templatePaths: string[];
 
   const isDevelopment = !isProduction();
 
@@ -37,7 +36,7 @@
     popup({
       title: "Devconsole",
       component: DevConsoleModal,
-      componentProps: { quickloginUsers, templatePaths },
+      componentProps: { quickloginUsers },
     });
   }
 </script>
