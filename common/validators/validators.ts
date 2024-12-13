@@ -9,8 +9,9 @@ export const VALIDATOR_IS_EMAIL =
   };
 
 export const VALIDATOR_IS_PHONE_INTERNATIONAL =
-  (message = "Invalid phone") =>
+  (message = "Invalid phone", required = true) =>
   (value: string) => {
+    if (required === false && value === "") return;
     if (REGEX_VALID_PHONE_INTERNATIONAL.test(value) === false) return message;
   };
 
