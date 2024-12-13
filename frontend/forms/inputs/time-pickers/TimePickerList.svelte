@@ -5,11 +5,15 @@
   export let onSelect: (date: DateTime) => void = () => {};
 </script>
 
-{#each availableSlots as availableDateTime}
-  <button
-    class="variant-outline-primary"
-    on:click={async () => {
-      onSelect(availableDateTime);
-    }}>{availableDateTime.toLocaleString(format)}</button
-  >
-{/each}
+{#if !availableSlots || availableSlots.length === 0}
+  <p>-</p>
+{:else}
+  {#each availableSlots as availableDateTime}
+    <button
+      class="variant-outline-primary"
+      on:click={async () => {
+        onSelect(availableDateTime);
+      }}>{availableDateTime.toLocaleString(format)}</button
+    >
+  {/each}
+{/if}
