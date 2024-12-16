@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { SvelteComponent } from "svelte";
+  import type { ComponentType, SvelteComponent } from "svelte";
   import { removePopup } from "./popup-logic";
   export let id: string;
   export let title: string;
   export let message: string;
-  export let component: typeof SvelteComponent | undefined = undefined;
+  export let component: ComponentType<SvelteComponent> | undefined = undefined;
   export let componentProps: Record<string, any> = {};
   export let isOutsideClickClose: boolean = true;
   export let onClose: (() => void) | undefined;

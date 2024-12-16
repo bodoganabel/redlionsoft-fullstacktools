@@ -1,12 +1,12 @@
 // src/routes/popups/popup-logic.ts
 import { writable } from "svelte/store";
-import type { SvelteComponent } from "svelte";
+import type { ComponentType, SvelteComponent } from "svelte";
 
 export interface IPopup {
   id: string;
   title?: string;
   message?: string;
-  component?: typeof SvelteComponent | undefined | any; // Typescript fails when passing svelte component. Use any svelte component here.
+  component?: ComponentType<SvelteComponent>; // Typescript fails when passing svelte component. Use any svelte component here.
   componentProps?: Record<string, any>;
   isOutsideClickClose?: boolean;
   onClose?: () => void;
