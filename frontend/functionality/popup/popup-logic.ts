@@ -1,6 +1,7 @@
 // src/routes/popups/popup-logic.ts
 import { writable } from "svelte/store";
 import type { ComponentType, SvelteComponent } from "svelte";
+import PopupInputModal from "./PopupInputModal.svelte";
 
 export interface IPopup {
   id?: string;
@@ -26,4 +27,30 @@ export const popup = (popup: IPopup) => {
 
 export const popupClose = (id: string) => {
   popupStore.update((popups) => popups.filter((popup) => popup.id !== id));
+};
+
+export const popupInput = (
+  title: string,
+  onSave: (newValue: string) => {},
+  initialValue = "",
+  props = {
+    id: "popup-input",
+    message: undefined,
+    isSaveClose: true,
+  }
+) => {
+  const { id, message, isSaveClose } = props;
+
+  popup({
+    id,
+    title,
+    message,
+    component: PopupInputModal,
+    componentProps: {
+      value: initialValue,
+      onSave,
+      id,
+      isSaveClose,
+    },
+  });
 };
