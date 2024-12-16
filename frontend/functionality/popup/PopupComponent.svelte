@@ -1,5 +1,10 @@
 <script lang="ts">
-  import type { ComponentType, SvelteComponent } from "svelte";
+  import {
+    onDestroy,
+    onMount,
+    type ComponentType,
+    type SvelteComponent,
+  } from "svelte";
   import { popupClose } from "./popup-logic";
   export let id: string;
   export let title: string;
@@ -37,6 +42,20 @@
       removePopup();
     }
   };
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Escape" || e.key === "Esc") {
+      removePopup();
+    }
+  };
+
+  onMount(() => {
+    document.addEventListener("keydown", handleKeyDown);
+  });
+
+  onDestroy(() => {
+    document.removeEventListener("keydown", handleKeyDown);
+  });
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
