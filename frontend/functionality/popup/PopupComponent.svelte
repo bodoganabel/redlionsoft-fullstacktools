@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ComponentType, SvelteComponent } from "svelte";
-  import { removePopup } from "./popup-logic";
+  import { popupClose } from "./popup-logic";
   export let id: string;
   export let title: string;
   export let message: string;
@@ -15,18 +15,18 @@
   console.log("componentProps:");
   console.log(componentProps);
 
-  const closePopup = () => {
+  const removePopup = () => {
     onClose !== undefined ? onClose() : null;
 
     if (onClose !== undefined) {
       onClose();
     }
-    removePopup(id);
+    popupClose(id);
   };
 
   const acceptPopup = () => {
     onAccept !== undefined ? onAccept() : null;
-    removePopup(id);
+    popupClose(id);
   };
 
   const handleOutsideClick = (e: MouseEvent) => {
@@ -34,7 +34,7 @@
       isOutsideClickClose &&
       (e.target as HTMLElement).classList.contains("popup-overlay")
     ) {
-      closePopup();
+      removePopup();
     }
   };
 </script>
@@ -50,7 +50,7 @@
   >
     <header class="flex justify-between items-center mb-4">
       <h2 class="text-lg font-semibold">{@html title}</h2>
-      <button class="text-xl font-bold" on:click={closePopup}>✕</button>
+      <button class="text-xl font-bold" on:click={removePopup}>✕</button>
     </header>
 
     {#if message}
@@ -64,7 +64,7 @@
     {#if onClose !== undefined || onAccept !== undefined}
       <footer class="flex justify-end mt-4 space-x-2">
         {#if onClose !== undefined}
-          <button class="btn variant-outline-secondary" on:click={closePopup}
+          <button class="btn variant-outline-secondary" on:click={removePopup}
             >{@html closeMessage}</button
           >
         {/if}
