@@ -33,7 +33,11 @@ export const popupInput = (
   title: string,
   onSave: (newValue: string) => {},
   initialValue = "",
-  props = {
+  props: {
+    id: string;
+    message?: string;
+    isSaveClose: boolean;
+  } = {
     id: "popup-input",
     message: undefined,
     isSaveClose: true,
