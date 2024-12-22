@@ -37,13 +37,15 @@ export const popupInput = (
     id: string;
     message?: string;
     isSaveClose: boolean;
+    saveButtonTitle: string;
   } = {
     id: "popup-input",
     message: undefined,
     isSaveClose: true,
+    saveButtonTitle: "Save",
   }
 ) => {
-  const { id, message, isSaveClose } = props;
+  const { id, message, isSaveClose, saveButtonTitle } = props;
 
   popup({
     id,
@@ -55,6 +57,7 @@ export const popupInput = (
       onSave,
       id,
       isSaveClose,
+      saveButtonTitle,
     },
   });
 };

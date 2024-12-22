@@ -6,6 +6,7 @@
   export let onSave: (value: string) => void;
   export let isSaveClose: boolean;
   export let id: string;
+  export let saveButtonTitle = "Save";
 
   onMount(() => {
     if (typeof window === undefined) return;
@@ -36,4 +37,6 @@
 
 <input class="input" type="text" bind:value />
 
-<button class="mt-3 variant-filled-primary" on:click={onClick}> Save</button>
+<button class="mt-3 variant-filled-primary" on:click={onClick}>
+  {saveButtonTitle}</button
+>
