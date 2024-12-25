@@ -27,15 +27,21 @@ export class AuthService<
   private usersCollection;
   // function that gets the server side user object and returns a client side user object from it.
   private parse_serverUserTo_clientUser;
+  private saltOrRounds: string | number = 10;
   constructor(initializer: {
     jwt: JWT;
     usersCollection: Collection<TUserServer>;
     parse_serverUserTo_clientUser: (userServer: TUserServer) => TUserClient;
+    saltOrRounds?: number | string;
   }) {
     this.jwt = initializer.jwt;
     this.usersCollection = initializer.usersCollection;
     this.parse_serverUserTo_clientUser =
       initializer.parse_serverUserTo_clientUser;
+
+    if (initializer.saltOrRounds) {
+      this.saltOrRounds = initializer.saltOrRounds;
+    }
   }
 
   public async generateDevUsers(devUsers: TUserServer[]) {
@@ -55,7 +61,7 @@ export class AuthService<
     /*************  ✨ Codeium Command ⭐  *************/
     const user: TUserServer = {
       ...props,
-      password: await bcrypt.hash(props.password, 10),
+      password: await bcrypt.hash(props.password, this.saltOrRounds),
       created_at: new Date(),
     };
 
@@ -73,6 +79,34 @@ export class AuthService<
       return { status: 500, message: "An error occurred" };
     }
     /******  7c19a7bd-a78f-4682-9a24-2e3d3ff62ef6  *******/
+  }
+
+  /* Expects validated inputs */
+  public async changePassword(
+    password: string,
+    newPassword: string,
+    cookies: Cookies
+  ) {
+    const user = await this.getServerUserFromCookies(cookies);
+    if (!user) {
+      return { status: 401, message: "Unauthorized" };
+    }
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return { status: 401, message: "Wrong old password" };
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, this.saltOrRounds);
+    await this.usersCollection.updateOne(
+      { _id: user._id } as OptionalUnlessRequiredId<TUserServer>,
+      {
+        $set: {
+          password: hashedNewPassword,
+        } as Partial<TUserServer>,
+      }
+    );
+    return { status: 200, message: "Password changed successfully" };
   }
 
   public async logout(cookies: Cookies) {
