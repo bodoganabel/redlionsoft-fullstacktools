@@ -1,6 +1,7 @@
-import { uuidShort } from "../../common/utilities/general";
 import { Database } from "../database";
-import type { DateTime } from "luxon";
+import { DateTime } from "luxon";
+import type JWT from "../jwt";
+import type { ObjectId } from "mongodb";
 
 /* Use this class as your login service in the backend at your app.
 Good example: signaltuzfal /auth/login/+server.ts 2024.10.25 */
@@ -15,7 +16,9 @@ export const temporaryTokensCollection = await Database.createCollection(
 );
 
 export class TemporaryTokensService {
-  constructor(initializer: {}) {
+  private jwt: JWT;
+  constructor(initializer: { jwt: JWT }) {
+    this.jwt = initializer.jwt;
     this.initializeTTL();
   }
 
@@ -31,7 +34,7 @@ export class TemporaryTokensService {
       ...data,
       expiresAt: expireDate.toJSDate(),
     });
-    const insertedData = await temporaryTokensCollection.findOne({ data });
+    const insertedData = await temporaryTokensCollection.findOne(data);
     return insertedData as T;
   }
 
@@ -43,8 +46,31 @@ export class TemporaryTokensService {
     await temporaryTokensCollection.deleteOne(filter);
   }
 
-  public async addToken(data: any, expiresAt: DateTime, uuidTokenLength = 8) {
-    const token = uuidShort(uuidTokenLength);
-    return await this.add({ ...data, token }, expiresAt);
+  public async addToken(data: any, expiresAt: DateTime) {
+    const token = this.jwt.signToken(data);
+    console.log("token:");
+    console.log(token);
+    return (
+      (await this.add({ token }, expiresAt)) as {
+        token: string;
+        _id: ObjectId;
+        expiresAt: Date;
+      }
+    ).token as string | null;
+  }
+
+  public async getToken<T>(token: string) {
+    console.log("token:");
+    console.log(token);
+    const document = (await temporaryTokensCollection.findOne({ token })) as {
+      _id: ObjectId;
+      token: string;
+    } | null;
+    console.log("document:");
+    console.log(document);
+    if (document !== null) {
+      return this.jwt.decode(document.token) as T;
+    }
+    return null;
   }
 }
