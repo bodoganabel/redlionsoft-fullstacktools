@@ -3,6 +3,9 @@ import { type Cookies } from "@sveltejs/kit";
 import bcrypt from "bcrypt";
 import { JWT } from "../jwt";
 import { delay } from "../../common/utilities/general";
+import type { TemporaryTokensService } from "../temporary-tokens/temporary-tokens.service";
+import { DateTime } from "luxon";
+import type { EmailService } from "../email/email.service";
 
 /* Use this class as your login service in the backend at your app.
 Good example: signaltuzfal /auth/login/+server.ts 2024.10.25 */
@@ -25,22 +28,33 @@ export class AuthService<
 > {
   private jwt: JWT;
   private usersCollection;
+  private temporaryTokensService: TemporaryTokensService;
   // function that gets the server side user object and returns a client side user object from it.
+  private emailService: EmailService;
   private parse_serverUserTo_clientUser;
   private saltOrRounds: string | number = 10;
+  private passwordResetExpires_min: number = 15;
   constructor(initializer: {
     jwt: JWT;
     usersCollection: Collection<TUserServer>;
     parse_serverUserTo_clientUser: (userServer: TUserServer) => TUserClient;
+    temporaryTokensService: TemporaryTokensService;
+    emailService: EmailService;
     saltOrRounds?: number | string;
+    passwordResetExpires_min?: number;
   }) {
     this.jwt = initializer.jwt;
     this.usersCollection = initializer.usersCollection;
+    this.temporaryTokensService = initializer.temporaryTokensService;
+    this.emailService = initializer.emailService;
     this.parse_serverUserTo_clientUser =
       initializer.parse_serverUserTo_clientUser;
 
     if (initializer.saltOrRounds) {
       this.saltOrRounds = initializer.saltOrRounds;
+    }
+    if (initializer.passwordResetExpires_min !== undefined) {
+      this.passwordResetExpires_min = initializer.passwordResetExpires_min;
     }
   }
 
@@ -111,6 +125,25 @@ export class AuthService<
 
   public async logout(cookies: Cookies) {
     cookies.delete("auth", { path: "/" });
+  }
+
+  // Creating a reset token encoding the email as data
+  public async resetPasswordInit(email: string) {
+    const token = await this.temporaryTokensService.addToken(
+      { email },
+      DateTime.now().plus({ minutes: this.passwordResetExpires_min })
+    );
+    if (token === null) {
+      return { error: "An error occurred" };
+    }
+    const result = await this.emailService.sendTemplate({
+      to: email,
+      subject: "Reset password",
+      templateUrl_reative: "/reset-password.hbs",
+      options: { token } as any,
+    });
+
+    return result;
   }
 
   /* Expects validated input */
