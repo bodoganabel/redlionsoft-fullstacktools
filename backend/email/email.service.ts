@@ -127,33 +127,32 @@ export class EmailService {
     to: string;
     subject: string;
     templateUrl_reative: string;
-    options: string;
+    templateParams: Record<string, any>;
     fallbackText?: string;
     useBaseTemplate?: boolean;
   }): Promise<{ result: any; error?: string }> {
     try {
-      // Read the template file
-      const source = await readFile(
-        join(
-          this.templateFolderPath_absolute,
-          `${options.templateUrl_reative}`
-        ),
-        "utf-8"
+      // Read and compile the specific template
+      const templatePath = join(
+        this.templateFolderPath_absolute,
+        options.templateUrl_reative
       );
-
-      // Compile the template
+      const source = await readFile(templatePath, "utf-8");
       const templateCompile = Handlebars.compile(source);
 
-      // Render the template with provided data
-      const body = templateCompile(options);
+      // Render the body using the provided parameters
+      const body = templateCompile(options.templateParams);
 
+      // Optionally wrap with the base template
       const html =
         options.useBaseTemplate === true
           ? this.baseTemplate(this.baseTemplateProps(body))
           : body;
 
-      // Send mail with SendGrid if in 'PRODUCTION' environment, else use nodemailer
+      console.log("html:");
+      console.log(html);
 
+      // Check if we are in production to decide email sending method
       if (isProduction()) {
         try {
           const emailResult = await this.sendWithSendGrid(
@@ -164,7 +163,7 @@ export class EmailService {
           );
           return { result: emailResult };
         } catch (error) {
-          throw new Error("Email sending failed: " + error);
+          throw new Error(`Email sending failed with SendGrid: ${error}`);
         }
       } else {
         console.log("Sent test email to devmail server at: localhost:1080");
@@ -178,7 +177,8 @@ export class EmailService {
         return { result };
       }
     } catch (error) {
-      return { result: undefined, error: error as string };
+      console.error("Error sending template email:", error);
+      return { result: undefined, error: String(error) };
     }
   }
 }

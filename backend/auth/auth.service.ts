@@ -6,6 +6,7 @@ import { delay } from "../../common/utilities/general";
 import type { TemporaryTokensService } from "../temporary-tokens/temporary-tokens.service";
 import { DateTime } from "luxon";
 import type { EmailService } from "../email/email.service";
+import { isProduction } from "../../common";
 
 /* Use this class as your login service in the backend at your app.
 Good example: signaltuzfal /auth/login/+server.ts 2024.10.25 */
@@ -43,6 +44,9 @@ export class AuthService<
     saltOrRounds?: number | string;
     passwordResetExpires_min?: number;
   }) {
+    if (process.env.FRONTEND_URL === undefined)
+      throw new Error("FRONTEND_URL is not defined in .env");
+
     this.jwt = initializer.jwt;
     this.usersCollection = initializer.usersCollection;
     this.temporaryTokensService = initializer.temporaryTokensService;
@@ -136,11 +140,20 @@ export class AuthService<
     if (token === null) {
       return { error: "An error occurred" };
     }
+    const resetPasswordPageUrl =
+      process.env.FRONTEND_URL + "/auth/reset-password";
+
+    console.log("token,resetPasswordPageUrl:");
+    console.log(token, resetPasswordPageUrl);
+
     const result = await this.emailService.sendTemplate({
       to: email,
       subject: "Reset password",
       templateUrl_reative: "/reset-password.hbs",
-      options: { token } as any,
+      templateParams: {
+        token: encodeURIComponent(token),
+        resetPasswordPageUrl,
+      } as any,
     });
 
     return result;
