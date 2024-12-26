@@ -1,3 +1,4 @@
+import { uuidShort } from "../../common/utilities/general";
 import { Database } from "../database";
 import type { DateTime } from "luxon";
 
@@ -36,5 +37,14 @@ export class TemporaryTokensService {
 
   public async get<T>(filter: any) {
     return (await temporaryTokensCollection.findOne(filter)) as T | null;
+  }
+
+  public async delete(filter: any) {
+    await temporaryTokensCollection.deleteOne(filter);
+  }
+
+  public async addToken(data: any, expiresAt: DateTime, uuidTokenLength = 8) {
+    const token = uuidShort(uuidTokenLength);
+    return await this.add({ ...data, token }, expiresAt);
   }
 }
