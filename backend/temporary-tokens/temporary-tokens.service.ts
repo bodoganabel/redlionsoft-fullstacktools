@@ -46,12 +46,12 @@ export class TemporaryTokensService {
     await temporaryTokensCollection.deleteOne(filter);
   }
 
-  public async addToken(data: any, expiresAt: DateTime) {
+  public async addToken(data: any, expiresAt: DateTime, unEncodedData?: any) {
     const token = this.jwt.signToken(data);
     console.log("token:");
     console.log(token);
     return (
-      (await this.add({ token }, expiresAt)) as {
+      (await this.add({ token, ...unEncodedData }, expiresAt)) as {
         token: string;
         _id: ObjectId;
         expiresAt: Date;

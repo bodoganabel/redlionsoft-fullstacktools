@@ -133,9 +133,18 @@ export class AuthService<
 
   // Creating a reset token encoding the email as data
   public async resetPasswordInit(email: string) {
+    const existingToken = await this.temporaryTokensService.get({ email });
+    if (existingToken !== null) {
+      return {
+        error:
+          "A password reset request already exists for this email. <br/>Please try again in 15 minutes.",
+      };
+    }
+
     const token = await this.temporaryTokensService.addToken(
       { email },
-      DateTime.now().plus({ minutes: this.passwordResetExpires_min })
+      DateTime.now().plus({ minutes: this.passwordResetExpires_min }),
+      { email }
     );
     if (token === null) {
       return { error: "An error occurred" };
