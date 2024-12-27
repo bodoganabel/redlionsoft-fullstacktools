@@ -1,12 +1,14 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
   import { popupClose } from "./popup-logic";
+  import SpinnerRls from "../../elements/SpinnerRls.svelte";
 
   export let value: string;
   export let onSave: (value: string) => void;
   export let isSaveClose: boolean;
   export let id: string;
   export let saveButtonTitle = "Save";
+  export let isFetching = false;
 
   onMount(() => {
     if (typeof window === undefined) return;
@@ -28,7 +30,9 @@
   });
 
   async function onClick() {
+    isFetching = true;
     await onSave(value);
+    isFetching = false;
     if (isSaveClose) {
       popupClose(id);
     }
@@ -37,6 +41,13 @@
 
 <input class="input" type="text" bind:value />
 
-<button class="mt-3 variant-filled-primary" on:click={onClick}>
-  {saveButtonTitle}</button
->
+{#if isFetching}
+  <div class="mt-4 ml-4 mb-2 w-8 h-8">
+    <SpinnerRls stroke={40}></SpinnerRls>
+  </div>
+{:else}
+  <!-- else content here -->
+  <button class="mt-3 variant-filled-primary" on:click={onClick}>
+    {saveButtonTitle}</button
+  >
+{/if}
