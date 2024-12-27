@@ -159,6 +159,35 @@ export class AuthService<
     return result;
   }
 
+  public async resetPassword(
+    newPassword: string,
+    token: string,
+    cookies: Cookies
+  ): Promise<{ message?: string; error?: string }> {
+    console.log("newPassword,token:");
+    console.log(newPassword, token);
+
+    const data = await this.temporaryTokensService.getToken<{ email: string }>(
+      token
+    );
+    if (data === null) {
+      return { error: "Invalid token" };
+    }
+    console.log("data:");
+    console.log(data);
+    const hashedNewPassword = await bcrypt.hash(newPassword, this.saltOrRounds);
+    await this.usersCollection.updateOne(
+      { email: data.email } as OptionalUnlessRequiredId<TUserServer>,
+      {
+        $set: {
+          password: hashedNewPassword,
+        } as Partial<TUserServer>,
+      }
+    );
+    await this.login(data.email, newPassword, cookies);
+    return { message: "Password reset successfully" };
+  }
+
   /* Expects validated input */
   public async login(
     email: string,

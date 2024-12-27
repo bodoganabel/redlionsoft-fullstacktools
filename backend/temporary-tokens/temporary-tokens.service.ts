@@ -59,7 +59,7 @@ export class TemporaryTokensService {
     ).token as string | null;
   }
 
-  public async getToken<T>(token: string) {
+  public async getToken<T>(token: string): Promise<T | null> {
     console.log("token:");
     console.log(token);
     const document = (await temporaryTokensCollection.findOne({ token })) as {
