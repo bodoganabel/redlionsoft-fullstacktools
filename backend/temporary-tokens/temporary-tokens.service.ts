@@ -42,8 +42,8 @@ export class TemporaryTokensService {
     return (await temporaryTokensCollection.findOne(filter)) as T | null;
   }
 
-  public async delete(filter: any) {
-    await temporaryTokensCollection.deleteOne(filter);
+  public async delete(token: string) {
+    await temporaryTokensCollection.deleteOne({ token });
   }
 
   public async addToken(data: any, expiresAt: DateTime, unEncodedData?: any) {

@@ -133,6 +133,13 @@ export class AuthService<
 
   // Creating a reset token encoding the email as data
   public async resetPasswordInit(email: string) {
+    const existingUser = await this.usersCollection.findOne({
+      email,
+    } as TUserServer);
+    if (existingUser === null) {
+      return { error: "No user exists with this email" };
+    }
+
     const existingToken = await this.temporaryTokensService.get({ email });
     if (existingToken !== null) {
       return {
@@ -193,6 +200,7 @@ export class AuthService<
         } as Partial<TUserServer>,
       }
     );
+    await this.temporaryTokensService.delete(token);
     await this.login(data.email, newPassword, cookies);
     return { message: "Password reset successfully" };
   }
