@@ -6,7 +6,6 @@ import { delay } from "../../common/utilities/general";
 import type { TemporaryTokensService } from "../temporary-tokens/temporary-tokens.service";
 import { DateTime } from "luxon";
 import type { EmailService } from "../email/email.service";
-import { isProduction } from "../../common";
 
 /* Use this class as your login service in the backend at your app.
 Good example: signaltuzfal /auth/login/+server.ts 2024.10.25 */
@@ -36,6 +35,7 @@ export class AuthService<
   private saltOrRounds: string | number = 10;
   private passwordResetExpires_min: number = 15;
   constructor(initializer: {
+    defaultUsers: TUserServer[];
     jwt: JWT;
     usersCollection: Collection<TUserServer>;
     parse_serverUserTo_clientUser: (userServer: TUserServer) => TUserClient;
@@ -49,10 +49,10 @@ export class AuthService<
 
     this.jwt = initializer.jwt;
     this.usersCollection = initializer.usersCollection;
-    this.temporaryTokensService = initializer.temporaryTokensService;
-    this.emailService = initializer.emailService;
     this.parse_serverUserTo_clientUser =
       initializer.parse_serverUserTo_clientUser;
+    this.temporaryTokensService = initializer.temporaryTokensService;
+    this.emailService = initializer.emailService;
 
     if (initializer.saltOrRounds) {
       this.saltOrRounds = initializer.saltOrRounds;
@@ -60,6 +60,9 @@ export class AuthService<
     if (initializer.passwordResetExpires_min !== undefined) {
       this.passwordResetExpires_min = initializer.passwordResetExpires_min;
     }
+
+    // Initialize default users if none exist
+    this.initUsers(initializer.defaultUsers);
   }
 
   public async generateDevUsers(devUsers: TUserServer[]) {
@@ -308,5 +311,31 @@ export class AuthService<
     return permissions.every((permission) =>
       serverUser.permissions.includes(permission)
     );
+  }
+
+  // Populate users collection
+  private async initUsers(defaultUsers: TUserServer[]) {
+    const userCount = await this.usersCollection.countDocuments();
+    if (userCount === 0 && defaultUsers.length > 0) {
+      // Hash passwords for default users
+      const usersWithHashedPasswords: TUserServer[] = await Promise.all(
+        defaultUsers.map(async (user) => {
+          const hashedPassword = await bcrypt.hash(
+            user.password,
+            this.saltOrRounds
+          );
+          return {
+            ...user,
+            password: hashedPassword,
+          };
+        })
+      );
+
+      // Insert default users
+      await this.usersCollection.insertMany(
+        usersWithHashedPasswords as OptionalUnlessRequiredId<TUserServer>[]
+      );
+      console.log(`Created ${defaultUsers.length} default users`);
+    }
   }
 }
