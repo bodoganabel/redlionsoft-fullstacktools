@@ -6,25 +6,16 @@ import { delay } from "../../common/utilities/general";
 import type { TemporaryTokensService } from "../temporary-tokens/temporary-tokens.service";
 import { DateTime } from "luxon";
 import type { EmailService } from "../email/email.service";
+import type { TUserServerRls, TUserClientRls } from "./user.types";
 
 /* Use this class as your login service in the backend at your app.
 Good example: signaltuzfal /auth/login/+server.ts 2024.10.25 */
 
-/*
- * Has email and password properties, which are required (i.e., cannot be null or undefined)
- * Can have any additional properties with string keys and values of any type
- */
-type TBareMinimumUserType = {
-  email: string;
-  password: string;
-  permissions: string[];
-} & {
-  [key: string]: any;
-};
-
 export class AuthService<
-  TUserServer extends TBareMinimumUserType,
-  TUserClient
+  ERoles,
+  EPermissions,
+  Metadata_UserServer,
+  Metadata_UserClient
 > {
   private jwt: JWT;
   private usersCollection;
@@ -34,11 +25,19 @@ export class AuthService<
   private parse_serverUserTo_clientUser;
   private saltOrRounds: string | number = 10;
   private passwordResetExpires_min: number = 15;
+
   constructor(initializer: {
-    defaultUsers: TUserServer[];
+    defaultUsers: Omit<
+      TUserServerRls<ERoles, EPermissions, Metadata_UserServer>,
+      "_id"
+    >[];
     jwt: JWT;
-    usersCollection: Collection<TUserServer>;
-    parse_serverUserTo_clientUser: (userServer: TUserServer) => TUserClient;
+    usersCollection: Collection<
+      TUserServerRls<ERoles, EPermissions, Metadata_UserServer>
+    >;
+    parse_serverUserTo_clientUser: (
+      userServer: TUserServerRls<ERoles, EPermissions, Metadata_UserServer>
+    ) => TUserClientRls<ERoles, EPermissions, Metadata_UserClient>;
     temporaryTokensService: TemporaryTokensService;
     emailService: EmailService;
     saltOrRounds?: number | string;
@@ -65,7 +64,9 @@ export class AuthService<
     this.initUsers(initializer.defaultUsers);
   }
 
-  public async generateDevUsers(devUsers: TUserServer[]) {
+  public async generateDevUsers(
+    devUsers: TUserServerRls<ERoles, EPermissions, Metadata_UserServer>[]
+  ) {
     const successfullyCreatedUsers = [];
 
     devUsers.forEach(async (devUser) => {
@@ -78,17 +79,19 @@ export class AuthService<
 
   /* Expects validated inputs */
 
-  public async signup(props: TUserServer) {
+  public async signup(
+    props: TUserServerRls<ERoles, EPermissions, Metadata_UserServer>
+  ) {
     /*************  ✨ Codeium Command ⭐  *************/
-    const user: TUserServer = {
+    const user: TUserServerRls<ERoles, EPermissions, Metadata_UserServer> = {
       ...props,
       password: await bcrypt.hash(props.password, this.saltOrRounds),
-      created_at: new Date(),
+      created_at: DateTime.now().toISO() as string,
     };
 
     try {
       const result = await this.usersCollection.insertOne(
-        user as OptionalUnlessRequiredId<TUserServer>
+        user as TUserServerRls<ERoles, EPermissions, Metadata_UserServer>
       );
       if (!result.acknowledged) {
         return { status: 500, message: "An error occurred" };
@@ -120,11 +123,11 @@ export class AuthService<
 
     const hashedNewPassword = await bcrypt.hash(newPassword, this.saltOrRounds);
     await this.usersCollection.updateOne(
-      { _id: user._id } as OptionalUnlessRequiredId<TUserServer>,
+      { _id: user._id },
       {
         $set: {
           password: hashedNewPassword,
-        } as Partial<TUserServer>,
+        } as Partial<TUserServerRls<ERoles, EPermissions, Metadata_UserServer>>,
       }
     );
     return { status: 200, message: "Password changed successfully" };
@@ -138,7 +141,7 @@ export class AuthService<
   public async resetPasswordInit(email: string) {
     const existingUser = await this.usersCollection.findOne({
       email,
-    } as TUserServer);
+    });
     if (existingUser === null) {
       return { error: "No user exists with this email" };
     }
@@ -196,11 +199,11 @@ export class AuthService<
     console.log(data);
     const hashedNewPassword = await bcrypt.hash(newPassword, this.saltOrRounds);
     await this.usersCollection.updateOne(
-      { email: data.email } as OptionalUnlessRequiredId<TUserServer>,
+      { email: data.email },
       {
         $set: {
           password: hashedNewPassword,
-        } as Partial<TUserServer>,
+        } as Partial<TUserServerRls<ERoles, EPermissions, Metadata_UserServer>>,
       }
     );
     await this.temporaryTokensService.delete(token);
@@ -224,7 +227,7 @@ export class AuthService<
       console.log(hashedPw);
 
       // Find user by email
-      const user = await this.usersCollection.findOne({ email } as TUserServer);
+      const user = await this.usersCollection.findOne({ email });
       if (user === null) {
         return { status: 401, message: "Invalid email or password" };
       }
@@ -235,10 +238,14 @@ export class AuthService<
         return { status: 401, message: "Invalid email or password" };
       }
 
-      // This ensures type matching between TUser_client and
+      // This ensures type matching between TUser_client<ERoles,EPermissions,Metadata_UserClient> and
       try {
-        const clientUser: TUserClient = this.parse_serverUserTo_clientUser(
-          user as TUserServer
+        const clientUser: TUserClientRls<
+          ERoles,
+          EPermissions,
+          Metadata_UserClient
+        > = this.parse_serverUserTo_clientUser(
+          user as TUserServerRls<ERoles, EPermissions, Metadata_UserServer>
         );
         // Generate a JWT token with the user as the payload
         const clientUserAsPayloadToken = this.jwt.signToken(
@@ -269,9 +276,15 @@ export class AuthService<
     const authCookie = cookies.get("auth");
     if (authCookie) {
       try {
-        const decodedUser: TUserClient = this.jwt.decode(
-          authCookie
-        ) as TUserClient;
+        const decodedUser: TUserClientRls<
+          ERoles,
+          EPermissions,
+          Metadata_UserClient
+        > = this.jwt.decode(authCookie) as TUserClientRls<
+          ERoles,
+          EPermissions,
+          Metadata_UserClient
+        >;
         // Initialize the Svelte store with user data
         return decodedUser;
       } catch (error) {
@@ -283,24 +296,28 @@ export class AuthService<
   }
 
   private async getServerUser(
-    clientUser: TUserClient
-  ): Promise<WithId<TUserServer> | null> {
-    return await this.usersCollection.findOne({
+    clientUser: TUserClientRls<ERoles, EPermissions, Metadata_UserClient>
+  ): Promise<TUserServerRls<ERoles, EPermissions, Metadata_UserServer> | null> {
+    return (await this.usersCollection.findOne({
       email: (clientUser as any).email,
-    } as TUserServer);
+    })) as TUserServerRls<ERoles, EPermissions, Metadata_UserServer> | null;
   }
 
   public async getServerUserFromCookies(
     cookies: Cookies
-  ): Promise<WithId<TUserServer> | null> {
+  ): Promise<TUserServerRls<ERoles, EPermissions, Metadata_UserServer> | null> {
     const clientUser = this.getClientUserFromCookies(cookies);
     if (clientUser === null) return null;
     return await this.getServerUser(clientUser);
   }
 
   public async hasPermissions(
-    serverUser: TUserServer | null,
-    permissions: string[]
+    serverUser: TUserServerRls<
+      ERoles,
+      EPermissions,
+      Metadata_UserServer
+    > | null,
+    permissions: EPermissions[]
   ): Promise<boolean> {
     if (serverUser === null) {
       return false;
@@ -314,11 +331,16 @@ export class AuthService<
   }
 
   // Populate users collection
-  private async initUsers(defaultUsers: TUserServer[]) {
+  private async initUsers(
+    defaultUsers: Omit<
+      TUserServerRls<ERoles, EPermissions, Metadata_UserServer>,
+      "_id"
+    >[]
+  ) {
     const userCount = await this.usersCollection.countDocuments();
     if (userCount === 0 && defaultUsers.length > 0) {
       // Hash passwords for default users
-      const usersWithHashedPasswords: TUserServer[] = await Promise.all(
+      const usersWithHashedPasswords = await Promise.all(
         defaultUsers.map(async (user) => {
           const hashedPassword = await bcrypt.hash(
             user.password,
@@ -333,7 +355,9 @@ export class AuthService<
 
       // Insert default users
       await this.usersCollection.insertMany(
-        usersWithHashedPasswords as OptionalUnlessRequiredId<TUserServer>[]
+        usersWithHashedPasswords as OptionalUnlessRequiredId<
+          TUserServerRls<ERoles, EPermissions, Metadata_UserServer>
+        >[]
       );
       console.log(`Created ${defaultUsers.length} default users`);
     }
