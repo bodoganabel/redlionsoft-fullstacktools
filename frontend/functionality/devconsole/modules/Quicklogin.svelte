@@ -36,7 +36,9 @@
     }}
   >
     {#each quickloginUsers as login}
-      <option class="text-white" value={login}>{login.email}</option>
+      <option class="text-white" value={login}
+        >{login.email}{login.note ? login.note : ""}</option
+      >
     {/each}
   </select>
 
