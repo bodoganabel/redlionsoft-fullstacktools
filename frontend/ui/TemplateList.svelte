@@ -2,7 +2,7 @@
   import { createEventDispatcher } from "svelte";
   import IconEdit from "../icons/IconEdit.svelte";
   import IconTrash from "../icons/IconTrash.svelte";
-  import { popupInput } from "../functionality/popup/popup-logic";
+  import { popup, popupInput } from "../functionality/popup/popup-logic";
 
   type TTemplateItem = {
     uniqueName: string;
@@ -21,11 +21,28 @@
   export let onSave: (name: string) => Promise<void>;
   export let onFavorite: (name: string) => Promise<void>;
 
-  function handleSave() {
+  async function handleSave() {
     popupInput(
       "Save Template",
-      (newValue: string) => {
-        onSave(newValue);
+      async (newValue: string) => {
+        const existingTemplate = items.find(
+          (item) => item.uniqueName === newValue
+        );
+        if (existingTemplate) {
+          popup({
+            id: "confirm-overwrite",
+            title: "Template already exists",
+            message:
+              "A template with this name already exists. Do you want to overwrite it?",
+            onAccept: async () => {
+              await onSave(newValue);
+            },
+            acceptMessage: "Overwrite",
+            closeMessage: "Cancel",
+          });
+        } else {
+          await onSave(newValue);
+        }
         return {};
       },
       "",
@@ -38,11 +55,32 @@
     );
   }
 
-  function handleRename(name: string) {
+  async function handleRename(name: string) {
     popupInput(
       "Rename Template",
-      (newValue: string) => {
-        onRename(name, newValue);
+      async (newValue: string) => {
+        if (newValue === name) {
+          return {};
+        }
+
+        const existingTemplate = items.find(
+          (item) => item.uniqueName === newValue
+        );
+        if (existingTemplate) {
+          popup({
+            id: "confirm-rename-override",
+            title: "Template already exists",
+            message:
+              "A template with this name already exists. Do you want to override it?",
+            onAccept: async () => {
+              await onRename(name, newValue);
+            },
+            acceptMessage: "Override",
+            closeMessage: "Cancel",
+          });
+        } else {
+          await onRename(name, newValue);
+        }
         return {};
       },
       name,
