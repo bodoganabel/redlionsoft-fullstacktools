@@ -22,7 +22,7 @@
   export let onFavorite: (item: TTemplateItem) => void;
 </script>
 
-<div class="flex flex-col card max-w-max">
+<div class="flex flex-col card shadow-md max-w-max">
   <div class="template-list-row">
     <button>Save current as template</button>
   </div>
