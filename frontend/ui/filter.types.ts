@@ -26,12 +26,10 @@ export const FilterSchema = z.object({
 
 export const FiltersSchema = z.array(FilterSchema);
 
-export interface IFilterTemplate {
-  name: string;
-  filters: TFilters;
-}
-
 export const FilterTemplateSchema = z.object({
   name: z.string(),
   filters: FiltersSchema,
+  isFavorite: z.boolean().optional(),
 });
+
+export type TFilterTemplate = z.infer<typeof FilterTemplateSchema>;

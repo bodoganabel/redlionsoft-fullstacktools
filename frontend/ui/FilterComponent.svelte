@@ -1,8 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import { IFilter, EFilterOperator } from "./filter.types";
+  import { EFilterOperator, type IFilter, type TFilters } from "./filter.types";
 
-  export let activeFilters: IFilter[] = [
+  export let activeFilters: TFilters = [
     { field: "", operator: EFilterOperator.contains, value: "" },
   ];
 

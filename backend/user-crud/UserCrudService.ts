@@ -9,6 +9,7 @@ import type {
 import { json } from "@sveltejs/kit";
 import type { AuthService } from "../auth/auth.service";
 import type { Cookies } from "@sveltejs/kit";
+import { devOnly } from "../../common/utilities/general";
 
 export class UserCrudService<T extends z.ZodType<any, any, any>> {
   protected collection: Collection;
@@ -28,10 +29,24 @@ export class UserCrudService<T extends z.ZodType<any, any, any>> {
     };
   }
 
-  private validateData(data: unknown): z.infer<T> {
+  private validateData(data: unknown): z.infer<T> & { resourceId: string } | null {
     try {
-      return this.options.dataSchema.parse(data);
+      if (!data || typeof data !== 'object' || !('resourceId' in data) || !('data' in data)) {
+        return null;
+      }
+      
+      const { resourceId, data: innerData } = data as { resourceId: string; data: unknown };
+      if (typeof resourceId !== 'string' || !resourceId) {
+        return null;
+      }
+
+      const validatedInnerData = this.options.dataSchema.parse(innerData);
+      return {
+        resourceId,
+        ...validatedInnerData
+      };
     } catch (error) {
+      devOnly(() => console.error(error));
       return null;
     }
   }
@@ -54,20 +69,19 @@ export class UserCrudService<T extends z.ZodType<any, any, any>> {
         return json({ error: "Unauthorized" }, { status: 401 });
       }
 
-      const data = await request.json();
-      console.log("data:");
-      console.log(data);
-      const validatedData = this.validateData(data);
+      const requestData = await request.json();
+      const validatedData = this.validateData(requestData);
 
       if (!validatedData) {
-        return json({ error: "Invalid data format" }, { status: 400 });
+        return json({ error: "Invalid data format. Required format: { resourceId: string, data: { /* your data schema */ } }" }, { status: 400 });
       }
 
+      const { resourceId, ...data } = validatedData;
       const document: WithAnyData<z.infer<T>> = {
         userId: user._id,
-        resourceId: data.resourceId || "default",
+        resourceId,
         createdAt: new Date().toISOString(),
-        data: validatedData,
+        data,
         changeHistory: [],
       };
 
