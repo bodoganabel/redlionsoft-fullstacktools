@@ -93,7 +93,7 @@
 <style>
   .tooltip-container {
     position: fixed;
-    z-index: 50;
+    z-index: 10;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.15s ease-out;
