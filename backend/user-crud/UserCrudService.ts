@@ -99,6 +99,14 @@ export class UserCrudService {
         );
       }
 
+      // Get the highest order value
+      const highestOrder = await this.collection
+        .find({ userId: user._id })
+        .sort({ order: -1 })
+        .limit(1)
+        .toArray()
+        .then((docs) => (docs.length > 0 ? docs[0]?.order || 0 : 0));
+
       const document: WithAnyData<z.infer<typeof this.dataSchema>> = {
         userId: user._id,
         resourceId,
@@ -106,6 +114,7 @@ export class UserCrudService {
         updatedAt: new Date().toISOString(),
         data: validatedData,
         changeHistory: [],
+        order: highestOrder + 1, // Set order to highest + 1
       };
 
       const result = await this.collection.insertOne(document);
@@ -139,6 +148,7 @@ export class UserCrudService {
 
       const results = await this.collection
         .find({ userId: user._id })
+        .sort({ order: 1 }) // Sort by order ascending
         .toArray();
       return json(results, { status: 200 });
     } catch (error) {
@@ -169,7 +179,6 @@ export class UserCrudService {
 
       try {
         const query = { resourceId: data.resourceId, userId: user._id };
-
         const existingDoc = await this.collection.findOne(query);
 
         const updateDoc: Partial<WithAnyData<z.infer<typeof this.dataSchema>>> =
@@ -177,6 +186,11 @@ export class UserCrudService {
             data: validatedData,
             updatedAt: new Date().toISOString(),
           };
+
+        // Preserve the existing order when updating
+        if (existingDoc?.order !== undefined) {
+          updateDoc.order = existingDoc.order;
+        }
 
         if (this.isStoreChangeHistory && existingDoc) {
           const changeHistoryEntry = this.createChangeHistoryEntry(
@@ -248,6 +262,37 @@ export class UserCrudService {
       }
     } catch (error) {
       return json({ error: "Failed to delete document" }, { status: 500 });
+    }
+  }
+
+  // New method to handle reordering of resources
+  async updateOrder(request: Request, cookies: Cookies): Promise<Response> {
+    try {
+      const user = await this.authService.getServerUserFromCookies(cookies);
+      if (!user) {
+        return json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const { items } = (await request.json()) as {
+        items: { resourceId: string; order: number }[];
+      };
+
+      if (!Array.isArray(items)) {
+        return json({ error: "Invalid items format" }, { status: 400 });
+      }
+
+      const operations = items.map(({ resourceId, order }) => ({
+        updateOne: {
+          filter: { resourceId, userId: user._id },
+          update: { $set: { order } },
+        },
+      }));
+
+      await this.collection.bulkWrite(operations);
+
+      return json({ success: true }, { status: 200 });
+    } catch (error) {
+      return json({ error: "Failed to update order" }, { status: 500 });
     }
   }
 }

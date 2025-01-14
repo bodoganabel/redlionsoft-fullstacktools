@@ -7,6 +7,7 @@ export const BaseDocumentSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string().optional(),
   changeHistory: z.array(z.object({})).optional(),
+  order: z.number().optional(),  // Add order field to track position
 });
 
 export type BaseDocument = z.infer<typeof BaseDocumentSchema>;

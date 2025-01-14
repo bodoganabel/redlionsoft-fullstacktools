@@ -15,6 +15,7 @@
   export let onDelete: (name: string) => Promise<void>;
   export let onSave: (name: string) => Promise<void>;
   export let onFavorite: (name: string) => Promise<void>;
+  export let onReorder: (event: CustomEvent<{ resourceId: string; newIndex: number }>) => Promise<void>;
 
   const operators: Array<{ value: EFilterOperator; label: string }> = [
     { value: EFilterOperator.contains, label: "contains" },
@@ -152,6 +153,7 @@
           {onDelete}
           {onSave}
           {onFavorite}
+          {onReorder}
         />
       </div>
     </TooltipContainer>
