@@ -10,6 +10,8 @@
   export let saveButtonTitle = "Save";
   export let isFetching = false;
 
+  let inputElement: HTMLInputElement;
+
   onMount(() => {
     if (typeof window === undefined) return;
     window.addEventListener("keyup", (event) => {
@@ -17,6 +19,12 @@
         onClick();
       }
     });
+    
+    // Focus input and move cursor to end
+    if (inputElement) {
+      inputElement.focus();
+      inputElement.setSelectionRange(value.length, value.length);
+    }
   });
 
   onDestroy(() => {
@@ -39,7 +47,12 @@
   }
 </script>
 
-<input class="input" type="text" bind:value />
+<input 
+  bind:this={inputElement}
+  class="input" 
+  type="text" 
+  bind:value 
+/>
 
 {#if isFetching}
   <div class="mt-4 ml-4 mb-2 w-8 h-8">
