@@ -94,12 +94,13 @@
   .tooltip-container {
     position: fixed;
     z-index: 50;
-    visibility: hidden;
+    opacity: 0;
     pointer-events: none;
+    transition: opacity 0.15s ease-out;
   }
 
   .tooltip-container.visible {
-    visibility: visible;
+    opacity: 1;
     pointer-events: auto;
   }
 </style>
