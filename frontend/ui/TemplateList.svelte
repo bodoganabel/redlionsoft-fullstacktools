@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
   import IconEdit from "../icons/IconEdit.svelte";
   import IconTrash from "../icons/IconTrash.svelte";
   import { popup, popupInput } from "../functionality/popup/popup-logic";
@@ -10,10 +9,6 @@
   };
 
   export let items: TTemplateItem[] = [];
-
-  export let selectedItemId: string | null = null;
-  export let showSaveDialog = false;
-  export let newItemName = "";
 
   export let onSelect: (name: string) => Promise<void>;
   export let onRename: (oldName: string, newName: string) => Promise<void>;

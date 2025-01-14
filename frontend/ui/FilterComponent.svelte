@@ -1,20 +1,19 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
+  import { IFilter, EFilterOperator } from "./filter.types";
 
-  export let activeFilters: Array<{
-    field: string;
-    operator: string;
-    value: string;
-  }> = [{ field: "", operator: "contains", value: "" }];
+  export let activeFilters: IFilter[] = [
+    { field: "", operator: EFilterOperator.contains, value: "" },
+  ];
 
-  const operators = [
-    { value: "contains", label: "contains" },
-    { value: "is", label: "is" },
-    { value: "is_not", label: "is not" },
-    { value: "greater_than", label: "is greater than" },
-    { value: "less_than", label: "is less than" },
-    { value: "between", label: "is between" },
-    { value: "has_any_value", label: "has any value" },
+  const operators: Array<{ value: EFilterOperator; label: string }> = [
+    { value: EFilterOperator.contains, label: "contains" },
+    { value: EFilterOperator.is, label: "is" },
+    { value: EFilterOperator.is_not, label: "is not" },
+    { value: EFilterOperator.greater_than, label: "is greater than" },
+    { value: EFilterOperator.less_than, label: "is less than" },
+    { value: EFilterOperator.between, label: "is between" },
+    { value: EFilterOperator.has_any_value, label: "has any value" },
   ];
 
   const fields = [
@@ -32,13 +31,15 @@
   function addFilter() {
     activeFilters = [
       ...activeFilters,
-      { field: "", operator: "contains", value: "" },
+      { field: "", operator: EFilterOperator.contains, value: "" },
     ];
   }
 
   function removeFilter(index: number) {
     if (activeFilters.length === 1) {
-      activeFilters = [{ field: "", operator: "contains", value: "" }];
+      activeFilters = [
+        { field: "", operator: EFilterOperator.contains, value: "" },
+      ];
     } else {
       activeFilters = activeFilters.filter((_, i) => i !== index);
     }
@@ -50,7 +51,9 @@
   }
 
   function clearFilters() {
-    activeFilters = [{ field: "", operator: "contains", value: "" }];
+    activeFilters = [
+      { field: "", operator: EFilterOperator.contains, value: "" },
+    ];
     dispatch("filterChange", { filters: activeFilters });
   }
 

@@ -55,6 +55,8 @@ export class UserCrudService<T extends z.ZodType<any, any, any>> {
       }
 
       const data = await request.json();
+      console.log("data:");
+      console.log(data);
       const validatedData = this.validateData(data);
 
       if (!validatedData) {
