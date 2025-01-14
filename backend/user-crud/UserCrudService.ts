@@ -11,42 +11,46 @@ import type { AuthService } from "../auth/auth.service";
 import type { Cookies } from "@sveltejs/kit";
 import { devOnly } from "../../common/utilities/general";
 
-export class UserCrudService<T extends z.ZodType<any, any, any>> {
+export class UserCrudService {
   protected collection: Collection;
-  private options: UserCrudServiceOptions<T>;
+  private isStoreChangeHistory?: boolean;
+  private dataSchema: z.ZodSchema<BaseDocument>;
   private authService: AuthService<any, any, any, any>;
 
   constructor(
     collection: Collection,
     authService: AuthService<any, any, any, any>,
-    options: UserCrudServiceOptions<T>
+    options: {
+      dataSchema: z.ZodSchema<BaseDocument>;
+      isStoreChangeHistory?: boolean;
+    }
   ) {
     this.collection = collection;
     this.authService = authService;
-    this.options = {
-      isStoreChangeHistory: false,
-      ...options,
-    };
+    this.dataSchema = options.dataSchema;
+    this.isStoreChangeHistory = options.isStoreChangeHistory;
   }
 
-  private validateData(data: unknown): z.infer<T> & { resourceId: string } | null {
+  private validateData(data: unknown): z.infer<typeof this.dataSchema> | null {
     try {
-      if (!data || typeof data !== 'object' || !('resourceId' in data) || !('data' in data)) {
-        return null;
-      }
-      
-      const { resourceId, data: innerData } = data as { resourceId: string; data: unknown };
-      if (typeof resourceId !== 'string' || !resourceId) {
-        return null;
-      }
+      devOnly(() => {
+        console.log("Validating data:", data);
+      });
 
-      const validatedInnerData = this.options.dataSchema.parse(innerData);
-      return {
-        resourceId,
-        ...validatedInnerData
-      };
+      const validated = this.dataSchema.parse(data);
+
+      devOnly(() => {
+        console.log("Validation passed:", validated);
+      });
+
+      return validated;
     } catch (error) {
-      devOnly(() => console.error(error));
+      devOnly(() => {
+        console.error("Validation error:", error);
+        if (error instanceof z.ZodError) {
+          console.error("Zod validation errors:", error.errors);
+        }
+      });
       return null;
     }
   }
@@ -70,18 +74,28 @@ export class UserCrudService<T extends z.ZodType<any, any, any>> {
       }
 
       const requestData = await request.json();
-      const validatedData = this.validateData(requestData);
+      const { resourceId, data } = requestData as {
+        resourceId: string;
+        data: unknown;
+      };
 
+      const validatedData = this.validateData(data);
       if (!validatedData) {
-        return json({ error: "Invalid data format. Required format: { resourceId: string, data: { /* your data schema */ } }" }, { status: 400 });
+        return json(
+          {
+            error:
+              "Invalid data format. Please check the data schema requirements.",
+          },
+          { status: 400 }
+        );
       }
 
-      const { resourceId, ...data } = validatedData;
-      const document: WithAnyData<z.infer<T>> = {
+      const document: WithAnyData<z.infer<typeof this.dataSchema>> = {
         userId: user._id,
         resourceId,
         createdAt: new Date().toISOString(),
-        data,
+        updatedAt: new Date().toISOString(),
+        data: validatedData,
         changeHistory: [],
       };
 
@@ -131,33 +145,31 @@ export class UserCrudService<T extends z.ZodType<any, any, any>> {
       }
 
       const data = await request.json();
-      const { _id, ...updateData } = data;
 
-      if (!_id) {
-        return json({ error: "Missing _id field" }, { status: 400 });
+      if (!data.resourceId) {
+        return json({ error: "Missing resourceId field" }, { status: 400 });
       }
 
-      const validatedData = this.validateData(updateData);
+      console.log("updateData:");
+      console.log(data);
+
+      const validatedData = this.validateData(data.data);
       if (!validatedData) {
         return json({ error: "Invalid data format" }, { status: 400 });
       }
 
       try {
-        const existingDoc = await this.collection.findOne({
-          _id: new ObjectId(_id),
-          userId: user._id,
-        });
+        const query = { resourceId: data.resourceId, userId: user._id };
 
-        if (!existingDoc) {
-          return json({ error: "Document not found" }, { status: 404 });
-        }
+        const existingDoc = await this.collection.findOne(query);
 
-        const updateDoc: Partial<WithAnyData<z.infer<T>>> = {
-          data: validatedData,
-          updatedAt: new Date().toISOString(),
-        };
+        const updateDoc: Partial<WithAnyData<z.infer<typeof this.dataSchema>>> =
+          {
+            data: validatedData,
+            updatedAt: new Date().toISOString(),
+          };
 
-        if (this.options.isStoreChangeHistory) {
+        if (this.isStoreChangeHistory && existingDoc) {
           const changeHistoryEntry = this.createChangeHistoryEntry(
             existingDoc.data,
             validatedData
@@ -169,13 +181,23 @@ export class UserCrudService<T extends z.ZodType<any, any, any>> {
         }
 
         const result = await this.collection.findOneAndUpdate(
-          { _id: new ObjectId(_id), userId: user._id },
-          { $set: updateDoc },
-          { returnDocument: "after" }
+          query,
+          {
+            $set: existingDoc
+              ? updateDoc
+              : {
+                  ...updateDoc,
+                  userId: user._id,
+                  resourceId: data.resourceId,
+                  createdAt: new Date().toISOString(),
+                  changeHistory: [],
+                },
+          },
+          { returnDocument: "after", upsert: true }
         );
 
-        return json(result?.value || null, {
-          status: result?.value ? 200 : 404,
+        return json(result, {
+          status: result ? 200 : 404,
         });
       } catch (error) {
         return json({ error: "Invalid ID format" }, { status: 400 });
@@ -194,20 +216,24 @@ export class UserCrudService<T extends z.ZodType<any, any, any>> {
 
       const data = await request.json();
 
-      if (!data._id) {
-        return json({ error: "Missing _id field" }, { status: 400 });
+      console.log("data:");
+      console.log(data);
+
+      if (!data.resourceId) {
+        return json({ error: "Missing resourceId field" }, { status: 400 });
       }
 
       try {
-        const result = await this.collection.deleteOne({
-          _id: new ObjectId(data._id),
+        const result = await this.collection.findOneAndDelete({
+          resourceId: data.resourceId,
           userId: user._id,
         });
 
-        return json(
-          { success: result.deletedCount > 0 },
-          { status: result.deletedCount > 0 ? 200 : 404 }
-        );
+        if (result?.deletedCount === 0) {
+          return json({ error: "Document not found" }, { status: 404 });
+        }
+
+        return json({ ok: true }, { status: 200 });
       } catch (error) {
         return json({ error: "Invalid ID format" }, { status: 400 });
       }

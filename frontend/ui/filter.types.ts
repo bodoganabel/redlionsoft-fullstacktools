@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TTemplate } from "./template.types";
+import { TemplateSchema, TTemplate } from "./template.types";
 
 export enum EFilterOperator {
   contains = "contains",
@@ -25,13 +25,10 @@ export const FilterSchema = z.object({
   value: z.string(),
 });
 
-export const FiltersSchema = z.array(FilterSchema);
-
-export interface IFilterTemplate {
-  name: string;
-  filters: TFilters;
-  isFavorite?: boolean;
-}
+export const FilterTemplateSchema = z.object({
+  ...TemplateSchema.shape,
+  filters: z.array(FilterSchema),
+});
 
 export type TFilterTemplate = TTemplate & {
   filters: TFilters;
