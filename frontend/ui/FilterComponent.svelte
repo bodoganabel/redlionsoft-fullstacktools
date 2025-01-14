@@ -10,7 +10,11 @@
     { field: "", operator: EFilterOperator.contains, value: "" },
   ];
   export let templates: TTemplate[];
-  export let templateListProps: any;
+  export let onSelect: (name: string) => Promise<void>;
+  export let onRename: (oldName: string, newName: string) => Promise<void>;
+  export let onDelete: (name: string) => Promise<void>;
+  export let onSave: (name: string) => Promise<void>;
+  export let onFavorite: (name: string) => Promise<void>;
 
   const operators: Array<{ value: EFilterOperator; label: string }> = [
     { value: EFilterOperator.contains, label: "contains" },
@@ -71,16 +75,14 @@
 </script>
 
 <div class="p-4 card shadow-md">
-  <div class="flex justify-between items-center mb-4">
+  <div class="flex justify-start items-center mb-4 space-x-2">
     <h2 class="text-left">Filter</h2>
-    {#if showClearButton}
+    {#each templates.filter((t) => t.isFavorite) as template}
       <button
-        on:click={clearFilters}
-        class="px-3 py-1 text-sm text-slate-500 bg-slate-100 rounded hover:bg-slate-200 hover:text-slate-600"
+        class="badge font-light variant-filled-surface text-xs"
+        on:click={() => onSelect(template.name)}>{template.name}</button
       >
-        Clear All
-      </button>
-    {/if}
+    {/each}
   </div>
   <div class="flex flex-col gap-3">
     {#each activeFilters as filter, index}
@@ -143,7 +145,14 @@
       </button>
 
       <div slot="tooltip">
-        <TemplateList {templates} {...templateListProps} />
+        <TemplateList
+          {templates}
+          {onSelect}
+          {onRename}
+          {onDelete}
+          {onSave}
+          {onFavorite}
+        />
       </div>
     </TooltipContainer>
   </div>
