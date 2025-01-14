@@ -1,10 +1,14 @@
 <script lang="ts">
+  import IconRectangles from "./../icons/IconRectangles.svelte";
   import { createEventDispatcher } from "svelte";
   import { EFilterOperator, type IFilter, type TFilters } from "./filter.types";
+  import { tooltip } from "../functionality/tooltip/tooltip.store";
+  import TemplateList from "./TemplateList.svelte";
 
   export let activeFilters: TFilters = [
     { field: "", operator: EFilterOperator.contains, value: "" },
   ];
+  export let templateListProps: any;
 
   const operators: Array<{ value: EFilterOperator; label: string }> = [
     { value: EFilterOperator.contains, label: "contains" },
@@ -117,12 +121,23 @@
     {/each}
   </div>
 
-  <button
-    on:click={addFilter}
-    class="mt-4 px-4 py-2 text-sm text-white variant-filled-secondary rounded-lg hover:bg-primary-600 flex items-center gap-2"
-  >
-    + Add Filter
-  </button>
+  <div class="mt-4 flex justify-start items-center space-x-2">
+    <button
+      on:click={addFilter}
+      class=" text-sm text-white variant-filled-secondary rounded-lg flex items-center gap-2"
+    >
+      + Add Filter
+    </button>
+
+    <button
+      class=" btn-icon p-1 w-10 h-10 text-sm variant-filled-secondary rounded-lg flex items-center gap-2"
+      on:click={(e) => {
+        tooltip(e, TemplateList, templateListProps);
+      }}
+    >
+      <IconRectangles />
+    </button>
+  </div>
 </div>
 
 <style>

@@ -4,7 +4,14 @@
   import type { Unsubscriber } from "svelte/store";
 
   function closeTooltip() {
-    tooltipStore.set({ content: "", visible: false, x: 0, y: 0 });
+    tooltipStore.set({
+      content: "",
+      visible: false,
+      x: 0,
+      y: 0,
+      component: null,
+      componentProps: null,
+    });
     console.log("I run");
     document.removeEventListener("click", closeTooltip);
   }
@@ -84,11 +91,20 @@
 <div
   bind:this={tooltipRef}
   id="tooltip-root"
-  class="card p-4 absolute z-10 variant-filled-primary shadow-lg transform -translate-x-1/2 -translate-y-full"
+  class={$tooltipStore.component !== null
+    ? "absolute z-10 transform -translate-x-1/2 -translate-y-full"
+    : "card p-4 absolute z-10 variant-filled-primary shadow-lg transform -translate-x-1/2 -translate-y-full"}
   class:visible={$tooltipStore.visible}
   class:hidden={!$tooltipStore.visible}
   on:click|stopPropagation={() => {}}
 >
-  <p>{@html $tooltipStore.content}</p>
+  {#if $tooltipStore.content}
+    <p>{@html $tooltipStore.content}</p>
+  {:else if $tooltipStore.component}
+    <svelte:component
+      this={$tooltipStore.component}
+      {...$tooltipStore.componentProps || {}}
+    />
+  {/if}
   <div class="arrow variant-filled-primary"></div>
 </div>
