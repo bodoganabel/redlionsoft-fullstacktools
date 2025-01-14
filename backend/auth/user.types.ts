@@ -11,7 +11,8 @@ export type TGuestUser = {
 
 // For users in the database
 export type TUserServerRls<ERoles, EPermissions, TMetadata = any> = {
-  _id: string;
+  //Using any here instead of ObjectId because frontend cannot handle importing mongodb, not even when just the type is imported
+  _id: any;
   email: string;
   password: string;
   role: ERoles; //For frontend display purposes

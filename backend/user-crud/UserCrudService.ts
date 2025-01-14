@@ -7,18 +7,21 @@ import type {
   WithAnyData,
 } from "./types";
 import { json } from "@sveltejs/kit";
-
-type ApiResponse<T> = {
-  data: T;
-  status: number;
-};
+import type { AuthService } from "../auth/auth.service";
+import type { Cookies } from "@sveltejs/kit";
 
 export class UserCrudService<T extends z.ZodType<any, any, any>> {
   protected collection: Collection;
   private options: UserCrudServiceOptions<T>;
+  private authService: AuthService<any, any, any, any>;
 
-  constructor(collection: Collection, options: UserCrudServiceOptions<T>) {
+  constructor(
+    collection: Collection,
+    authService: AuthService<any, any, any, any>,
+    options: UserCrudServiceOptions<T>
+  ) {
     this.collection = collection;
+    this.authService = authService;
     this.options = {
       isStoreChangeHistory: false,
       ...options,
@@ -44,108 +47,96 @@ export class UserCrudService<T extends z.ZodType<any, any, any>> {
     };
   }
 
-  async create(request: Request): Promise<Response> {
+  async create(request: Request, cookies: Cookies): Promise<Response> {
     try {
+      const user = await this.authService.getServerUserFromCookies(cookies);
+      if (!user) {
+        return json({ error: "Unauthorized" }, { status: 401 });
+      }
+
       const data = await request.json();
       const validatedData = this.validateData(data);
 
       if (!validatedData) {
-        return json({ data: null, status: 400, error: "Invalid data format" });
+        return json({ error: "Invalid data format" }, { status: 400 });
       }
 
-      const document: WithAnyData<T> = {
+      const document: WithAnyData<z.infer<T>> = {
+        userId: user._id,
+        resourceId: data.resourceId || "default",
         createdAt: new Date().toISOString(),
         data: validatedData,
         changeHistory: [],
       };
 
       const result = await this.collection.insertOne(document);
-      return json({
-        data: { ...document, _id: result.insertedId },
-        status: 200,
-      });
+      return json({ ...document, _id: result.insertedId }, { status: 200 });
     } catch (error) {
-      return json({
-        data: null,
-        status: 500,
-        error: "Failed to create document",
-      });
+      return json({ error: "Failed to create document" }, { status: 500 });
     }
   }
 
-  async get(request: Request): Promise<Response> {
+  async get(request: Request, cookies: Cookies): Promise<Response> {
     try {
-      const url = new URL(request.url);
-      const id = url.searchParams.get("id");
+      const user = await this.authService.getServerUserFromCookies(cookies);
+      if (!user) {
+        return json({ error: "Unauthorized" }, { status: 401 });
+      }
 
-      if (id) {
+      const url = new URL(request.url);
+      const resourceId = url.searchParams.get("resourceId");
+
+      if (resourceId) {
         try {
           const result = await this.collection.findOne({
-            _id: new ObjectId(id),
+            userId: user._id,
+            resourceId,
           });
-          return json({
-            data: result ? [result] : [],
-            status: 200,
-          });
+          return json(result ? [result] : [], { status: 200 });
         } catch (error) {
-          return json({
-            data: null,
-            status: 400,
-            error: "Invalid ID format",
-          });
+          return json({ error: "Invalid resourceId format" }, { status: 400 });
         }
       }
 
-      const results = await this.collection.find().toArray();
-      return json({
-        data: results,
-        status: 200,
-      });
+      const results = await this.collection
+        .find({ userId: user._id })
+        .toArray();
+      return json(results, { status: 200 });
     } catch (error) {
-      return json({
-        data: null,
-        status: 500,
-        error: "Failed to fetch documents",
-      });
+      return json({ error: "Failed to fetch documents" }, { status: 500 });
     }
   }
 
-  async update(request: Request): Promise<Response> {
+  async update(request: Request, cookies: Cookies): Promise<Response> {
     try {
+      const user = await this.authService.getServerUserFromCookies(cookies);
+      if (!user) {
+        return json({ error: "Unauthorized" }, { status: 401 });
+      }
+
       const data = await request.json();
       const { _id, ...updateData } = data;
 
       if (!_id) {
-        return json({
-          data: null,
-          status: 400,
-          error: "Missing _id field",
-        });
+        return json({ error: "Missing _id field" }, { status: 400 });
       }
 
       const validatedData = this.validateData(updateData);
       if (!validatedData) {
-        return json({
-          data: null,
-          status: 400,
-          error: "Invalid data format",
-        });
+        return json({ error: "Invalid data format" }, { status: 400 });
       }
 
       try {
         const existingDoc = await this.collection.findOne({
           _id: new ObjectId(_id),
+          userId: user._id,
         });
 
         if (!existingDoc) {
-          return json({
-            data: null,
-            status: 404,
-            error: "Document not found",
-          });
+          return json({ error: "Document not found" }, { status: 404 });
         }
 
-        const updateDoc: Partial<WithAnyData<T>> = {
+        const updateDoc: Partial<WithAnyData<z.infer<T>>> = {
           data: validatedData,
           updatedAt: new Date().toISOString(),
         };
@@ -162,65 +153,50 @@ export class UserCrudService<T extends z.ZodType<any, any, any>> {
         }
 
         const result = await this.collection.findOneAndUpdate(
-          { _id: new ObjectId(_id) },
+          { _id: new ObjectId(_id), userId: user._id },
           { $set: updateDoc },
           { returnDocument: "after" }
         );
 
-        return json({
-          data: result?.value,
-          status: 200,
+        return json(result?.value || null, {
+          status: result?.value ? 200 : 404,
         });
       } catch (error) {
-        return json({
-          data: null,
-          status: 400,
-          error: "Invalid ID format",
-        });
+        return json({ error: "Invalid ID format" }, { status: 400 });
       }
     } catch (error) {
-      return json({
-        data: null,
-        status: 500,
-        error: "Failed to update document",
-      });
+      return json({ error: "Failed to update document" }, { status: 500 });
     }
   }
 
-  async delete(request: Request): Promise<Response> {
+  async delete(request: Request, cookies: Cookies): Promise<Response> {
     try {
+      const user = await this.authService.getServerUserFromCookies(cookies);
+      if (!user) {
+        return json({ error: "Unauthorized" }, { status: 401 });
+      }
+
       const data = await request.json();
 
       if (!data._id) {
-        return json({
-          data: null,
-          status: 400,
-          error: "Missing _id field",
-        });
+        return json({ error: "Missing _id field" }, { status: 400 });
       }
 
       try {
         const result = await this.collection.deleteOne({
           _id: new ObjectId(data._id),
+          userId: user._id,
         });
 
-        return json({
-          data: { success: result.deletedCount > 0 },
-          status: result.deletedCount > 0 ? 200 : 404,
-        });
+        return json(
+          { success: result.deletedCount > 0 },
+          { status: result.deletedCount > 0 ? 200 : 404 }
+        );
       } catch (error) {
-        return json({
-          data: null,
-          status: 400,
-          error: "Invalid ID format",
-        });
+        return json({ error: "Invalid ID format" }, { status: 400 });
       }
     } catch (error) {
-      return json({
-        data: null,
-        status: 500,
-        error: "Failed to delete document",
-      });
+      return json({ error: "Failed to delete document" }, { status: 500 });
     }
   }
 }
