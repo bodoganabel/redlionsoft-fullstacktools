@@ -11,6 +11,7 @@
       y: 0,
       component: null,
       componentProps: null,
+      position: "top",
     });
     console.log("I run");
     document.removeEventListener("click", closeTooltip);
@@ -92,8 +93,10 @@
   bind:this={tooltipRef}
   id="tooltip-root"
   class={$tooltipStore.component !== null
-    ? "absolute z-10 transform -translate-x-1/2 -translate-y-full"
-    : "card p-4 absolute z-10 variant-filled-primary shadow-lg transform -translate-x-1/2 -translate-y-full"}
+    ? "absolute z-10 transform -translate-x-1/2" +
+      ($tooltipStore.position === "top" ? " -translate-y-full" : "")
+    : "card p-4 absolute z-10 variant-filled-primary shadow-lg transform -translate-x-1/2" +
+      ($tooltipStore.position === "top" ? " -translate-y-full" : "")}
   class:visible={$tooltipStore.visible}
   class:hidden={!$tooltipStore.visible}
   on:click|stopPropagation={() => {}}
@@ -106,5 +109,42 @@
       {...$tooltipStore.componentProps || {}}
     />
   {/if}
-  <div class="arrow variant-filled-primary"></div>
+  <div
+    class="arrow variant-filled-primary"
+    class:arrow-top={$tooltipStore.position === "bottom"}
+    class:arrow-bottom={$tooltipStore.position === "top"}
+  ></div>
 </div>
+
+<style>
+  .arrow {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+  }
+
+  .arrow-bottom {
+    bottom: -8px;
+    border-top: 8px solid var(--color-primary-500);
+    border-bottom: none;
+  }
+
+  .arrow-top {
+    top: -8px;
+    border-bottom: 8px solid var(--color-primary-500);
+    border-top: none;
+  }
+
+  /* Only apply arrow styling when no component is present */
+  :global(#tooltip-root:not(:has(svelte\:component)) .arrow) {
+    display: block;
+  }
+
+  :global(#tooltip-root:has(svelte\:component)) .arrow {
+    display: none;
+  }
+</style>

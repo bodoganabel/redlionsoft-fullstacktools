@@ -132,7 +132,7 @@
     <button
       class=" btn-icon p-1 w-10 h-10 text-sm variant-filled-secondary rounded-lg flex items-center gap-2"
       on:click={(e) => {
-        tooltip(e, TemplateList, templateListProps);
+        tooltip(e, TemplateList, templateListProps, "bottom");
       }}
     >
       <IconRectangles />
