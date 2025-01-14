@@ -2,13 +2,9 @@
   import IconEdit from "../icons/IconEdit.svelte";
   import IconTrash from "../icons/IconTrash.svelte";
   import { popup, popupInput } from "../functionality/popup/popup-logic";
+  import type { TTemplate } from "./template.types";
 
-  type TTemplateItem = {
-    uniqueName: string;
-    isFavorite?: boolean;
-  };
-
-  export let items: TTemplateItem[] = [];
+  export let items: TTemplate[] = [];
 
   export let onSelect: (name: string) => Promise<void>;
   export let onRename: (oldName: string, newName: string) => Promise<void>;
@@ -20,9 +16,7 @@
     popupInput(
       "Save Template",
       async (newValue: string) => {
-        const existingTemplate = items.find(
-          (item) => item.uniqueName === newValue
-        );
+        const existingTemplate = items.find((item) => item.name === newValue);
         if (existingTemplate) {
           popup({
             id: "confirm-overwrite",
@@ -58,9 +52,7 @@
           return {};
         }
 
-        const existingTemplate = items.find(
-          (item) => item.uniqueName === newValue
-        );
+        const existingTemplate = items.find((item) => item.name === newValue);
         if (existingTemplate) {
           popup({
             id: "confirm-rename-override",
@@ -100,25 +92,23 @@
       class="template-list-row px-2 flex justify-stretch items-center w-full group hover:bg-gray-100 dark:hover:bg-gray-700"
     >
       <button
-        on:click={() => onFavorite(item.uniqueName)}
+        on:click={() => onFavorite(item.name)}
         class="btn-icon w-5 h-5 invisible group-hover:visible transition-none"
         style={item.isFavorite ? "visibility: visible" : ""}
         >{item.isFavorite ? "★" : "☆"}</button
       >
-      <button
-        on:click={() => onSelect(item.uniqueName)}
-        class="w-full text-left"
+      <button on:click={() => onSelect(item.name)} class="w-full text-left"
         ><div class="w-full text-left">
-          {item.uniqueName}
+          {item.name}
         </div>
       </button>
       <button
-        on:click={() => handleRename(item.uniqueName)}
+        on:click={() => handleRename(item.name)}
         class="ml-1 btn-icon w-5 h-5 invisible group-hover:visible transition-none"
         ><IconEdit /></button
       >
       <button
-        on:click={() => onDelete(item.uniqueName)}
+        on:click={() => onDelete(item.name)}
         class="ml-1 btn-icon w-5 h-5 invisible group-hover:visible transition-none"
         ><IconTrash /></button
       >
