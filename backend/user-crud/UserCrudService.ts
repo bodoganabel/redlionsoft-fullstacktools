@@ -79,6 +79,15 @@ export class UserCrudService {
         data: unknown;
       };
 
+      if (!resourceId?.trim()) {
+        return json(
+          {
+            error: "Resource ID cannot be empty",
+          },
+          { status: 400 }
+        );
+      }
+
       const validatedData = this.validateData(data);
       if (!validatedData) {
         return json(
@@ -146,8 +155,8 @@ export class UserCrudService {
 
       const data = await request.json();
 
-      if (!data.resourceId) {
-        return json({ error: "Missing resourceId field" }, { status: 400 });
+      if (!data.resourceId?.trim()) {
+        return json({ error: "Resource ID cannot be empty" }, { status: 400 });
       }
 
       console.log("updateData:");
@@ -219,8 +228,8 @@ export class UserCrudService {
       console.log("data:");
       console.log(data);
 
-      if (!data.resourceId) {
-        return json({ error: "Missing resourceId field" }, { status: 400 });
+      if (!data.resourceId?.trim()) {
+        return json({ error: "Resource ID cannot be empty" }, { status: 400 });
       }
 
       try {
