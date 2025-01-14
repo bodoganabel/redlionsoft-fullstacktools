@@ -97,8 +97,7 @@
     >
       <button
         on:click={() => onFavorite(item.name)}
-        class="btn-icon w-5 h-5 invisible group-hover:visible transition-none"
-        style={item.isFavorite ? "visibility: visible" : ""}
+        class="btn-icon w-5 h-5 {item.isFavorite ? '' : 'invisible group-hover:visible'} transition-none"
         >{item.isFavorite ? "★" : "☆"}</button
       >
       <button on:click={() => onSelect(item.name)} class="w-full text-left"
