@@ -2,12 +2,14 @@
   import IconRectangles from "./../icons/IconRectangles.svelte";
   import { createEventDispatcher } from "svelte";
   import { EFilterOperator, type IFilter, type TFilters } from "./filter.types";
-  import { tooltip } from "../functionality/tooltip/tooltip.store";
+  import TooltipContainer from "../functionality/tooltip/TooltipContainer.svelte";
   import TemplateList from "./TemplateList.svelte";
+  import type { TTemplate } from "./template.types";
 
   export let activeFilters: TFilters = [
     { field: "", operator: EFilterOperator.contains, value: "" },
   ];
+  export let templates: TTemplate[];
   export let templateListProps: any;
 
   const operators: Array<{ value: EFilterOperator; label: string }> = [
@@ -31,6 +33,8 @@
   ];
 
   const dispatch = createEventDispatcher();
+
+  let tooltipVisible = false;
 
   function addFilter() {
     activeFilters = [
@@ -129,14 +133,19 @@
       + Add Filter
     </button>
 
-    <button
-      class=" btn-icon p-1 w-10 h-10 text-sm variant-filled-secondary rounded-lg flex items-center gap-2"
-      on:click={(e) => {
-        tooltip(e, TemplateList, templateListProps, "bottom");
-      }}
-    >
-      <IconRectangles />
-    </button>
+    <TooltipContainer position="bottom" bind:visible={tooltipVisible}>
+      <button
+        slot="trigger"
+        class="btn-icon p-1 w-10 h-10 text-sm variant-filled-secondary rounded-lg flex items-center gap-2"
+        on:click={() => (tooltipVisible = true)}
+      >
+        <IconRectangles />
+      </button>
+
+      <div slot="tooltip">
+        <TemplateList {templates} {...templateListProps} />
+      </div>
+    </TooltipContainer>
   </div>
 </div>
 
