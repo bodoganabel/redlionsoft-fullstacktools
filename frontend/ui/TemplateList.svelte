@@ -4,7 +4,7 @@
   import { popup, popupInput } from "../functionality/popup/popup-logic";
   import type { TTemplate } from "./template.types";
 
-  export let items: TTemplate[] = [];
+  export let templates: TTemplate[] = [];
 
   export let onSelect: (name: string) => Promise<void>;
   export let onRename: (oldName: string, newName: string) => Promise<void>;
@@ -16,7 +16,9 @@
     popupInput(
       "Save Template",
       async (newValue: string) => {
-        const existingTemplate = items.find((item) => item.name === newValue);
+        const existingTemplate = templates.find(
+          (item) => item.name === newValue
+        );
         if (existingTemplate) {
           popup({
             id: "confirm-overwrite",
@@ -52,7 +54,9 @@
           return {};
         }
 
-        const existingTemplate = items.find((item) => item.name === newValue);
+        const existingTemplate = templates.find(
+          (item) => item.name === newValue
+        );
         if (existingTemplate) {
           popup({
             id: "confirm-rename-override",
@@ -87,7 +91,7 @@
   </div>
 
   <hr />
-  {#each items as item}
+  {#each templates as item}
     <div
       class="template-list-row px-2 flex justify-stretch items-center w-full group hover:bg-gray-100 dark:hover:bg-gray-700"
     >
