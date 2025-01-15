@@ -1,5 +1,10 @@
 <script lang="ts">
-  import { EFilterOperator, type TFilters } from "./filter.types";
+  import {
+    EFilterOperator,
+    TFilterField,
+    TFilterOperator,
+    type TFilters,
+  } from "./filter.types";
   import type { TTemplate } from "./template.types";
   import FilterHeader from "./FilterHeader.svelte";
   import FilterRow from "./FilterRow.svelte";
@@ -18,6 +23,8 @@
   export let onReorder: (
     event: CustomEvent<{ resourceId: string; newIndex: number }>
   ) => Promise<void>;
+  export let operators: TFilterOperator[];
+  export let fields: TFilterField[];
 
   const dispatch = createEventDispatcher();
 
@@ -64,6 +71,8 @@
     {#each activeFilters as filter, index}
       <FilterRow
         {filter}
+        {operators}
+        {fields}
         onUpdate={updateFilter}
         onRemove={() => removeFilter(index)}
       />

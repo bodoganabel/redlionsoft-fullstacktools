@@ -1,6 +1,16 @@
 import { z } from "zod";
 import { TemplateSchema, TTemplate } from "./template.types";
 
+export type TFilterOperator = {
+  value: EFilterOperator;
+  label: string;
+};
+
+export type TFilterField = {
+  value: string;
+  label: string;
+};
+
 export enum EFilterOperator {
   contains = "contains",
   is = "is",

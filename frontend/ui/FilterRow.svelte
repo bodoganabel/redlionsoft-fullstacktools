@@ -1,5 +1,10 @@
 <script lang="ts">
-  import { EFilterOperator, type IFilter } from "./filter.types";
+  import {
+    EFilterOperator,
+    TFilterField,
+    TFilterOperator,
+    type IFilter,
+  } from "./filter.types";
   import { debounce } from "../utils/debounce";
   import { onDestroy } from "svelte";
 
@@ -7,25 +12,8 @@
   export let onUpdate: () => void;
   export let onRemove: () => void;
 
-  const operators = [
-    { value: EFilterOperator.contains, label: "contains" },
-    { value: EFilterOperator.is, label: "is" },
-    { value: EFilterOperator.is_not, label: "is not" },
-    { value: EFilterOperator.greater_than, label: "is greater than" },
-    { value: EFilterOperator.less_than, label: "is less than" },
-    { value: EFilterOperator.between, label: "is between" },
-    { value: EFilterOperator.has_any_value, label: "has any value" },
-  ];
-
-  const fields = [
-    { value: "order_number", label: "Order #" },
-    { value: "date", label: "Date" },
-    { value: "status", label: "Status" },
-    { value: "email", label: "Email" },
-    { value: "customer", label: "Customer" },
-    { value: "purchased", label: "Purchased" },
-    { value: "revenue", label: "Revenue" },
-  ];
+  export let operators: TFilterOperator[];
+  export let fields: TFilterField[];
 
   const debouncedUpdate = debounce(onUpdate, 500);
 
