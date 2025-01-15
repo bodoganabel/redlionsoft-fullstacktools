@@ -9,7 +9,6 @@
   import FilterHeader from "./FilterHeader.svelte";
   import FilterRow from "./FilterRow.svelte";
   import FilterActions from "./FilterActions.svelte";
-  import { createEventDispatcher } from "svelte";
 
   export let activeFilters: TFilters = [
     { field: "", operator: EFilterOperator.contains, value: "" },
@@ -25,17 +24,16 @@
   ) => Promise<void>;
   export let operators: TFilterOperator[];
   export let fields: TFilterField[];
+  export let onFilterChange: (filters: TFilters) => void;
 
-  const dispatch = createEventDispatcher();
-
-  function addFilter() {
+  export function addFilter() {
     activeFilters = [
       ...activeFilters,
       { field: "", operator: EFilterOperator.contains, value: "" },
     ];
   }
 
-  function removeFilter(index: number) {
+  export function removeFilter(index: number) {
     if (activeFilters.length === 1) {
       activeFilters = [
         { field: "", operator: EFilterOperator.contains, value: "" },
@@ -45,18 +43,18 @@
         (_, filterIndex) => filterIndex !== index
       );
     }
-    dispatch("filterChange", { filters: activeFilters });
+    onFilterChange(activeFilters);
   }
 
-  function updateFilter() {
-    dispatch("filterChange", { filters: activeFilters });
+  export function updateFilter() {
+    onFilterChange(activeFilters);
   }
 
-  function clearFilters() {
+  export function clearFilters() {
     activeFilters = [
       { field: "", operator: EFilterOperator.contains, value: "" },
     ];
-    dispatch("filterChange", { filters: activeFilters });
+    onFilterChange(activeFilters);
   }
 
   $: showClearButton =
