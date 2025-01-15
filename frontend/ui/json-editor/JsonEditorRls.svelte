@@ -94,7 +94,18 @@
   }
 
   function getFieldAlias(path: string): string {
-    return fieldAliases[path] || path;
+    // First check if there's a direct alias for this path
+    if (fieldAliases[path]) {
+      return fieldAliases[path];
+    }
+    
+    // For tree mode, also check if there's an alias for just the key name
+    const key = path.split('.').pop() || '';
+    if (fieldAliases[key]) {
+      return fieldAliases[key];
+    }
+    
+    return path;
   }
 
   function getAllFields() {

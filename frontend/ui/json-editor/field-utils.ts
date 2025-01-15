@@ -4,6 +4,20 @@ export function getIndentationLevel(path: string): number {
   return path.split(".").length - 1;
 }
 
+export function getDisplayName(
+  key: string,
+  path: string,
+  displayMode: DisplayMode,
+  getFieldAlias: (path: string) => string
+): string {
+  if (displayMode === "tree") {
+    // In tree mode, use the key or its alias if defined
+    return getFieldAlias(key) || key;
+  }
+  // In linear mode, use the full path or its alias
+  return getFieldAlias(path) || path;
+}
+
 export function renderField(
   key: string,
   value: any,
@@ -30,7 +44,7 @@ export function renderField(
             {
               path: currentPath,
               key,
-              displayName: getFieldAlias(currentPath),
+              displayName: getDisplayName(key, currentPath, displayMode, getFieldAlias),
               value: "",
               disabled: true,
               isObject: true,
@@ -57,7 +71,7 @@ export function renderField(
     {
       path: currentPath,
       key,
-      displayName: getFieldAlias(currentPath),
+      displayName: getDisplayName(key, currentPath, displayMode, getFieldAlias),
       value: value === null ? "" : String(value),
       disabled: isFieldDisabled(currentPath),
       isObject: false,
