@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { TTemplate } from "./template.types";
+  import type { TTemplate } from "./template/template.types";
 
   export let templates: TTemplate[];
   export let onSelect: (name: string) => Promise<void>;

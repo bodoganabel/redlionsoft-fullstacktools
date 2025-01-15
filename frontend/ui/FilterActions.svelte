@@ -1,8 +1,8 @@
 <script lang="ts">
   import IconRectangles from "./../icons/IconRectangles.svelte";
   import TooltipContainer from "../functionality/tooltip/TooltipContainer.svelte";
-  import TemplateList from "./TemplateList.svelte";
-  import type { TTemplate } from "./template.types";
+  import TemplateList from "./template/TemplateList.svelte";
+  import type { TTemplate } from "./template/template.types";
   import { EFilterOperator, type TFilters } from "./filter.types";
 
   export let templates: TTemplate[];

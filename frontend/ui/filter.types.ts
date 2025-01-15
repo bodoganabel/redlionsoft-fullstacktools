@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TemplateSchema, TTemplate } from "./template.types";
+import { TemplateSchema, TTemplate } from "./template/template.types";
 
 export type TFilterOperator = {
   value: EFilterOperator;

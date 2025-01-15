@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { popup, popupInput } from "../functionality/popup/popup-logic";
+  import { popup, popupInput } from "../../functionality/popup/popup-logic";
   import type { TTemplate } from "./template.types";
   import SaveTemplateButton from "./SaveTemplateButton.svelte";
   import TemplateListItem from "./TemplateListItem.svelte";
@@ -33,10 +33,14 @@
     return (event: DragEvent) => {
       event.preventDefault();
       if (draggedItem === templateName) return;
-      
-      const fromIndex = templates.findIndex((template) => template.name === draggedItem);
-      const toIndex = templates.findIndex((template) => template.name === templateName);
-      
+
+      const fromIndex = templates.findIndex(
+        (template) => template.name === draggedItem
+      );
+      const toIndex = templates.findIndex(
+        (template) => template.name === templateName
+      );
+
       draggedOverItem = templateName;
       isDraggingUp = fromIndex > toIndex;
     };
@@ -52,8 +56,12 @@
       event.preventDefault();
       if (!draggedItem || draggedItem === templateName) return;
 
-      const fromIndex = templates.findIndex((template) => template.name === draggedItem);
-      const toIndex = templates.findIndex((template) => template.name === templateName);
+      const fromIndex = templates.findIndex(
+        (template) => template.name === draggedItem
+      );
+      const toIndex = templates.findIndex(
+        (template) => template.name === templateName
+      );
 
       if (fromIndex !== -1 && toIndex !== -1) {
         onReorder(

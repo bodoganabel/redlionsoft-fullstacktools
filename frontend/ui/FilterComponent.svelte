@@ -5,7 +5,7 @@
     type TFilterOperator,
     type TFilters,
   } from "./filter.types";
-  import type { TTemplate } from "./template.types";
+  import type { TTemplate } from "./template/template.types";
   import FilterHeader from "./FilterHeader.svelte";
   import FilterRow from "./FilterRow.svelte";
   import FilterActions from "./FilterActions.svelte";
