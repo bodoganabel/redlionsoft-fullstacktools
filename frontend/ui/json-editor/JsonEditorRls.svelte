@@ -1,21 +1,22 @@
 <script lang="ts">
-  import { differenceDeep } from "../../../common/utilities/data";
+  import { differenceDeep } from "./../../../common/utilities/data";
   import { clone, equals } from "ramda";
   import { onMount } from "svelte";
   import { writable } from "svelte/store";
+  import JsonEditorField from "./JsonEditorField.svelte";
+  import { renderField, getIndentationLevel } from "./field-utils";
+  import type { DisplayMode, FieldsPosition, ReturnsMode } from "./types";
 
   export let initialData: Record<string, any> | string = {};
   export let onSave: (changedFields: Record<string, any>) => void;
   export let hiddenFields: string[] = [];
   export let disabledFields: string[] = [];
   export let fieldAliases: Record<string, string> = {};
-  export let displayMode: "linear" | "tree" = "linear";
-  export let fieldsPosition: "next-to-key" | "below-key" = "below-key";
-  export let returns: "changed-fields-only" | "changed-object-full" =
-    "changed-fields-only";
+  export let displayMode: DisplayMode = "linear";
+  export let fieldsPosition: FieldsPosition = "below-key";
+  export let returns: ReturnsMode = "changed-fields-only";
 
   let displayedFields: any;
-
   const dataStore = writable<Record<string, any>>({});
   let originalData: Record<string, any>;
   let hasChanges = false;
@@ -43,7 +44,7 @@
       if (!parts.length) {
         return data;
       }
-      // Navigate to the parent object
+
       for (let i = 0; i < parts.length - 1; i++) {
         const part = parts[i] as string;
         if (!(part in current)) {
@@ -52,7 +53,6 @@
         current = current[part] as Record<string, any>;
       }
 
-      // Set the value on the last part
       const lastPart = parts[parts.length - 1] as any;
       current[lastPart] = value;
 
@@ -68,11 +68,9 @@
 
   function handleSave() {
     const changedFields = differenceDeep(originalData, $dataStore);
-
     const dataToReturn =
       returns === "changed-fields-only" ? changedFields : $dataStore;
     onSave(dataToReturn);
-
     originalData = clone($dataStore);
     hasChanges = false;
   }
@@ -96,75 +94,25 @@
   }
 
   function getFieldAlias(path: string): string {
-    const alias = fieldAliases[path];
-    if (alias) return alias;
-
-    // Return the full path if no alias is defined
-    return path;
-  }
-
-  function renderField(key: string, value: any, path = ""): any {
-    const currentPath = path ? `${path}.${key}` : key;
-
-    if (isFieldHidden(currentPath)) {
-      return null;
-    }
-
-    if (typeof value === "object" && value !== null) {
-      if (Object.keys(value).length === 0) {
-        return null;
-      }
-
-      const result =
-        displayMode === "tree"
-          ? [
-              {
-                path: currentPath,
-                key,
-                displayName: getFieldAlias(currentPath),
-                value: "",
-                disabled: true,
-                isObject: true,
-              },
-            ]
-          : [];
-
-      const nestedFields = Object.entries(value).map(
-        ([nestedKey, nestedValue]) =>
-          renderField(nestedKey, nestedValue, currentPath)
-      );
-
-      const finalResult = [
-        ...result,
-        ...nestedFields.filter((field) => field !== null).flat(),
-      ];
-      return finalResult;
-    }
-
-    const result = [
-      {
-        path: currentPath,
-        key,
-        displayName: getFieldAlias(currentPath),
-        value: value === null ? "" : String(value),
-        disabled: isFieldDisabled(currentPath),
-        isObject: false,
-      },
-    ];
-
-    return result;
+    return fieldAliases[path] || path;
   }
 
   function getAllFields() {
     const fields = Object.entries($dataStore)
-      .map(([key, value]) => renderField(key, value))
+      .map(([key, value]) =>
+        renderField(
+          key,
+          value,
+          "",
+          displayMode,
+          isFieldHidden,
+          isFieldDisabled,
+          getFieldAlias
+        )
+      )
       .filter((field) => field !== null)
       .flat();
     return fields;
-  }
-
-  function getIndentationLevel(path: string): number {
-    return path.split(".").length - 1;
   }
 
   function renderLinearMode() {
@@ -196,31 +144,7 @@
 <div class="w-full space-y-4">
   {#if $dataStore && Object.keys($dataStore).length > 0}
     {#each displayedFields || [] as field}
-      <div
-        class="flex space-x-1"
-        class:flex-col={fieldsPosition === "below-key" || field.isObject}
-        class:flex-row={fieldsPosition === "next-to-key" && !field.isObject}
-        style="margin-left: {field.indentLevel * 20}px"
-      >
-        <label class="text-sm font-medium text-gray-700 mb-1" for={field.path}>
-          {field.displayName}
-        </label>
-        {#if !field.isObject}
-          <input
-            type="text"
-            id={field.path}
-            class="input min-w-24"
-            value={field.value}
-            disabled={field.disabled}
-            on:input={(e) =>
-              handleInputChange(
-                field.path,
-                //@ts-ignore
-                e.target.value
-              )}
-          />
-        {/if}
-      </div>
+      <JsonEditorField {field} {fieldsPosition} onChange={handleInputChange} />
     {/each}
   {/if}
 
