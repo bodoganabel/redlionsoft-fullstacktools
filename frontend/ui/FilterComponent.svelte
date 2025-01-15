@@ -1,8 +1,8 @@
 <script lang="ts">
   import {
     EFilterOperator,
-    TFilterField,
-    TFilterOperator,
+    type TFilterField,
+    type TFilterOperator,
     type TFilters,
   } from "./filter.types";
   import type { TTemplate } from "./template.types";

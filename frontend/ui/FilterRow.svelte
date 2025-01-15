@@ -1,8 +1,7 @@
 <script lang="ts">
   import {
-    EFilterOperator,
-    TFilterField,
-    TFilterOperator,
+    type TFilterField,
+    type TFilterOperator,
     type IFilter,
   } from "./filter.types";
   import { debounce } from "../utils/debounce";
