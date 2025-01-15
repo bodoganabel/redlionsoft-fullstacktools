@@ -3,8 +3,10 @@
   import TooltipContainer from "../functionality/tooltip/TooltipContainer.svelte";
   import TemplateList from "./TemplateList.svelte";
   import type { TTemplate } from "./template.types";
+  import { EFilterOperator, type TFilters } from "./filter.types";
 
   export let templates: TTemplate[];
+  export let activeFilters: TFilters;
   export let onSelect: (name: string) => Promise<void>;
   export let onRename: (oldName: string, newName: string) => Promise<void>;
   export let onDelete: (name: string) => Promise<void>;
@@ -47,4 +49,17 @@
       />
     </div>
   </TooltipContainer>
+
+  {#if activeFilters.some((filter) => filter.value !== "") || activeFilters.length > 1}
+    <button
+      class="text-sm variant-outline-secondary rounded-lg"
+      on:click={() => {
+        activeFilters = [
+          { field: "", operator: EFilterOperator.contains, value: "" },
+        ];
+      }}
+    >
+      Clear Filters
+    </button>
+  {/if}
 </div>

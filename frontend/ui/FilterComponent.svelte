@@ -34,7 +34,9 @@
         { field: "", operator: EFilterOperator.contains, value: "" },
       ];
     } else {
-      activeFilters = activeFilters.filter((_, filterIndex) => filterIndex !== index);
+      activeFilters = activeFilters.filter(
+        (_, filterIndex) => filterIndex !== index
+      );
     }
     dispatch("filterChange", { filters: activeFilters });
   }
@@ -57,7 +59,7 @@
 
 <div class="p-4 card shadow-md">
   <FilterHeader {templates} {onSelect} />
-  
+
   <div class="flex flex-col gap-3">
     {#each activeFilters as filter, index}
       <FilterRow
@@ -69,6 +71,7 @@
   </div>
 
   <FilterActions
+    bind:activeFilters
     {templates}
     {onSelect}
     {onRename}
