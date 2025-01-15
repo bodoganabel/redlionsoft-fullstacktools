@@ -3,7 +3,6 @@
   import IconTrash from "../icons/IconTrash.svelte";
   import { popup, popupInput } from "../functionality/popup/popup-logic";
   import type { TTemplate } from "./template.types";
-  import { createEventDispatcher } from "svelte";
   import IconDragHandle from "../icons/IconDragHandle.svelte";
 
   export let templates: TTemplate[] = [];
@@ -18,22 +17,33 @@
 
   let draggedItem: string | null = null;
   let draggedOverItem: string | null = null;
+  let isDraggingUp = false;
 
   function handleDragStart(e: DragEvent, name: string) {
     if (!e.dataTransfer) return;
     draggedItem = name;
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", name);
+    draggedOverItem = null;
+    isDraggingUp = false;
   }
 
   function handleDragOver(e: DragEvent, name: string) {
     e.preventDefault();
     if (draggedItem === name) return;
+    
+    // Find indices to determine drag direction
+    const fromIndex = templates.findIndex((t) => t.name === draggedItem);
+    const toIndex = templates.findIndex((t) => t.name === name);
+    
+    // Set draggedOverItem with direction info
     draggedOverItem = name;
+    isDraggingUp = fromIndex > toIndex;
   }
 
   function handleDragLeave() {
     draggedOverItem = null;
+    isDraggingUp = false;
   }
 
   function handleDrop(e: DragEvent, name: string) {
@@ -56,6 +66,7 @@
 
     draggedItem = null;
     draggedOverItem = null;
+    isDraggingUp = false;
   }
 
   async function handleSave() {
@@ -147,7 +158,8 @@
       on:dragleave={handleDragLeave}
       on:drop={(e) => handleDrop(e, item.name)}
       class:dragging={draggedItem === item.name}
-      class:drag-over={draggedOverItem === item.name}
+      class:drag-over-up={draggedOverItem === item.name && isDraggingUp}
+      class:drag-over-down={draggedOverItem === item.name && !isDraggingUp}
     >
       <button
         on:click={() => onFavorite(item.name)}
@@ -185,8 +197,11 @@
   .dragging {
     opacity: 0.5;
   }
-  .drag-over {
+  .drag-over-down {
     border-bottom: 2px solid #4f46e5;
+  }
+  .drag-over-up {
+    border-top: 2px solid #4f46e5;
   }
   .drag-handle {
     cursor: grab;
