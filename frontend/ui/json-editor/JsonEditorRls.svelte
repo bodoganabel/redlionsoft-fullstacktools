@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { differenceDeep } from "./../../common/utilities/data";
+  import { differenceDeep } from "../../../common/utilities/data";
   import { clone, equals } from "ramda";
   import { onMount } from "svelte";
   import { writable } from "svelte/store";
@@ -9,8 +9,11 @@
   export let hiddenFields: string[] = [];
   export let disabledFields: string[] = [];
   export let fieldAliases: Record<string, string> = {};
+  export let displayMode: "linear" | "tree" = "linear";
   export let returns: "changed-fields-only" | "changed-object-full" =
     "changed-fields-only";
+
+  let displayedFields: any;
 
   const dataStore = writable<Record<string, any>>({});
   let originalData: Record<string, any>;
@@ -23,19 +26,15 @@
         parsedData = JSON.parse(initialData);
       } catch (e) {
         parsedData = {};
-        console.error("Invalid JSON string provided");
       }
     } else {
       parsedData = clone(initialData);
     }
-    console.log("Setting initial data:", parsedData);
     dataStore.set(parsedData);
     originalData = clone(parsedData);
   });
 
   function handleInputChange(path: string, value: string) {
-    console.log("Updating path:", path, "with value:", value);
-
     dataStore.update((data) => {
       const newData = clone(data);
       const parts = path.split(".").filter(Boolean);
@@ -56,7 +55,6 @@
       const lastPart = parts[parts.length - 1] as any;
       current[lastPart] = value;
 
-      console.log("Updated data:", newData);
       return newData;
     });
 
@@ -70,13 +68,10 @@
   function handleSave() {
     const changedFields = differenceDeep(originalData, $dataStore);
 
-    console.log("data, originalData:");
-    console.log($dataStore, originalData);
-    console.log("changedFields", changedFields);
-
-    const dataToReturn = returns === "changed-fields-only" ? changedFields : $dataStore;
+    const dataToReturn =
+      returns === "changed-fields-only" ? changedFields : $dataStore;
     onSave(dataToReturn);
-    
+
     originalData = clone($dataStore);
     hasChanges = false;
   }
@@ -109,72 +104,119 @@
 
   function renderField(key: string, value: any, path = ""): any {
     const currentPath = path ? `${path}.${key}` : key;
-    console.log("Rendering field:", { currentPath, value });
 
     if (isFieldHidden(currentPath)) {
-      console.log("Field is hidden:", currentPath);
       return null;
     }
 
     if (typeof value === "object" && value !== null) {
       if (Object.keys(value).length === 0) {
-        return null; // Skip empty objects
+        return null;
       }
-      console.log("Processing nested object:", currentPath);
+
+      const result =
+        displayMode === "tree"
+          ? [
+              {
+                path: currentPath,
+                key,
+                displayName: getFieldAlias(currentPath),
+                value: "",
+                disabled: true,
+                isObject: true,
+              },
+            ]
+          : [];
+
       const nestedFields = Object.entries(value).map(
         ([nestedKey, nestedValue]) =>
           renderField(nestedKey, nestedValue, currentPath)
       );
-      // Filter out null values and flatten nested arrays
-      return nestedFields.filter((field) => field !== null).flat();
+
+      const finalResult = [
+        ...result,
+        ...nestedFields.filter((field) => field !== null).flat(),
+      ];
+      return finalResult;
     }
 
-    const result = {
-      path: currentPath,
-      key,
-      displayName: getFieldAlias(currentPath),
-      value: value === null ? "" : String(value),
-      disabled: isFieldDisabled(currentPath),
-    };
-    console.log("Returning field:", result);
+    const result = [
+      {
+        path: currentPath,
+        key,
+        displayName: getFieldAlias(currentPath),
+        value: value === null ? "" : String(value),
+        disabled: isFieldDisabled(currentPath),
+        isObject: false,
+      },
+    ];
+
     return result;
   }
 
   function getAllFields() {
-    console.log("Getting all fields from dataStore:", $dataStore);
     const fields = Object.entries($dataStore)
       .map(([key, value]) => renderField(key, value))
       .filter((field) => field !== null)
       .flat();
-    console.log("All fields:", fields);
+    return fields;
+  }
+
+  function getIndentationLevel(path: string): number {
+    return path.split(".").length - 1;
+  }
+
+  function renderLinearMode() {
+    const fields = getAllFields()
+      .filter((field) => !field.isObject)
+      .map((field) => ({
+        ...field,
+        indentLevel: 0,
+      }));
+    return fields;
+  }
+
+  function renderTreeMode() {
+    const fields = getAllFields().map((field) => ({
+      ...field,
+      indentLevel: getIndentationLevel(field.path),
+    }));
     return fields;
   }
 
   $: {
-    console.log("DataStore updated:", $dataStore);
+    if ($dataStore && Object.keys($dataStore).length > 0) {
+      displayedFields =
+        displayMode === "linear" ? renderLinearMode() : renderTreeMode();
+    }
   }
 </script>
 
 <div class="w-full space-y-4">
   {#if $dataStore && Object.keys($dataStore).length > 0}
-    {#each getAllFields() as field}
-      <div class="flex flex-col">
+    {#each displayedFields || [] as field}
+      <div
+        class="flex flex-col"
+        style="margin-left: {field.indentLevel * 20}px"
+      >
         <label class="text-sm font-medium text-gray-700 mb-1" for={field.path}>
           {field.displayName}
         </label>
-        <input
-          type="text"
-          id={field.path}
-          class="input"
-          value={field.value}
-          disabled={field.disabled}
-          on:input={(e) =>
-            handleInputChange(
-              field.path,
-              //@ts-ignore
-              e.target.value
-            )}
-        />
+        {#if !field.isObject}
+          <input
+            type="text"
+            id={field.path}
+            class="input"
+            value={field.value}
+            disabled={field.disabled}
+            on:input={(e) =>
+              handleInputChange(
+                field.path,
+                //@ts-ignore
+                e.target.value
+              )}
+          />
+        {/if}
       </div>
     {/each}
   {/if}
