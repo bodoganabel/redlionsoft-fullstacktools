@@ -31,3 +31,41 @@
     />
   {/if}
 </div>
+
+<!-- Example usage:
+<div>Json editor test</div>
+    <JsonEditorRls
+      displayMode="tree"
+      fieldsPosition="next-to-key"
+      returns="changed-object-full"
+      initialData={{
+        foo: "something2",
+        deep: {
+          inner1: {},
+          inner2: {
+            deepInner1: {
+              value: "something2",
+              value2: "other",
+              arrie: [
+                { hoppa: "hoppa", tr: true, number: 1 },
+                { another: "another" },
+                "string",
+                234,
+                true,
+                undefined,
+                null,
+              ],
+            },
+            deepInner2: 7,
+            deepInner3: true,
+          },
+        },
+      }}
+      onSave={console.log}
+      hiddenFields={["_id"]}
+      fieldAliases={{
+        foo: "owyeah",
+      }}
+      disabledFields={[""]}
+    /> 
+-->
