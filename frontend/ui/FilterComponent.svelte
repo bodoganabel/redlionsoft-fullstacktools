@@ -82,6 +82,3 @@
     onAddFilter={addFilter}
   />
 </div>
-
-<style>
-</style>
