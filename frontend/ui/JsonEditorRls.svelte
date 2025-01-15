@@ -9,6 +9,8 @@
   export let hiddenFields: string[] = [];
   export let disabledFields: string[] = [];
   export let fieldAliases: Record<string, string> = {};
+  export let returns: "changed-fields-only" | "changed-object-full" =
+    "changed-fields-only";
 
   const dataStore = writable<Record<string, any>>({});
   let originalData: Record<string, any>;
@@ -70,10 +72,11 @@
 
     console.log("data, originalData:");
     console.log($dataStore, originalData);
-
     console.log("changedFields", changedFields);
 
-    onSave(changedFields);
+    const dataToReturn = returns === "changed-fields-only" ? changedFields : $dataStore;
+    onSave(dataToReturn);
+    
     originalData = clone($dataStore);
     hasChanges = false;
   }
