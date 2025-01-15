@@ -4,7 +4,7 @@
     type TFilterOperator,
     type IFilter,
   } from "./filter.types";
-  import { debounce } from "../utils/debounce";
+  import { debounce } from "../../utils/debounce";
   import { onDestroy } from "svelte";
 
   export let filter: IFilter;
