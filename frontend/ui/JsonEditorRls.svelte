@@ -6,6 +6,8 @@
 
   export let initialData: Record<string, any> | string = {};
   export let onSave: (changedFields: Record<string, any>) => void;
+  export let hiddenFields: string[] = [];
+  export let disabledFields: string[] = [];
 
   const dataStore = writable<Record<string, any>>({});
   let originalData: Record<string, any>;
@@ -56,27 +58,84 @@
     dataStore.set(clone(originalData));
     hasChanges = false;
   }
+
+  function isFieldHidden(path: string): boolean {
+    return hiddenFields.some(hiddenPath => 
+      path === hiddenPath || path.startsWith(hiddenPath + '.'));
+  }
+
+  function isFieldDisabled(path: string): boolean {
+    return disabledFields.some(disabledPath => 
+      path === disabledPath || path.startsWith(disabledPath + '.'));
+  }
+
+  function renderField(key: string, value: any, path = '') {
+    const currentPath = path ? `${path}.${key}` : key;
+    
+    if (isFieldHidden(currentPath)) {
+      return null;
+    }
+
+    if (typeof value === 'object' && value !== null) {
+      return Object.entries(value).map(([nestedKey, nestedValue]) => 
+        renderField(nestedKey, nestedValue, currentPath));
+    }
+
+    return {
+      path: currentPath,
+      key,
+      value: String(value),
+      disabled: isFieldDisabled(currentPath)
+    };
+  }
 </script>
 
 <div class="w-full space-y-4">
   {#each Object.entries($dataStore) as [key, value]}
-    <div class="flex flex-col">
-      <label class="text-sm font-medium text-gray-700 mb-1" for={key}>
-        {key}
-      </label>
-      <input
-        type="text"
-        id={key}
-        class="input"
-        {value}
-        on:input={(e) =>
-          handleInputChange(
-            key,
-            //@ts-ignore
-            e.target.value
-          )}
-      />
-    </div>
+    {@const fields = renderField(key, value)}
+    {#if Array.isArray(fields)}
+      {#each fields as field}
+        {#if field}
+          <div class="flex flex-col">
+            <label class="text-sm font-medium text-gray-700 mb-1" for={field.path}>
+              {field.key}
+            </label>
+            <input
+              type="text"
+              id={field.path}
+              class="input"
+              value={field.value}
+              disabled={field.disabled}
+              on:input={(e) =>
+                handleInputChange(
+                  field.path,
+                  //@ts-ignore
+                  e.target.value
+                )}
+            />
+          </div>
+        {/if}
+      {/each}
+    {:else if fields}
+      <div class="flex flex-col">
+        <label class="text-sm font-medium text-gray-700 mb-1" for={fields.path}>
+          {fields.key}
+        </label>
+        <input
+          type="text"
+          id={fields.path}
+          class="input"
+          value={fields.value}
+          disabled={fields.disabled}
+          on:input={(e) =>
+            handleInputChange(
+              fields.path,
+              //@ts-ignore
+              e.target.value
+            )}
+        />
+      </div>
+    {/if}
   {/each}
 
   {#if hasChanges}
