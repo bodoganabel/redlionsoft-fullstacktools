@@ -1,5 +1,7 @@
 <script lang="ts">
   import { EFilterOperator, type IFilter } from "./filter.types";
+  import { debounce } from "../utils/debounce";
+  import { onDestroy } from "svelte";
 
   export let filter: IFilter;
   export let onUpdate: () => void;
@@ -24,6 +26,12 @@
     { value: "purchased", label: "Purchased" },
     { value: "revenue", label: "Revenue" },
   ];
+
+  const debouncedUpdate = debounce(onUpdate, 500);
+
+  onDestroy(() => {
+    debouncedUpdate.clear?.();
+  });
 </script>
 
 <div class="flex items-center gap-2">
@@ -51,7 +59,7 @@
   <input
     type="text"
     bind:value={filter.value}
-    on:input={onUpdate}
+    on:input={debouncedUpdate}
     placeholder="Enter value"
     class="input input-small flex-1"
   />
