@@ -10,6 +10,7 @@
   export let disabledFields: string[] = [];
   export let fieldAliases: Record<string, string> = {};
   export let displayMode: "linear" | "tree" = "linear";
+  export let fieldsPosition: "next-to-key" | "below-key" = "below-key";
   export let returns: "changed-fields-only" | "changed-object-full" =
     "changed-fields-only";
 
@@ -196,7 +197,9 @@
   {#if $dataStore && Object.keys($dataStore).length > 0}
     {#each displayedFields || [] as field}
       <div
-        class="flex flex-col"
+        class="flex space-x-1"
+        class:flex-col={fieldsPosition === "below-key" || field.isObject}
+        class:flex-row={fieldsPosition === "next-to-key" && !field.isObject}
         style="margin-left: {field.indentLevel * 20}px"
       >
         <label class="text-sm font-medium text-gray-700 mb-1" for={field.path}>
@@ -206,7 +209,7 @@
           <input
             type="text"
             id={field.path}
-            class="input"
+            class="input min-w-24"
             value={field.value}
             disabled={field.disabled}
             on:input={(e) =>
