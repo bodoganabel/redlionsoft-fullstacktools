@@ -8,6 +8,7 @@
   export let onSave: (changedFields: Record<string, any>) => void;
   export let hiddenFields: string[] = [];
   export let disabledFields: string[] = [];
+  export let fieldAliases: Record<string, string> = {};
 
   const dataStore = writable<Record<string, any>>({});
   let originalData: Record<string, any>;
@@ -60,32 +61,46 @@
   }
 
   function isFieldHidden(path: string): boolean {
-    return hiddenFields.some(hiddenPath => 
-      path === hiddenPath || path.startsWith(hiddenPath + '.'));
+    return hiddenFields.some(
+      (hiddenPath) => path === hiddenPath || path.startsWith(hiddenPath + ".")
+    );
   }
 
   function isFieldDisabled(path: string): boolean {
-    return disabledFields.some(disabledPath => 
-      path === disabledPath || path.startsWith(disabledPath + '.'));
+    return disabledFields.some(
+      (disabledPath) =>
+        path === disabledPath || path.startsWith(disabledPath + ".")
+    );
   }
 
-  function renderField(key: string, value: any, path = '') {
+  function getFieldAlias(path: string): string | undefined {
+    const alias = fieldAliases[path];
+    if (alias) return alias;
+
+    // Get the last part of the path for default display
+    const parts = path.split(".");
+    return parts[parts.length - 1];
+  }
+
+  function renderField(key: string, value: any, path = ""): any {
     const currentPath = path ? `${path}.${key}` : key;
-    
+
     if (isFieldHidden(currentPath)) {
       return null;
     }
 
-    if (typeof value === 'object' && value !== null) {
-      return Object.entries(value).map(([nestedKey, nestedValue]) => 
-        renderField(nestedKey, nestedValue, currentPath));
+    if (typeof value === "object" && value !== null) {
+      return Object.entries(value).map(([nestedKey, nestedValue]) =>
+        renderField(nestedKey, nestedValue, currentPath)
+      );
     }
 
     return {
       path: currentPath,
       key,
+      displayName: getFieldAlias(currentPath),
       value: String(value),
-      disabled: isFieldDisabled(currentPath)
+      disabled: isFieldDisabled(currentPath),
     };
   }
 </script>
@@ -97,8 +112,11 @@
       {#each fields as field}
         {#if field}
           <div class="flex flex-col">
-            <label class="text-sm font-medium text-gray-700 mb-1" for={field.path}>
-              {field.key}
+            <label
+              class="text-sm font-medium text-gray-700 mb-1"
+              for={field.path}
+            >
+              {field.displayName}
             </label>
             <input
               type="text"
@@ -119,7 +137,7 @@
     {:else if fields}
       <div class="flex flex-col">
         <label class="text-sm font-medium text-gray-700 mb-1" for={fields.path}>
-          {fields.key}
+          {fields.displayName}
         </label>
         <input
           type="text"
