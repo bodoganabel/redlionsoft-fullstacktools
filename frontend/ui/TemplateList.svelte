@@ -1,9 +1,8 @@
 <script lang="ts">
-  import IconEdit from "../icons/IconEdit.svelte";
-  import IconTrash from "../icons/IconTrash.svelte";
   import { popup, popupInput } from "../functionality/popup/popup-logic";
   import type { TTemplate } from "./template.types";
-  import IconDragHandle from "../icons/IconDragHandle.svelte";
+  import SaveTemplateButton from "./SaveTemplateButton.svelte";
+  import TemplateListItem from "./TemplateListItem.svelte";
 
   export let templates: TTemplate[] = [];
   export let onSelect: (name: string) => Promise<void>;
@@ -19,26 +18,28 @@
   let draggedOverItem: string | null = null;
   let isDraggingUp = false;
 
-  function handleDragStart(e: DragEvent, name: string) {
-    if (!e.dataTransfer) return;
-    draggedItem = name;
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", name);
-    draggedOverItem = null;
-    isDraggingUp = false;
+  function handleDragStart(templateName: string) {
+    return (event: DragEvent) => {
+      if (!event.dataTransfer) return;
+      draggedItem = templateName;
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", templateName);
+      draggedOverItem = null;
+      isDraggingUp = false;
+    };
   }
 
-  function handleDragOver(e: DragEvent, name: string) {
-    e.preventDefault();
-    if (draggedItem === name) return;
-    
-    // Find indices to determine drag direction
-    const fromIndex = templates.findIndex((t) => t.name === draggedItem);
-    const toIndex = templates.findIndex((t) => t.name === name);
-    
-    // Set draggedOverItem with direction info
-    draggedOverItem = name;
-    isDraggingUp = fromIndex > toIndex;
+  function handleDragOver(templateName: string) {
+    return (event: DragEvent) => {
+      event.preventDefault();
+      if (draggedItem === templateName) return;
+      
+      const fromIndex = templates.findIndex((template) => template.name === draggedItem);
+      const toIndex = templates.findIndex((template) => template.name === templateName);
+      
+      draggedOverItem = templateName;
+      isDraggingUp = fromIndex > toIndex;
+    };
   }
 
   function handleDragLeave() {
@@ -46,73 +47,41 @@
     isDraggingUp = false;
   }
 
-  function handleDrop(e: DragEvent, name: string) {
-    e.preventDefault();
-    if (!draggedItem || draggedItem === name) return;
+  function handleDrop(templateName: string) {
+    return (event: DragEvent) => {
+      event.preventDefault();
+      if (!draggedItem || draggedItem === templateName) return;
 
-    const fromIndex = templates.findIndex((t) => t.name === draggedItem);
-    const toIndex = templates.findIndex((t) => t.name === name);
+      const fromIndex = templates.findIndex((template) => template.name === draggedItem);
+      const toIndex = templates.findIndex((template) => template.name === templateName);
 
-    if (fromIndex !== -1 && toIndex !== -1) {
-      onReorder(
-        new CustomEvent("reorder", {
-          detail: {
-            resourceId: draggedItem,
-            newIndex: toIndex,
-          },
-        })
-      );
-    }
-
-    draggedItem = null;
-    draggedOverItem = null;
-    isDraggingUp = false;
-  }
-
-  async function handleSave() {
-    popupInput(
-      "Save Template",
-      async (newValue: string) => {
-        const existingTemplate = templates.find(
-          (item) => item.name === newValue
-        );
-        if (existingTemplate) {
-          popup({
-            id: "confirm-overwrite",
-            title: "Template already exists",
-            message:
-              "A template with this name already exists. Do you want to overwrite it?",
-            onAccept: async () => {
-              await onSave(newValue);
+      if (fromIndex !== -1 && toIndex !== -1) {
+        onReorder(
+          new CustomEvent("reorder", {
+            detail: {
+              resourceId: draggedItem,
+              newIndex: toIndex,
             },
-            acceptMessage: "Overwrite",
-            closeMessage: "Cancel",
-          });
-        } else {
-          await onSave(newValue);
-        }
-        return {};
-      },
-      "",
-      {
-        id: "save-template-input",
-        message: "Enter template name",
-        isSaveClose: true,
-        saveButtonTitle: "Save",
+          })
+        );
       }
-    );
+
+      draggedItem = null;
+      draggedOverItem = null;
+      isDraggingUp = false;
+    };
   }
 
-  async function handleRename(name: string) {
+  function handleRename(templateName: string) {
     popupInput(
       "Rename Template",
-      async (newValue: string) => {
-        if (newValue === name) {
+      async (newName: string) => {
+        if (newName === templateName) {
           return {};
         }
 
         const existingTemplate = templates.find(
-          (item) => item.name === newValue
+          (template) => template.name === newName
         );
         if (existingTemplate) {
           popup({
@@ -121,19 +90,19 @@
             message:
               "A template with this name already exists. Do you want to override it?",
             onAccept: async () => {
-              await onRename(name, newValue);
+              await onRename(templateName, newName);
             },
             acceptMessage: "Override",
             closeMessage: "Cancel",
           });
         } else {
-          await onRename(name, newValue);
+          await onRename(templateName, newName);
         }
         return {};
       },
-      name,
+      templateName,
       {
-        id: `rename-template-${name}`,
+        id: `rename-template-${templateName}`,
         message: "Enter new name",
         isSaveClose: true,
         saveButtonTitle: "Rename",
@@ -143,70 +112,22 @@
 </script>
 
 <div class="flex flex-col card shadow-md max-w-max">
-  <div class="template-list-row">
-    <button on:click={handleSave}>Save current as template</button>
-  </div>
-
+  <SaveTemplateButton {templates} {onSave} />
   <hr />
-  {#each templates as item}
-    <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <div
-      class="template-list-row px-2 flex justify-stretch items-center w-full group hover:bg-gray-100 dark:hover:bg-gray-700 cursor-move"
-      draggable="true"
-      on:dragstart={(e) => handleDragStart(e, item.name)}
-      on:dragover={(e) => handleDragOver(e, item.name)}
-      on:dragleave={handleDragLeave}
-      on:drop={(e) => handleDrop(e, item.name)}
-      class:dragging={draggedItem === item.name}
-      class:drag-over-up={draggedOverItem === item.name && isDraggingUp}
-      class:drag-over-down={draggedOverItem === item.name && !isDraggingUp}
-    >
-      <button
-        on:click={() => onFavorite(item.name)}
-        class="btn-icon w-5 h-5 {item.isFavorite
-          ? ''
-          : 'invisible group-hover:visible'} transition-none"
-        >{item.isFavorite ? "★" : "☆"}</button
-      >
-      <button on:click={() => onSelect(item.name)} class="w-full text-left"
-        ><div class="w-full text-left">
-          {item.name}
-        </div>
-      </button>
-      <div
-        class="drag-handle btn-icon w-5 h-5 invisible group-hover:visible transition-none"
-      >
-        <!-- svelte-ignore missing-declaration -->
-        <IconDragHandle />
-      </div>
-      <button
-        on:click={() => handleRename(item.name)}
-        class="ml-1 btn-icon w-5 h-5 invisible group-hover:visible transition-none"
-        ><IconEdit /></button
-      >
-      <button
-        on:click={() => onDelete(item.name)}
-        class="ml-1 btn-icon w-5 h-5 invisible group-hover:visible transition-none"
-        ><IconTrash /></button
-      >
-    </div>
+  {#each templates as template}
+    <TemplateListItem
+      {template}
+      {onSelect}
+      onRename={handleRename}
+      {onDelete}
+      {onFavorite}
+      isDragging={draggedItem === template.name}
+      isDraggedOver={draggedOverItem === template.name}
+      {isDraggingUp}
+      handleDragStart={handleDragStart(template.name)}
+      handleDragOver={handleDragOver(template.name)}
+      {handleDragLeave}
+      handleDrop={handleDrop(template.name)}
+    />
   {/each}
 </div>
-
-<style>
-  .dragging {
-    opacity: 0.5;
-  }
-  .drag-over-down {
-    border-bottom: 2px solid #4f46e5;
-  }
-  .drag-over-up {
-    border-top: 2px solid #4f46e5;
-  }
-  .drag-handle {
-    cursor: grab;
-  }
-  .drag-handle:active {
-    cursor: grabbing;
-  }
-</style>
