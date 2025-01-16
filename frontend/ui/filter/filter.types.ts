@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TemplateSchema, TTemplate } from "../template/template.types";
+import { BaseDocumentSchema } from "../../../backend/user-crud/types";
 
 export type TFilterOperator = {
   value: EFilterOperator;
@@ -35,11 +36,18 @@ export const FilterSchema = z.object({
   value: z.string(),
 });
 
-export const FilterTemplateSchema = z.object({
+export const FilterTemplateSchema = BaseDocumentSchema.extend({
   ...TemplateSchema.shape,
   filters: z.array(FilterSchema),
 });
 
 export type TFilterTemplate = TTemplate & {
   filters: TFilters;
+  _id?: any;
+  userId?: any;
+  resourceId: string;
+  createdAt: string;
+  updatedAt?: string;
+  changeHistory?: {}[];
+  order?: number;
 };
