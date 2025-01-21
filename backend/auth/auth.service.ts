@@ -80,10 +80,16 @@ export class AuthService<
   /* Expects validated inputs */
 
   public async signup(
-    props: TUserServerRls<ERoles, EPermissions, Metadata_UserServer>
+    props: Omit<
+      TUserServerRls<ERoles, EPermissions, Metadata_UserServer>,
+      "_id"
+    >
   ) {
     /*************  ✨ Codeium Command ⭐  *************/
-    const user: TUserServerRls<ERoles, EPermissions, Metadata_UserServer> = {
+    const user: Omit<
+      TUserServerRls<ERoles, EPermissions, Metadata_UserServer>,
+      "_id"
+    > = {
       ...props,
       password: await bcrypt.hash(props.password, this.saltOrRounds),
       created_at: DateTime.now().toISO() as string,
@@ -93,14 +99,17 @@ export class AuthService<
       const result = await this.usersCollection.insertOne(
         user as TUserServerRls<ERoles, EPermissions, Metadata_UserServer>
       );
-      if (!result.acknowledged) {
-        return { status: 500, message: "An error occurred" };
-      }
+
+      const userServer = await this.usersCollection.findOne({
+        _id: result.insertedId,
+      });
+      return { ok: true, user: userServer, message: "" };
     } catch (error: any) {
       if (error.code === 11000) {
-        return { status: 400, message: "Email already exists" };
+        console.log("Email already exists");
+        return { ok: false, user: null, message: "Email already exists" };
       }
-      return { status: 500, message: "An error occurred" };
+      return { ok: false, user: null, message: "An error occurred" };
     }
     /******  7c19a7bd-a78f-4682-9a24-2e3d3ff62ef6  *******/
   }
