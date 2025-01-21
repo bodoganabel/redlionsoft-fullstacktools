@@ -181,4 +181,40 @@ export class EmailService {
       return { result: undefined, error: String(error) };
     }
   }
+
+  async send(options: {
+    to: string;
+    subject: string;
+    html: string;
+    fallbackText?: string;
+  }): Promise<{ result: any; error?: string }> {
+    try {
+      if (isProduction()) {
+        try {
+          const emailResult = await this.sendWithSendGrid(
+            options.to,
+            options.subject,
+            options.html,
+            options.fallbackText
+          );
+          return { result: emailResult };
+        } catch (error) {
+          throw new Error(`Email sending failed with SendGrid: ${error}`);
+        }
+      } else {
+        console.log("Sent test email to devmail server at: localhost:1080");
+        const result = await this.transporter.sendMail({
+          from: this.mailDefaultEmail,
+          to: options.to,
+          subject: options.subject,
+          html: options.html,
+          text: options.fallbackText,
+        });
+        return { result };
+      }
+    } catch (error) {
+      console.error("Error sending email:", error);
+      return { result: undefined, error: String(error) };
+    }
+  }
 }
