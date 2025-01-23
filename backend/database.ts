@@ -1,4 +1,4 @@
-import type { Db } from "mongodb";
+import type { Db, WithId } from "mongodb";
 import dotenv from "dotenv";
 import { connectToMongoDatabase } from ".";
 import { isProduction } from "../common";
@@ -27,12 +27,12 @@ export class Database {
     return Database._database;
   }
 
-  public static async createCollection(collectionName: string) {
+  public static async createCollection<T = any>(collectionName: string) {
     console.log(typeof Database._database);
 
     if (typeof Database._database === "undefined") {
       await Database.initializeDatabase();
     }
-    return Database._database.collection(collectionName);
+    return Database._database.collection<WithId<T>>(collectionName);
   }
 }
