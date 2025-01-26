@@ -6,7 +6,7 @@
   import DatePickerWeekdays from "./DatePickerWeekdays.svelte";
 
   export let startDayOfWeek = 1; // 0 = Sunday, 1 = Monday, etc.
-  export let weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  export let weekdaysShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   export let monthNames = [
     "January",
     "February",
@@ -27,14 +27,18 @@
   export let onSelect: (date: DateTime) => void = () => {};
   export let minDate: DateTime | undefined = undefined;
 
+  export let todayButtonText = "Today";
+  export let tomorrowButtonText = "Tomorrow";
+  export let resetButtonText = "Reset";
+
   let currentMonth = selectedDate.month - 1; // Luxon's months are 1-based
   let currentYear = selectedDate.year;
   let dates: (DateTime | null)[] = [];
 
   $: if (selectedDate) updateCalendar();
   $: orderedWeekdays = [
-    ...weekdays.slice(startDayOfWeek),
-    ...weekdays.slice(0, startDayOfWeek),
+    ...weekdaysShort.slice(startDayOfWeek),
+    ...weekdaysShort.slice(0, startDayOfWeek),
   ];
 
   function onDateSelected(newDate: DateTime) {
@@ -122,5 +126,8 @@
     onSetToToday={setToToday}
     onSetToTomorrow={setToTomorrow}
     onReset={setToCurrentOrMinimal}
+    {todayButtonText}
+    {tomorrowButtonText}
+    {resetButtonText}
   />
 </div>

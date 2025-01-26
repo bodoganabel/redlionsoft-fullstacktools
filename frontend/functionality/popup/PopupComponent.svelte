@@ -61,36 +61,39 @@
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div
-  class="popup-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+  class="popup-overlay fixed inset-0 bg-surface-500/50 flex items-center justify-center z-50"
   on:click={handleOutsideClick}
 >
   <div
-    class="popup bg-surface-200 dark:bg-surface-700 p-6 rounded-md shadow-md max-w-lg w-full"
+    class="popup card variant-filled-surface max-w-lg w-full mx-auto my-8 flex flex-col"
+    style="max-height: calc(100vh - 4rem);"
   >
-    <header class="flex justify-between items-center mb-4">
-      <h2 class="text-lg font-semibold">{@html title}</h2>
-      <button class="text-xl font-bold" on:click={removePopup}>✕</button>
+    <header
+      class="card-header flex justify-between items-center p-4 bg-inherit border-b border-surface-500/30"
+    >
+      <h2 class="h3">{@html title}</h2>
+      <button class="btn-icon variant-ghost-surface" on:click={removePopup}>✕</button>
     </header>
 
-    {#if message}
-      <p class="mb-4">{@html message}</p>
-    {/if}
+    <div class="flex-1 overflow-y-auto p-4">
+      {#if message}
+        <p class="mb-4">{@html message}</p>
+      {/if}
 
-    {#if component}
-      <svelte:component this={component} {...componentProps} />
-    {/if}
+      {#if component}
+        <svelte:component this={component} {...componentProps} />
+      {/if}
+    </div>
 
     {#if onClose !== undefined || onAccept !== undefined}
-      <footer class="flex justify-end mt-4 space-x-2">
+      <footer
+        class="card-footer flex justify-end p-4 bg-inherit border-t border-surface-500/30"
+      >
         {#if onClose !== undefined}
-          <button class="btn variant-outline-secondary" on:click={removePopup}
-            >{@html closeMessage}</button
-          >
+          <button class="btn variant-ghost-surface" on:click={removePopup}>{@html closeMessage}</button>
         {/if}
         {#if onAccept !== undefined}
-          <button class="btn variant-filled-primary" on:click={acceptPopup}
-            >{@html acceptMessage}</button
-          >
+          <button class="btn variant-filled-primary ml-2" on:click={acceptPopup}>{@html acceptMessage}</button>
         {/if}
       </footer>
     {/if}
@@ -99,11 +102,6 @@
 
 <style>
   .popup-overlay {
-    background: rgba(0, 0, 0, 0.5);
-  }
-  .popup {
-    max-width: 500px;
-    border-radius: 8px;
-    padding: 16px;
+    backdrop-filter: blur(2px);
   }
 </style>
