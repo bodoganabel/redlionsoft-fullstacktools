@@ -121,13 +121,4 @@
     {minDate}
     onDateSelect={onDateSelected}
   />
-
-  <DatePickerCalendarFooter
-    onSetToToday={setToToday}
-    onSetToTomorrow={setToTomorrow}
-    onReset={setToCurrentOrMinimal}
-    {todayButtonText}
-    {tomorrowButtonText}
-    {resetButtonText}
-  />
 </div>
