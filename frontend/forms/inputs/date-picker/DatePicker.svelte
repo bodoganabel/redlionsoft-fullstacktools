@@ -27,10 +27,6 @@
   export let onSelect: (date: DateTime) => void = () => {};
   export let minDate: DateTime | undefined = undefined;
 
-  export let todayButtonText = "Today";
-  export let tomorrowButtonText = "Tomorrow";
-  export let resetButtonText = "Reset";
-
   let currentMonth = selectedDate.month - 1; // Luxon's months are 1-based
   let currentYear = selectedDate.year;
   let dates: (DateTime | null)[] = [];

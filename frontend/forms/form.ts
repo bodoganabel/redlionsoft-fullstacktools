@@ -6,6 +6,7 @@ export interface IFormContext {
   validators: Writable<any>;
   inputNodes: HTMLElement[];
   validateAll: () => boolean;
+  touchAll: () => void;
 }
 
 export function createFormContext() {
@@ -20,10 +21,26 @@ export function createFormContext() {
     validators,
     inputNodes,
     validateAll: () => false,
+    touchAll: () => {},
   };
+
   formContext.validateAll = () => {
     return validateAll(formContext);
   };
+
+  formContext.touchAll = () => {
+    const touchedFields: Record<string, boolean> = {};
+    inputNodes.forEach((node) => {
+      const name = node.getAttribute("name");
+      if (name) {
+        touchedFields[name] = true;
+        // Trigger validation for this field
+        validate(name, getNodeValue(node), formContext);
+      }
+    });
+    touched.set(touchedFields);
+  };
+
   return formContext;
 }
 
@@ -35,6 +52,7 @@ export function validateAll(formContext: IFormContext) {
     const name = node.getAttribute("name");
     const value = getNodeValue(node);
     if (name) {
+      console.log("name:", name);
       if (!validate(name, value, formContext)) {
         allValid = false;
       }
