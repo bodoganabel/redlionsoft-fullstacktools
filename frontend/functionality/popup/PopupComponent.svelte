@@ -39,8 +39,14 @@
       isOutsideClickClose &&
       (e.target as HTMLElement).classList.contains("popup-overlay")
     ) {
+      e.stopPropagation();
       removePopup();
     }
+  };
+
+  const handleClose = (e: MouseEvent) => {
+    e.stopPropagation();
+    removePopup();
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -62,7 +68,7 @@
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div
   class="popup-overlay fixed inset-0 bg-surface-500/50 flex items-center justify-center z-50"
-  on:click={handleOutsideClick}
+  on:click|stopPropagation={handleOutsideClick}
 >
   <div
     class="popup card variant-filled-surface max-w-lg w-full mx-auto my-8 flex flex-col"
@@ -72,7 +78,7 @@
       class="card-header flex justify-between items-center p-4 bg-inherit border-b border-surface-500/30"
     >
       <h2 class="h3">{@html title}</h2>
-      <button class="btn-icon variant-ghost-surface" on:click={removePopup}>✕</button>
+      <button class="btn-icon variant-ghost-surface" on:click|stopPropagation={handleClose}>✕</button>
     </header>
 
     <div class="flex-1 overflow-y-auto p-4">
@@ -90,10 +96,10 @@
         class="card-footer flex justify-end p-4 bg-inherit border-t border-surface-500/30"
       >
         {#if onClose !== undefined}
-          <button class="btn variant-ghost-surface" on:click={removePopup}>{@html closeMessage}</button>
+          <button class="btn variant-ghost-surface" on:click|stopPropagation={handleClose}>{@html closeMessage}</button>
         {/if}
         {#if onAccept !== undefined}
-          <button class="btn variant-filled-primary ml-2" on:click={acceptPopup}>{@html acceptMessage}</button>
+          <button class="btn variant-filled-primary ml-2" on:click|stopPropagation={acceptPopup}>{@html acceptMessage}</button>
         {/if}
       </footer>
     {/if}
