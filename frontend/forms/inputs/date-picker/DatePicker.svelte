@@ -23,7 +23,7 @@
   ];
 
   export let initialDate: DateTime = DateTime.now();
-  let selectedDate: DateTime = initialDate;
+  export let selectedDate: DateTime = initialDate;
   export let onSelect: (date: DateTime) => void = () => {};
   export let minDate: DateTime | undefined = undefined;
 
