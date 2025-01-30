@@ -4,37 +4,52 @@ import { EFilterOperator } from "../../frontend/ui/filter/filter.types";
 // Creating Filter Queries for datatables
 export class FilterService {
   static createMongoFilter(
-    filters: { field: string; operator: EFilterOperator; value: string }[]
+    filters: { field: string; operator: EFilterOperator; value: string }[],
+    allFields: string[]
   ): Filter<any> | {} {
+    console.log("createMongoFilter called with filters:", filters);
+    console.log("allFields:", allFields);
+
     const validFilters = filters.filter((f) => f.operator && f.value);
-    if (!validFilters.length) return {};
+    if (!validFilters.length) {
+      console.log("No valid filters found.");
+      return {};
+    }
 
     const conditions = validFilters
-      .map((filter) => {
+      .flatMap((filter) => {
         const { field, operator, value } = filter;
 
-        switch (operator) {
-          case EFilterOperator.contains:
-            return { [field]: { $regex: value, $options: "i" } };
-          case EFilterOperator.is:
-            return { [field]: value };
-          case EFilterOperator.is_not:
-            return { [field]: { $ne: value } };
-          case EFilterOperator.greater_than:
-            return { [field]: { $gt: value } };
-          case EFilterOperator.less_than:
-            return { [field]: { $lt: value } };
-          case EFilterOperator.between:
-            const [min, max] = value.split(",").map((v) => v.trim());
-            return { [field]: { $gte: min, $lte: max } };
-          case EFilterOperator.has_any_value:
-            return { [field]: { $exists: true, $ne: null } };
-          default:
-            return null;
-        }
+        const targetFields = field === "*" ? allFields : [field];
+
+        return targetFields.map((targetField) => {
+          switch (operator) {
+            case EFilterOperator.contains:
+              return { [targetField]: { $regex: value, $options: "i" } };
+            case EFilterOperator.is:
+              return { [targetField]: value };
+            case EFilterOperator.is_not:
+              return { [targetField]: { $ne: value } };
+            case EFilterOperator.greater_than:
+              return { [targetField]: { $gt: value } };
+            case EFilterOperator.less_than:
+              return { [targetField]: { $lt: value } };
+            case EFilterOperator.between:
+              const [min, max] = value.split(",").map((v) => v.trim());
+              return { [targetField]: { $gte: min, $lte: max } };
+            case EFilterOperator.has_any_value:
+              return { [targetField]: { $exists: true, $ne: null } };
+            default:
+              console.error("Unknown operator:", operator);
+              return null;
+          }
+        });
       })
       .filter(Boolean);
 
-    return conditions.length ? { $and: conditions } : {};
+    const query = conditions.length ? { $or: conditions } : {};
+    console.log("MongoDB Query:", query);
+
+    return query;
   }
 }
