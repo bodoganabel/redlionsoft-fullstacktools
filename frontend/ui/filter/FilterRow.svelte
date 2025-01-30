@@ -16,6 +16,9 @@
 
   const debouncedUpdate = debounce(onUpdate, 500);
 
+  console.log("filter.field:");
+  console.log(filter.field);
+
   onDestroy(() => {
     debouncedUpdate.clear?.();
   });
@@ -27,7 +30,7 @@
     on:change={onUpdate}
     class="input-small p-2 border border-slate-200 rounded-lg bg-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none"
   >
-    <option value="">Any field</option>
+    <option value="*">Any field</option>
     {#each fields as field}
       <option value={field.value}>{field.label}</option>
     {/each}

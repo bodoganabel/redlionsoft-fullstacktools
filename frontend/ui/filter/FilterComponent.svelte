@@ -11,7 +11,7 @@
   import FilterActions from "./FilterActions.svelte";
 
   export let activeFilters: TFilters = [
-    { field: "", operator: EFilterOperator.contains, value: "" },
+    { field: "*", operator: EFilterOperator.contains, value: "" },
   ];
   export let templates: TTemplate[];
   export let onSelect: (name: string) => Promise<void>;
@@ -29,14 +29,14 @@
   export function addFilter() {
     activeFilters = [
       ...activeFilters,
-      { field: "", operator: EFilterOperator.contains, value: "" },
+      { field: "*", operator: EFilterOperator.contains, value: "" },
     ];
   }
 
   export function removeFilter(index: number) {
     if (activeFilters.length === 1) {
       activeFilters = [
-        { field: "", operator: EFilterOperator.contains, value: "" },
+        { field: "*", operator: EFilterOperator.contains, value: "" },
       ];
     } else {
       activeFilters = activeFilters.filter(
@@ -52,14 +52,14 @@
 
   export function clearFilters() {
     activeFilters = [
-      { field: "", operator: EFilterOperator.contains, value: "" },
+      { field: "*", operator: EFilterOperator.contains, value: "" },
     ];
     onFilterChange(activeFilters);
   }
 
   $: showClearButton =
     activeFilters.length > 1 ||
-    activeFilters.some((filter) => filter.field !== "" || filter.value !== "");
+    activeFilters.some((filter) => filter.field !== "*" || filter.value !== "");
 </script>
 
 <div class="p-4 card shadow-md">
