@@ -5,7 +5,7 @@ import { EFilterOperator } from "../../frontend/ui/filter/filter.types";
 export class FilterService {
   static createMongoFilter(
     filters: { field: string; operator: EFilterOperator; value: string }[]
-  ): Filter<any> {
+  ): Filter<any> | {} {
     const validFilters = filters.filter((f) => f.operator && f.value);
     if (!validFilters.length) return {};
 
