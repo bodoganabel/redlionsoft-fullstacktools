@@ -29,7 +29,9 @@ export class FilterService {
             case EFilterOperator.is:
               return { [targetField]: value };
             case EFilterOperator.is_not:
-              return { [targetField]: { $ne: value } };
+              return field === "*"
+                ? { $nor: targetFields.map((tf) => ({ [tf]: value })) }
+                : { [targetField]: { $ne: value } };
             case EFilterOperator.greater_than:
               return { [targetField]: { $gt: value } };
             case EFilterOperator.less_than:
