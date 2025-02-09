@@ -29,7 +29,7 @@
           await onSave(templateName);
         }
       },
-      initialValue: "",
+      value: "",
       id: "save-template-input",
       message: "Enter template name",
       isSaveClose: true,
