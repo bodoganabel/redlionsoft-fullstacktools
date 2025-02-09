@@ -32,7 +32,7 @@ export const popupClose = (id: string) => {
 interface IPopupInputProps {
   title?: string;
   onSave?: (value: string) => Promise<void> | void;
-  initialValue?: string;
+  value?: string;
   id?: string;
   message?: string;
   isSaveClose?: boolean;
@@ -48,7 +48,7 @@ export const popupInput = (props: IPopupInputProps) => {
     saveButtonTitle: "Save",
     onSave: (value: string) => {},
     title: "",
-    initialValue: "",
+    value: "",
     isTextarea: false,
   };
   const combinedProps: IPopupInputProps = { ...defaultProps, ...props };

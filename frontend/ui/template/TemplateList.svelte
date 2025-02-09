@@ -85,7 +85,7 @@
       title: "Rename Template",
       onSave: async (newName: string) => {
         if (newName === templateName) {
-          return {};
+          return;
         }
 
         const existingTemplate = templates.find(
@@ -107,7 +107,7 @@
           await onRename(templateName, newName);
         }
       },
-      initialValue: templateName,
+      value: templateName,
       id: `rename-template-${templateName}`,
       message: "Enter new name",
       isSaveClose: true,
