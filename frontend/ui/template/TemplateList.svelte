@@ -81,9 +81,9 @@
   }
 
   function handleRename(templateName: string) {
-    popupInput(
-      "Rename Template",
-      async (newName: string) => {
+    popupInput({
+      title: "Rename Template",
+      onSave: async (newName: string) => {
         if (newName === templateName) {
           return {};
         }
@@ -106,16 +106,13 @@
         } else {
           await onRename(templateName, newName);
         }
-        return {};
       },
-      templateName,
-      {
-        id: `rename-template-${templateName}`,
-        message: "Enter new name",
-        isSaveClose: true,
-        saveButtonTitle: "Rename",
-      }
-    );
+      initialValue: templateName,
+      id: `rename-template-${templateName}`,
+      message: "Enter new name",
+      isSaveClose: true,
+      saveButtonTitle: "Rename",
+    });
   }
 </script>
 

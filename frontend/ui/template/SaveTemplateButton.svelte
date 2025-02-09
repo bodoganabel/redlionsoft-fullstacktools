@@ -6,9 +6,9 @@
   export let onSave: (name: string) => Promise<void>;
 
   async function handleSave() {
-    popupInput(
-      "Save Template",
-      async (templateName: string) => {
+    popupInput({
+      title: "Save Template",
+      onSave: async (templateName: string) => {
         const existingTemplate = templates.find(
           (template) => template.name === templateName
         );
@@ -28,16 +28,13 @@
         } else {
           await onSave(templateName);
         }
-        return {};
       },
-      "",
-      {
-        id: "save-template-input",
-        message: "Enter template name",
-        isSaveClose: true,
-        saveButtonTitle: "Save",
-      }
-    );
+      initialValue: "",
+      id: "save-template-input",
+      message: "Enter template name",
+      isSaveClose: true,
+      saveButtonTitle: "Save",
+    });
   }
 </script>
 

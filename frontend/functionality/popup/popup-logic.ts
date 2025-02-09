@@ -29,35 +29,41 @@ export const popupClose = (id: string) => {
   popupStore.update((popups) => popups.filter((popup) => popup.id !== id));
 };
 
-export const popupInput = (
-  title: string,
-  onSave: (newValue: string) => {},
-  initialValue = "",
-  props: {
-    id: string;
-    message?: string;
-    isSaveClose: boolean;
-    saveButtonTitle: string;
-  } = {
+interface IPopupInputProps {
+  title?: string;
+  onSave?: (value: string) => Promise<void> | void;
+  initialValue?: string;
+  id?: string;
+  message?: string;
+  isSaveClose?: boolean;
+  saveButtonTitle?: string;
+  isTextarea?: boolean;
+}
+
+export const popupInput = (props: IPopupInputProps) => {
+  const defaultProps: Required<IPopupInputProps> = {
     id: "popup-input",
-    message: undefined,
-    isSaveClose: true,
+    message: "",
+    isSaveClose: false,
     saveButtonTitle: "Save",
-  }
-) => {
-  const { id, message, isSaveClose, saveButtonTitle } = props;
+    onSave: (value: string) => {},
+    title: "",
+    initialValue: "",
+    isTextarea: false,
+  };
+  const combinedProps: IPopupInputProps = { ...defaultProps, ...props };
 
   popup({
-    id,
-    title,
-    message,
+    id: combinedProps.id,
+    title: combinedProps.title,
+    message: combinedProps.message,
     component: PopupInputModal,
     componentProps: {
-      value: initialValue,
-      onSave,
-      id,
-      isSaveClose,
-      saveButtonTitle,
+      value: combinedProps.initialValue,
+      onSave: combinedProps.onSave,
+      id: combinedProps.id,
+      isSaveClose: combinedProps.isSaveClose,
+      saveButtonTitle: combinedProps.saveButtonTitle,
     },
   });
 };
