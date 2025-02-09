@@ -16,9 +16,16 @@
 
   onMount(() => {
     if (typeof window === undefined) return;
+
     window.addEventListener("keyup", (event) => {
-      if (event.key === "Enter") {
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
         onClick();
+        return;
+      }
+
+      if (!isTextarea && event.key === "Enter") {
+        onClick();
+        return;
       }
     });
 

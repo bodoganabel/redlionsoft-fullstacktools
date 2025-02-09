@@ -44,7 +44,7 @@ export const popupInput = (props: IPopupInputProps) => {
   const defaultProps: Required<IPopupInputProps> = {
     id: "popup-input",
     message: "",
-    isSaveClose: false,
+    isSaveClose: true,
     saveButtonTitle: "Save",
     onSave: (value: string) => {},
     title: "",
