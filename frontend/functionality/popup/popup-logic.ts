@@ -58,12 +58,6 @@ export const popupInput = (props: IPopupInputProps) => {
     title: combinedProps.title,
     message: combinedProps.message,
     component: PopupInputModal,
-    componentProps: {
-      value: combinedProps.initialValue,
-      onSave: combinedProps.onSave,
-      id: combinedProps.id,
-      isSaveClose: combinedProps.isSaveClose,
-      saveButtonTitle: combinedProps.saveButtonTitle,
-    },
+    componentProps: combinedProps,
   });
 };
