@@ -13,11 +13,15 @@
 
   let inputElement: HTMLInputElement;
   let textareaElement: HTMLTextAreaElement;
+  let textareaRef: HTMLTextAreaElement;
 
   onMount(() => {
     if (typeof window === undefined) return;
 
     window.addEventListener("keyup", (event) => {
+      console.log("event:");
+      console.log(event);
+
       if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
         onClick();
         return;
@@ -38,6 +42,24 @@
     if (textareaElement) {
       textareaElement.focus();
       textareaElement.setSelectionRange(value.length, value.length);
+    }
+
+    // Add textarea-specific keyboard handler
+    if (textareaElement) {
+      textareaElement.addEventListener(
+        "keydown",
+        (event: {
+          metaKey: any;
+          ctrlKey: any;
+          key: string;
+          preventDefault: () => void;
+        }) => {
+          if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+            event.preventDefault();
+            onClick();
+          }
+        }
+      );
     }
   });
 
