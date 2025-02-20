@@ -62,7 +62,7 @@
     activeFilters.some((filter) => filter.field !== "*" || filter.value !== "");
 </script>
 
-<div class="p-4 card shadow-md">
+<div class="p-4 card">
   <FilterHeader {templates} {onSelect} />
 
   <div class="flex flex-col gap-3">
