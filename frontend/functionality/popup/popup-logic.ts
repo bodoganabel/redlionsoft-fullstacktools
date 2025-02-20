@@ -1,10 +1,10 @@
 // src/routes/popups/popup-logic.ts
-import { writable } from "svelte/store";
+import { get, writable } from "svelte/store";
 import type { ComponentType, SvelteComponent } from "svelte";
 import PopupInputModal from "./PopupInputModal.svelte";
 
 export interface IPopup {
-  id?: string;
+  id: string;
   title?: string;
   message?: string;
   component?: ComponentType<SvelteComponent>; // Typescript fails when passing svelte component. Use any svelte component here.
@@ -14,13 +14,14 @@ export interface IPopup {
   onAccept?: () => void;
   acceptMessage?: string;
   closeMessage?: string;
+  isEnterAccept?: boolean;
 }
 
 export const popupStore = writable<IPopup[]>([]);
 
 export const popup = (popup: IPopup) => {
   const id = popup.id === undefined ? crypto.randomUUID() : popup.id;
-  const newPopup = { id, ...popup };
+  const newPopup = { ...popup, id };
   popupStore.update((popups) => [...popups, newPopup]);
   return id;
 };
@@ -38,6 +39,7 @@ interface IPopupInputProps {
   isSaveClose?: boolean;
   saveButtonTitle?: string;
   isTextarea?: boolean;
+  isEnterAccept?: boolean;
 }
 
 export const popupInput = (props: IPopupInputProps) => {
@@ -50,14 +52,20 @@ export const popupInput = (props: IPopupInputProps) => {
     title: "",
     value: "",
     isTextarea: false,
+    isEnterAccept: false, // PopupInputModal should handle onEnter events instead of default popup
   };
-  const combinedProps: IPopupInputProps = { ...defaultProps, ...props };
+
+  const combinedProps: IPopupInputProps = {
+    ...defaultProps,
+    ...props,
+  };
 
   popup({
-    id: combinedProps.id,
+    id: combinedProps.id === undefined ? "popup-input" : combinedProps.id,
     title: combinedProps.title,
     message: combinedProps.message,
     component: PopupInputModal,
     componentProps: combinedProps,
+    isEnterAccept: combinedProps.isEnterAccept,
   });
 };

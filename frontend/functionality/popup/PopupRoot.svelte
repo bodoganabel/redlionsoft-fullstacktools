@@ -26,6 +26,7 @@
         onAccept={popup.onAccept}
         acceptMessage={popup.acceptMessage}
         closeMessage={popup.closeMessage}
+        isEnterAccepts={popup.isEnterAccept}
       />
     {/each}
   </div>

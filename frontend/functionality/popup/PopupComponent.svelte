@@ -16,6 +16,7 @@
   export let onAccept: (() => void) | undefined;
   export let acceptMessage: string = "Ok";
   export let closeMessage: string = "Cancel";
+  export let isEnterAccepts: boolean = true;
 
   console.log("componentProps:");
   console.log(componentProps);
@@ -52,6 +53,10 @@
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === "Escape" || e.key === "Esc") {
       removePopup();
+    } else if (e.key === "Enter" && isEnterAccepts) {
+      console.log("default component accepted enter");
+      acceptPopup();
+      e.preventDefault();
     }
   };
 
@@ -78,7 +83,10 @@
       class="card-header flex justify-between items-center p-4 bg-inherit border-b border-surface-500/30"
     >
       <h2 class="h3">{@html title}</h2>
-      <button class="btn-icon variant-ghost-surface" on:click|stopPropagation={handleClose}>✕</button>
+      <button
+        class="btn-icon variant-ghost-surface"
+        on:click|stopPropagation={handleClose}>✕</button
+      >
     </header>
 
     <div class="flex-1 overflow-y-auto p-4">
@@ -96,10 +104,16 @@
         class="card-footer flex justify-end p-4 bg-inherit border-t border-surface-500/30"
       >
         {#if onClose !== undefined}
-          <button class="btn variant-ghost-surface" on:click|stopPropagation={handleClose}>{@html closeMessage}</button>
+          <button
+            class="btn variant-ghost-surface"
+            on:click|stopPropagation={handleClose}>{@html closeMessage}</button
+          >
         {/if}
         {#if onAccept !== undefined}
-          <button class="btn variant-filled-primary ml-2" on:click|stopPropagation={acceptPopup}>{@html acceptMessage}</button>
+          <button
+            class="btn variant-filled-primary ml-2"
+            on:click|stopPropagation={acceptPopup}>{@html acceptMessage}</button
+          >
         {/if}
       </footer>
     {/if}

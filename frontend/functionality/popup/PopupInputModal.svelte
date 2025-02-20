@@ -19,9 +19,6 @@
     if (typeof window === undefined) return;
 
     window.addEventListener("keyup", (event) => {
-      console.log("event:");
-      console.log(event);
-
       if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
         onClick();
         return;
