@@ -4,7 +4,7 @@ import type { ComponentType, SvelteComponent } from "svelte";
 import PopupInputModal from "./PopupInputModal.svelte";
 
 export interface IPopup {
-  id: string;
+  id?: string;
   title?: string;
   message?: string;
   component?: ComponentType<SvelteComponent>; // Typescript fails when passing svelte component. Use any svelte component here.
