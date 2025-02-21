@@ -65,11 +65,11 @@ export class UCrudResourceClient<TResourceData> {
 
   async renameResource(oldName: string, newName: string): Promise<boolean> {
     const response = await fetch(this.baseUrl);
-    const templates = await response.json();
-    const oldTemplate = templates.find(
-      (template: any) => template.resourceId === oldName
+    const resources = await response.json();
+    const oldResource = resources.find(
+      (resource: any) => resource.resourceId === oldName
     );
-    if (!oldTemplate) {
+    if (!oldResource) {
       return false;
     }
 
@@ -80,15 +80,15 @@ export class UCrudResourceClient<TResourceData> {
         resourceId: newName,
         data: {
           name: newName,
-          filters: oldTemplate.data.filters,
-          isFavorite: oldTemplate.data.isFavorite,
+          filters: oldResource.data.filters,
+          isFavorite: oldResource.data.isFavorite,
         },
-        order: oldTemplate.order,
+        order: oldResource.order,
       }),
     });
 
     if (!saveResponse.ok) {
-      toastError("Failed to rename template");
+      toastError("Failed to rename resource");
       return false;
     }
 
@@ -99,11 +99,11 @@ export class UCrudResourceClient<TResourceData> {
     });
 
     if (!deleteResponse.ok) {
-      toastError("Failed to delete old template");
+      toastError("Failed to delete old resource");
       return false;
     }
 
-    toastSuccess("Template renamed successfully");
+    toastSuccess("Resource renamed successfully");
     return true;
   }
 
@@ -119,11 +119,11 @@ export class UCrudResourceClient<TResourceData> {
     if (response.ok) {
       return true;
     }
-    toastError("Failed to reorder templates");
+    toastError("Failed to reorder resources");
     return false;
   }
 
-  async handleTemplateReorder(
+  async handleResourceReorder(
     resourceId: string,
     newIndex: number
   ): Promise<boolean> {

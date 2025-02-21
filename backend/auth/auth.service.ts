@@ -12,10 +12,10 @@ import type { TUserServerRls, TUserClientRls } from "./user.types";
 Good example: signaltuzfal /auth/login/+server.ts 2024.10.25 */
 
 export class AuthService<
-  ERoles,
-  EPermissions,
-  Metadata_UserServer,
-  Metadata_UserClient
+  ERoles = any,
+  EPermissions = any,
+  Metadata_UserServer = any,
+  Metadata_UserClient = any
 > {
   private jwt: JWT;
   private usersCollection;
