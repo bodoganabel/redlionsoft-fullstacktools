@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { TemplateSchema, TTemplate } from "../template/template.types";
-import { BaseDocumentSchema } from "../../../backend/user-crud/types";
+import { UCrudResourceBaseSchema } from "../../../backend/user-crud/types";
 
 export type TFilterOperator = {
   value: EFilterOperator;
@@ -22,32 +21,26 @@ export enum EFilterOperator {
   has_any_value = "has_any_value",
 }
 
-export interface IFilter {
-  field: string;
-  operator: EFilterOperator;
-  value: string;
-}
-
-export type TFilters = IFilter[];
-
 export const FilterSchema = z.object({
   field: z.string(),
   operator: z.nativeEnum(EFilterOperator),
   value: z.string(),
 });
 
-export const FilterTemplateSchema = BaseDocumentSchema.extend({
-  ...TemplateSchema.shape,
+export type TFilter = z.infer<typeof FilterSchema>;
+
+// Template data schema (what goes inside the data property)
+export const FilterTemplateDataSchema = z.object({
+  isFavorite: z.boolean().optional(),
   filters: z.array(FilterSchema),
 });
+export type TFilterTemplateData = z.infer<typeof FilterTemplateDataSchema>;
 
-export type TFilterTemplate = TTemplate & {
-  filters: TFilters;
-  _id?: any;
-  userId?: any;
-  resourceId: string;
-  createdAt: string;
-  updatedAt?: string;
-  changeHistory?: {}[];
-  order?: number;
-};
+// Full document schema including the UserCrud wrapper
+export const FilterTemplateResourceSchema = UCrudResourceBaseSchema.extend({
+  data: FilterTemplateDataSchema,
+});
+
+export type TFilterTemplateResource = z.infer<
+  typeof FilterTemplateResourceSchema
+>;

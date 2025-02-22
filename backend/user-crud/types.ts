@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const BaseDocumentSchema = z.object({
+export const UCrudResourceBaseSchema = z.object({
   _id: z.any().optional(),
   userId: z.any(),
   resourceId: z.string(),
@@ -10,7 +10,7 @@ export const BaseDocumentSchema = z.object({
   order: z.number().optional(), // Add order field to track position
 });
 
-export type BaseDocument = z.infer<typeof BaseDocumentSchema>;
+export type BaseDocument = z.infer<typeof UCrudResourceBaseSchema>;
 
 export interface ChangeHistoryEntry {
   timestamp: string;

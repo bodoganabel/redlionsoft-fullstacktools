@@ -3,18 +3,18 @@
     EFilterOperator,
     type TFilterField,
     type TFilterOperator,
-    type TFilters,
+    type TFilter,
   } from "./filter.types";
   import type { TTemplate } from "./../template/template.types";
   import FilterHeader from "./FilterHeader.svelte";
   import FilterRow from "./FilterRow.svelte";
   import FilterActions from "./FilterActions.svelte";
 
-  export let activeFilters: TFilters = [
+  export let activeFilters: TFilter[] = [
     { field: "*", operator: EFilterOperator.contains, value: "" },
   ];
   export let templates: TTemplate[];
-  export let onSelect: (name: string) => Promise<void>;
+  export let onSelect: (templateName: string) => Promise<void>;
   export let onRename: (oldName: string, newName: string) => Promise<void>;
   export let onDelete: (name: string) => Promise<void>;
   export let onSave: (name: string) => Promise<void>;
@@ -22,18 +22,24 @@
   export let onReorder: (
     event: CustomEvent<{ resourceId: string; newIndex: number }>
   ) => Promise<void>;
-  export let operators: TFilterOperator[];
+  export let operators: TFilterOperator[] = [
+    { value: EFilterOperator.contains, label: "contains" },
+    { value: EFilterOperator.is, label: "is" },
+    { value: EFilterOperator.is_not, label: "is not" },
+    { value: EFilterOperator.greater_than, label: "is greater than" },
+    { value: EFilterOperator.less_than, label: "is less than" },
+  ];
   export let fields: TFilterField[];
-  export let onFilterChange: (filters: TFilters) => void;
+  export let onFilterChange: (filters: TFilter[]) => void;
 
-  export function addFilter() {
+  function addFilter() {
     activeFilters = [
       ...activeFilters,
       { field: "*", operator: EFilterOperator.contains, value: "" },
     ];
   }
 
-  export function removeFilter(index: number) {
+  function removeFilter(index: number) {
     if (activeFilters.length === 1) {
       activeFilters = [
         { field: "*", operator: EFilterOperator.contains, value: "" },
@@ -46,11 +52,11 @@
     onFilterChange(activeFilters);
   }
 
-  export function updateFilter() {
+  function updateFilter() {
     onFilterChange(activeFilters);
   }
 
-  export function clearFilters() {
+  function clearFilters() {
     activeFilters = [
       { field: "*", operator: EFilterOperator.contains, value: "" },
     ];

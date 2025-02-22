@@ -14,20 +14,23 @@ import { devOnly } from "../../common/utilities/general";
 export class UserCrudService {
   protected collection: Collection;
   private isStoreChangeHistory?: boolean;
-  private dataSchema: z.ZodSchema<BaseDocument>;
+  private dataSchema: z.ZodSchema;
   private authService: AuthService<any, any, any, any>;
 
   constructor(
     collection: Collection,
     authService: AuthService<any, any, any, any>,
     options: {
-      dataSchema: z.ZodSchema<BaseDocument>;
+      dataSchema: z.ZodSchema;
       isStoreChangeHistory?: boolean;
     }
   ) {
     this.collection = collection;
     this.authService = authService;
     this.dataSchema = options.dataSchema;
+
+    console.log("this.dataSchema:");
+    console.log(this.dataSchema);
     this.isStoreChangeHistory = options.isStoreChangeHistory;
   }
 
@@ -48,7 +51,8 @@ export class UserCrudService {
       devOnly(() => {
         console.error("Validation error:", error);
         if (error instanceof z.ZodError) {
-          console.error("Zod validation errors:", error.errors);
+          console.error("Zod validation errors:");
+          console.error(error.format());
         }
       });
       return null;
@@ -67,6 +71,8 @@ export class UserCrudService {
   }
 
   async create(request: Request, cookies: Cookies): Promise<Response> {
+    console.log("UCRUD create");
+
     try {
       const user = await this.authService.getServerUserFromCookies(cookies);
       if (!user) {
@@ -157,6 +163,8 @@ export class UserCrudService {
   }
 
   async update(request: Request, cookies: Cookies): Promise<Response> {
+    console.log("UCRUD update");
+
     try {
       const user = await this.authService.getServerUserFromCookies(cookies);
       if (!user) {
@@ -164,6 +172,9 @@ export class UserCrudService {
       }
 
       const data = await request.json();
+
+      console.log("data :");
+      console.log(data);
 
       if (!data.resourceId?.trim()) {
         return json({ error: "Resource ID cannot be empty" }, { status: 400 });

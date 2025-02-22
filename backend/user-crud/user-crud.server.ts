@@ -1,6 +1,6 @@
 import { json } from "@sveltejs/kit";
 import type { AuthService } from "../auth/auth.service";
-import { UserCrudService } from "./UserCrudService";
+import { UserCrudService } from "./user-crud.server.service";
 import { Database } from "../database";
 import type { z } from "zod";
 
@@ -92,6 +92,7 @@ export const createUCrudEndpoint = async (
     GET,
     POST,
     PATCH,
+    PUT,
     DELETE,
   };
 };

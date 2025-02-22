@@ -6,7 +6,8 @@ import { popup } from "../../frontend/functionality/popup/popup-logic";
 
 export interface TResource<TResourceData> {
   data: TResourceData;
-  _id: string;
+  _id?: string;
+  resourceId: string;
   order?: number;
   [key: string]: any;
 }
@@ -31,36 +32,36 @@ export class UCrudResourceClient<TResourceData> {
     return [];
   }
 
-  async saveResource(resourceName: string, data: any): Promise<boolean> {
-    const response = await fetch(this.baseUrl);
-    const existingResources = await response.json();
+  async saveResource(
+    resourceName: string,
+    data: any
+  ): Promise<TResource<TResourceData> | null> {
+    const existingResources = await this.loadResources();
     const highestOrder = Math.max(
       ...existingResources.map((resource: any) => resource.order ?? 0),
       0
     );
 
     const newResource: TResource<TResourceData> = {
-      _id: resourceName,
       data: data,
       resourceId: resourceName,
       createdAt: new Date().toISOString(),
     };
 
+    console.log("newResource:");
+    console.log(newResource);
+
     const saveResponse = await fetch(this.baseUrl, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        resourceId: resourceName,
-        data: newResource,
-        order: highestOrder + 1,
-      }),
+      body: JSON.stringify({ ...newResource }),
     });
 
     if (saveResponse.ok) {
       toastSuccess("Resource saved successfully");
-      return true;
+      return newResource;
     }
-    return false;
+    return null;
   }
 
   async renameResource(oldName: string, newName: string): Promise<boolean> {
