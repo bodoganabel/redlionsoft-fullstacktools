@@ -190,7 +190,7 @@ export class UCrudResourceClient<TResourceData> {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        resourceId: resource._id,
+        resourceId: resource.resourceId,
         data: resource.data,
       }),
     });

@@ -6,10 +6,13 @@
 
   export let templates: TFilterTemplateResource[] = [];
   export let onSelect: (template: TFilterTemplateResource) => Promise<void>;
-  export let onRename: (oldName: string, newName: string) => Promise<void>;
+  export let onRename: (
+    template: TFilterTemplateResource,
+    newName: string
+  ) => Promise<void>;
   export let onDelete: (name: string) => Promise<void>;
   export let onSave: (name: string) => Promise<void>;
-  export let onFavorite: (name: string) => Promise<void>;
+  export let onFavorite: (template: TFilterTemplateResource) => Promise<void>;
   export let onReorder: (
     event: CustomEvent<{ resourceId: string; newIndex: number }>
   ) => Promise<void>;
@@ -80,11 +83,11 @@
     };
   }
 
-  async function handleRename(resourceId: string) {
+  async function handleRename(template: TFilterTemplateResource) {
     popupInput({
       title: "Rename Template",
       onSave: async (newName: string) => {
-        if (newName === resourceId) {
+        if (newName === template.resourceId) {
           return;
         }
 
@@ -98,17 +101,17 @@
             message:
               "A template with this name already exists. Do you want to override it?",
             onAccept: async () => {
-              await onRename(resourceId, newName);
+              await onRename(template, newName);
             },
             acceptMessage: "Override",
             closeMessage: "Cancel",
           });
         } else {
-          await onRename(resourceId, newName);
+          await onRename(template, newName);
         }
       },
-      value: resourceId,
-      id: `rename-template-${resourceId}`,
+      value: template.resourceId,
+      id: `rename-template-${template.resourceId}`,
       message: "Enter new name",
       isSaveClose: true,
       saveButtonTitle: "Rename",

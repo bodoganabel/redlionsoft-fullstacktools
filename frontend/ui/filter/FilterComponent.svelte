@@ -15,10 +15,13 @@
   ];
   export let templates: TFilterTemplateResource[];
   export let onSelect: (template: TFilterTemplateResource) => Promise<void>;
-  export let onRename: (oldName: string, newName: string) => Promise<void>;
+  export let onRename: (
+    template: TFilterTemplateResource,
+    newName: string
+  ) => Promise<void>;
   export let onDelete: (name: string) => Promise<void>;
   export let onSave: (name: string) => Promise<void>;
-  export let onFavorite: (name: string) => Promise<void>;
+  export let onFavorite: (template: TFilterTemplateResource) => Promise<void>;
   export let onReorder: (
     event: CustomEvent<{ resourceId: string; newIndex: number }>
   ) => Promise<void>;

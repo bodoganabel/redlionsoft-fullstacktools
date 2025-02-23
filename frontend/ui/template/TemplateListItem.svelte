@@ -6,9 +6,12 @@
 
   export let template: TFilterTemplateResource;
   export let onSelect: (template: TFilterTemplateResource) => Promise<void>;
-  export let onRename: (resourceId: string) => Promise<void>;
+  export let onRename: (
+    template: TFilterTemplateResource,
+    newName: string
+  ) => Promise<void>;
   export let onDelete: (resourceId: string) => Promise<void>;
-  export let onFavorite: (resourceId: string) => Promise<void>;
+  export let onFavorite: (template: TFilterTemplateResource) => Promise<void>;
   export let isDragging = false;
   export let isDraggedOver = false;
   export let isDraggingUp = false;
@@ -32,7 +35,7 @@
   on:drop={handleDrop}
 >
   <button
-    on:click={() => onFavorite(template.resourceId)}
+    on:click={() => onFavorite(template)}
     class="btn-icon w-5 h-5 {template.data.isFavorite
       ? ''
       : 'invisible group-hover:visible'} transition-none"
@@ -53,7 +56,7 @@
   </div>
 
   <button
-    on:click={() => onRename(template.resourceId)}
+    on:click={() => onRename(template, template.resourceId)}
     class="ml-1 btn-icon w-5 h-5 invisible group-hover:visible transition-none"
   >
     <IconEdit />
