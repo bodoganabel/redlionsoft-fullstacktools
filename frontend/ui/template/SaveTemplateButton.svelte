@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type { TTemplate } from "./template.types";
   import { popupInput, popup } from "../../functionality/popup/popup-logic";
+  import type { TFilterTemplateResource } from "../filter/filter.types";
 
-  export let templates: TTemplate[];
+  export let templates: TFilterTemplateResource[];
   export let onSave: (name: string) => Promise<void>;
 
   async function handleSave() {
@@ -10,7 +10,7 @@
       title: "Save Template",
       onSave: async (templateName: string) => {
         const existingTemplate = templates.find(
-          (template) => template.name === templateName
+          (template) => template.resourceId === templateName
         );
 
         if (existingTemplate) {

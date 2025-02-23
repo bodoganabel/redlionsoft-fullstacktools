@@ -1,11 +1,11 @@
 <script lang="ts">
   import { popup, popupInput } from "../../functionality/popup/popup-logic";
-  import type { TTemplate } from "./template.types";
   import SaveTemplateButton from "./SaveTemplateButton.svelte";
   import TemplateListItem from "./TemplateListItem.svelte";
+  import type { TFilterTemplateResource } from "../filter/filter.types";
 
-  export let templates: TTemplate[] = [];
-  export let onSelect: (name: string) => Promise<void>;
+  export let templates: TFilterTemplateResource[] = [];
+  export let onSelect: (template: TFilterTemplateResource) => Promise<void>;
   export let onRename: (oldName: string, newName: string) => Promise<void>;
   export let onDelete: (name: string) => Promise<void>;
   export let onSave: (name: string) => Promise<void>;
@@ -35,10 +35,10 @@
       if (draggedItem === templateName) return;
 
       const fromIndex = templates.findIndex(
-        (template) => template.name === draggedItem
+        (template) => template.resourceId === draggedItem
       );
       const toIndex = templates.findIndex(
-        (template) => template.name === templateName
+        (template) => template.resourceId === templateName
       );
 
       draggedOverItem = templateName;
@@ -57,10 +57,10 @@
       if (!draggedItem || draggedItem === templateName) return;
 
       const fromIndex = templates.findIndex(
-        (template) => template.name === draggedItem
+        (template) => template.resourceId === draggedItem
       );
       const toIndex = templates.findIndex(
-        (template) => template.name === templateName
+        (template) => template.resourceId === templateName
       );
 
       if (fromIndex !== -1 && toIndex !== -1) {
@@ -80,16 +80,16 @@
     };
   }
 
-  function handleRename(templateName: string) {
+  async function handleRename(resourceId: string) {
     popupInput({
       title: "Rename Template",
       onSave: async (newName: string) => {
-        if (newName === templateName) {
+        if (newName === resourceId) {
           return;
         }
 
         const existingTemplate = templates.find(
-          (template) => template.name === newName
+          (template) => template.resourceId === newName
         );
         if (existingTemplate) {
           popup({
@@ -98,17 +98,17 @@
             message:
               "A template with this name already exists. Do you want to override it?",
             onAccept: async () => {
-              await onRename(templateName, newName);
+              await onRename(resourceId, newName);
             },
             acceptMessage: "Override",
             closeMessage: "Cancel",
           });
         } else {
-          await onRename(templateName, newName);
+          await onRename(resourceId, newName);
         }
       },
-      value: templateName,
-      id: `rename-template-${templateName}`,
+      value: resourceId,
+      id: `rename-template-${resourceId}`,
       message: "Enter new name",
       isSaveClose: true,
       saveButtonTitle: "Rename",
@@ -126,13 +126,13 @@
       onRename={handleRename}
       {onDelete}
       {onFavorite}
-      isDragging={draggedItem === template.name}
-      isDraggedOver={draggedOverItem === template.name}
+      isDragging={draggedItem === template.resourceId}
+      isDraggedOver={draggedOverItem === template.resourceId}
       {isDraggingUp}
-      handleDragStart={handleDragStart(template.name)}
-      handleDragOver={handleDragOver(template.name)}
+      handleDragStart={handleDragStart(template.resourceId)}
+      handleDragOver={handleDragOver(template.resourceId)}
       {handleDragLeave}
-      handleDrop={handleDrop(template.name)}
+      handleDrop={handleDrop(template.resourceId)}
     />
   {/each}
 </div>

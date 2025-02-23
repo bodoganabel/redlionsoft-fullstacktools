@@ -4,8 +4,8 @@
     type TFilterField,
     type TFilterOperator,
     type TFilter,
+    type TFilterTemplateResource,
   } from "./filter.types";
-  import type { TTemplate } from "./../template/template.types";
   import FilterHeader from "./FilterHeader.svelte";
   import FilterRow from "./FilterRow.svelte";
   import FilterActions from "./FilterActions.svelte";
@@ -13,8 +13,8 @@
   export let activeFilters: TFilter[] = [
     { field: "*", operator: EFilterOperator.contains, value: "" },
   ];
-  export let templates: TTemplate[];
-  export let onSelect: (templateName: string) => Promise<void>;
+  export let templates: TFilterTemplateResource[];
+  export let onSelect: (template: TFilterTemplateResource) => Promise<void>;
   export let onRename: (oldName: string, newName: string) => Promise<void>;
   export let onDelete: (name: string) => Promise<void>;
   export let onSave: (name: string) => Promise<void>;

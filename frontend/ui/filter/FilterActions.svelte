@@ -2,12 +2,15 @@
   import IconRectangles from "./../../icons/IconRectangles.svelte";
   import TooltipContainer from "../../functionality/tooltip/TooltipContainer.svelte";
   import TemplateList from "./../template/TemplateList.svelte";
-  import type { TTemplate } from "./../template/template.types";
-  import { EFilterOperator, type TFilters } from "./filter.types";
+  import {
+    EFilterOperator,
+    type TFilter,
+    type TFilterTemplateResource,
+  } from "./filter.types";
 
-  export let templates: TTemplate[];
-  export let activeFilters: TFilters;
-  export let onSelect: (name: string) => Promise<void>;
+  export let templates: TFilterTemplateResource[];
+  export let activeFilters: TFilter[];
+  export let onSelect: (template: TFilterTemplateResource) => Promise<void>;
   export let onRename: (oldName: string, newName: string) => Promise<void>;
   export let onDelete: (name: string) => Promise<void>;
   export let onSave: (name: string) => Promise<void>;

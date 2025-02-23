@@ -1,4 +1,4 @@
-import { TFilterField } from "./filter.types";
+import type { TFilterField } from "./filter.types";
 /**
  * Recursively extracts all fields from a given object into an array of
  * TFilterField objects

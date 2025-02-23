@@ -3,16 +3,13 @@ import {
   toastSuccess,
 } from "../../../frontend/functionality/toast/toast-logic";
 import { popup } from "../../../frontend/functionality/popup/popup-logic";
-import type {
-  TFilter,
-  TFilterTemplateResource,
-} from "../../../frontend/ui/filter/filter.types";
+import type { TFilterTemplateResource } from "../../../frontend/ui/filter/filter.types";
 const API_BASE_URL = "/app/calendar/users/api/users-filter-templates";
 
 export async function loadTemplates(): Promise<TFilterTemplateResource[]> {
   const response = await fetch(API_BASE_URL);
   if (response.ok) {
-    const data = (await response.json()) as TFilterTemplateResource[];
+    const data = (await response.json()) as any[];
     return data.sort(
       (templateA, templateB) =>
         (templateA.order ?? Infinity) - (templateB.order ?? Infinity)
@@ -28,7 +25,9 @@ export async function saveTemplate(
   const response = await fetch(API_BASE_URL);
   const existingTemplates = await response.json();
   const highestOrder = Math.max(
-    ...existingTemplates.map((template: any) => template.order ?? 0),
+    ...existingTemplates.map(
+      (template: TFilterTemplateResource) => template.order ?? 0
+    ),
     0
   );
 
@@ -37,7 +36,7 @@ export async function saveTemplate(
     resourceId: templateName,
     data: {
       isFavorite: false,
-      filters: currentFilters.map((filter: TFilter) => ({
+      filters: currentFilters.map((filter: any) => ({
         field: filter.field,
         operator: filter.operator,
         value: filter.value,
@@ -182,9 +181,7 @@ export async function deleteTemplate(resourceId: string): Promise<boolean> {
   return !!confirmResult;
 }
 
-export async function favoriteTemplate(
-  template: TFilterTemplateResource
-): Promise<boolean> {
+export async function favoriteTemplate(template: any): Promise<boolean> {
   const response = await fetch(API_BASE_URL, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },

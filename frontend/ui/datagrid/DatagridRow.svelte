@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
   import { columnWidthStyle } from "./data-grid.utilities";
   import { EDataGridColumnTypes, type IColumnType } from "./data-grid.types";
 
@@ -9,8 +8,6 @@
   export let isChanged: boolean;
   export let onClickRow: (() => void) | undefined = undefined;
   export let handleRowChange: (keyPath: string, value: string) => void;
-
-  const dispatch = createEventDispatcher();
 
   // Utility function to get a nested value
   function getNestedValue(obj: any, path: string): any {

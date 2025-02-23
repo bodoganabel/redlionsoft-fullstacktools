@@ -2,13 +2,13 @@
   import IconEdit from "../../icons/IconEdit.svelte";
   import IconTrash from "../../icons/IconTrash.svelte";
   import IconDragHandle from "../../icons/IconDragHandle.svelte";
-  import type { TTemplate } from "./template.types";
+  import type { TFilterTemplateResource } from "../filter/filter.types";
 
-  export let template: TTemplate;
-  export let onSelect: (name: string) => Promise<void>;
-  export let onRename: (name: string) => void;
-  export let onDelete: (name: string) => Promise<void>;
-  export let onFavorite: (name: string) => Promise<void>;
+  export let template: TFilterTemplateResource;
+  export let onSelect: (template: TFilterTemplateResource) => Promise<void>;
+  export let onRename: (resourceId: string) => Promise<void>;
+  export let onDelete: (resourceId: string) => Promise<void>;
+  export let onFavorite: (resourceId: string) => Promise<void>;
   export let isDragging = false;
   export let isDraggedOver = false;
   export let isDraggingUp = false;
@@ -32,17 +32,17 @@
   on:drop={handleDrop}
 >
   <button
-    on:click={() => onFavorite(template.name)}
-    class="btn-icon w-5 h-5 {template.isFavorite
+    on:click={() => onFavorite(template.resourceId)}
+    class="btn-icon w-5 h-5 {template.data.isFavorite
       ? ''
       : 'invisible group-hover:visible'} transition-none"
   >
-    {template.isFavorite ? "★" : "☆"}
+    {template.data.isFavorite ? "★" : "☆"}
   </button>
 
-  <button on:click={() => onSelect(template.name)} class="w-full text-left">
+  <button on:click={() => onSelect(template)} class="w-full text-left">
     <div class="w-full text-left">
-      {template.name}
+      {template.resourceId}
     </div>
   </button>
 
@@ -53,14 +53,14 @@
   </div>
 
   <button
-    on:click={() => onRename(template.name)}
+    on:click={() => onRename(template.resourceId)}
     class="ml-1 btn-icon w-5 h-5 invisible group-hover:visible transition-none"
   >
     <IconEdit />
   </button>
 
   <button
-    on:click={() => onDelete(template.name)}
+    on:click={() => onDelete(template.resourceId)}
     class="ml-1 btn-icon w-5 h-5 invisible group-hover:visible transition-none"
   >
     <IconTrash />
