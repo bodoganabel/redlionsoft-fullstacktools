@@ -10,12 +10,18 @@
     template: TFilterTemplateResource,
     newName: string
   ) => Promise<void>;
-  export let onDelete: (name: string) => Promise<void>;
+  export let onDelete: (template: TFilterTemplateResource) => Promise<void>;
   export let onSave: (name: string) => Promise<void>;
   export let onFavorite: (template: TFilterTemplateResource) => Promise<void>;
   export let onReorder: (
     event: CustomEvent<{ resourceId: string; newIndex: number }>
   ) => Promise<void>;
+
+  $: {
+    templates = templates;
+    console.log("templates from tls:");
+    console.log(templates);
+  }
 
   let draggedItem: string | null = null;
   let draggedOverItem: string | null = null;

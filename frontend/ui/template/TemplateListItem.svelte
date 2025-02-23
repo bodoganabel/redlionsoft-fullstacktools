@@ -10,7 +10,7 @@
     template: TFilterTemplateResource,
     newName: string
   ) => Promise<void>;
-  export let onDelete: (resourceId: string) => Promise<void>;
+  export let onDelete: (template: TFilterTemplateResource) => Promise<void>;
   export let onFavorite: (template: TFilterTemplateResource) => Promise<void>;
   export let isDragging = false;
   export let isDraggedOver = false;
@@ -63,7 +63,7 @@
   </button>
 
   <button
-    on:click={() => onDelete(template.resourceId)}
+    on:click={() => onDelete(template)}
     class="ml-1 btn-icon w-5 h-5 invisible group-hover:visible transition-none"
   >
     <IconTrash />

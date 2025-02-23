@@ -3,14 +3,7 @@ import {
   toastSuccess,
 } from "../../frontend/functionality/toast/toast-logic";
 import { popup } from "../../frontend/functionality/popup/popup-logic";
-
-export interface TResource<TResourceData> {
-  data: TResourceData;
-  _id?: string;
-  resourceId: string;
-  order?: number;
-  [key: string]: any;
-}
+import type { TResource } from "./types";
 
 export class UCrudResourceClient<TResourceData> {
   private readonly baseUrl: string;
@@ -163,16 +156,20 @@ export class UCrudResourceClient<TResourceData> {
     return this.reorderResources(reorderedItems);
   }
 
-  async deleteResource(resourceId: string): Promise<boolean> {
-    const confirmResult = await popup({
+  async deleteResource(
+    resource: TResource<TResourceData>,
+    onConfirmDelete: () => void | Promise<void>
+  ): Promise<boolean> {
+    const confirmResult = popup({
       id: "confirm-delete-resource",
-      title: `Are you sure you want to delete ${resourceId}?`,
+      title: `Are you sure you want to delete ${resource.resourceId}?`,
       onAccept: async () => {
         const response = await fetch(this.baseUrl, {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ resourceId }),
+          body: JSON.stringify({ resourceId: resource.resourceId }),
         });
+        await onConfirmDelete();
         if (response.ok) {
           toastSuccess("Resource deleted successfully");
           return true;

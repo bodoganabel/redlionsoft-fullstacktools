@@ -15,7 +15,7 @@
     template: TFilterTemplateResource,
     newName: string
   ) => Promise<void>;
-  export let onDelete: (name: string) => Promise<void>;
+  export let onDelete: (template: TFilterTemplateResource) => Promise<void>;
   export let onSave: (name: string) => Promise<void>;
   export let onFavorite: (template: TFilterTemplateResource) => Promise<void>;
   export let onReorder: (
@@ -45,7 +45,7 @@
 
     <div slot="tooltip">
       <TemplateList
-        {templates}
+        bind:templates
         {onSelect}
         {onRename}
         {onDelete}

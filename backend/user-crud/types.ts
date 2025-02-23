@@ -10,7 +10,11 @@ export const UCrudResourceBaseSchema = z.object({
   order: z.number().optional(), // Add order field to track position
 });
 
-export type BaseDocument = z.infer<typeof UCrudResourceBaseSchema>;
+type BaseDocument = z.infer<typeof UCrudResourceBaseSchema>;
+
+export type TResource<TResourceData> = BaseDocument & {
+  data: TResourceData;
+};
 
 export interface ChangeHistoryEntry {
   timestamp: string;
