@@ -1,13 +1,13 @@
 <script lang="ts">
   import {
+    type TFilter,
     type TFilterField,
     type TFilterOperator,
-    type IFilter,
   } from "./filter.types";
   import { debounce } from "../../utils/debounce";
   import { onDestroy } from "svelte";
 
-  export let filter: IFilter;
+  export let filter: TFilter;
   export let onUpdate: () => void;
   export let onRemove: () => void;
 
