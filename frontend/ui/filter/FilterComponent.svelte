@@ -1,30 +1,96 @@
 <script lang="ts">
+  import { UCrudResourceClient } from "../../../frontend/user-crud/user-crud.client";
   import {
     EFilterOperator,
     type TFilterField,
     type TFilterOperator,
     type TFilter,
     type TFilterTemplateResource,
+    type TFilterTemplateData,
   } from "./filter.types";
   import FilterHeader from "./FilterHeader.svelte";
   import FilterRow from "./FilterRow.svelte";
   import FilterActions from "./FilterActions.svelte";
 
+  export let baseUrl: string; //e.g.: "/app/calendar/submissions/api/submissions-filter-templates" - don't forget to create endpoints using ucrud-server.
+  const filterTemplateUCrudClient =
+    new UCrudResourceClient<TFilterTemplateData>(baseUrl);
+
   export let activeFilters: TFilter[] = [
     { field: "*", operator: EFilterOperator.contains, value: "" },
   ];
   export let templates: TFilterTemplateResource[];
-  export let onSelect: (template: TFilterTemplateResource) => Promise<void>;
+  export let onRefetchData: () => void | Promise<void>;
+  export let onSelect: (
+    template: TFilterTemplateResource
+  ) => Promise<void> = async (template: TFilterTemplateResource) => {
+    activeFilters = template.data.filters;
+    await onRefetchData();
+  };
   export let onRename: (
     template: TFilterTemplateResource,
     newName: string
-  ) => Promise<void>;
-  export let onDelete: (template: TFilterTemplateResource) => Promise<void>;
-  export let onSave: (name: string) => Promise<void>;
-  export let onFavorite: (template: TFilterTemplateResource) => Promise<void>;
+  ) => Promise<void> = async (template, newName) => {
+    if (
+      await filterTemplateUCrudClient.renameResource(
+        template.resourceId,
+        newName
+      )
+    ) {
+      templates = await filterTemplateUCrudClient.loadResources();
+    }
+  };
+  export let onDelete: (
+    template: TFilterTemplateResource
+  ) => Promise<void> = async (template) => {
+    await filterTemplateUCrudClient.deleteResource(template, async () => {
+      // If the deleted template was active, clear filters
+      if (
+        JSON.stringify(template.data.filters) === JSON.stringify(activeFilters)
+      ) {
+        clearFilters();
+      }
+
+      templates = await filterTemplateUCrudClient.loadResources();
+      console.log("templates reloaded after delete:");
+      console.log(templates);
+    });
+  };
+  export let onSave: (name: string) => Promise<void> = async (name) => {
+    if (
+      await filterTemplateUCrudClient.saveResource(name, {
+        filters: activeFilters,
+        isFavorite: false,
+      })
+    ) {
+      templates = await filterTemplateUCrudClient.loadResources();
+    }
+  };
+  export let onFavorite: (
+    template: TFilterTemplateResource
+  ) => Promise<void> = async (template) => {
+    await filterTemplateUCrudClient.favoriteResource({
+      ...template,
+      data: { ...template.data, isFavorite: !template.data.isFavorite },
+    });
+    templates = await filterTemplateUCrudClient.loadResources();
+  };
   export let onReorder: (
     event: CustomEvent<{ resourceId: string; newIndex: number }>
-  ) => Promise<void>;
+  ) => Promise<void> = async (
+    event: CustomEvent<{ resourceId: string; newIndex: number }>
+  ) => {
+    const { resourceId, newIndex } = event.detail;
+    if (
+      await filterTemplateUCrudClient.handleResourceReorder(
+        resourceId,
+        newIndex
+      )
+    ) {
+      templates = await filterTemplateUCrudClient.loadResources();
+    }
+  };
+
   export let operators: TFilterOperator[] = [
     { value: EFilterOperator.contains, label: "contains" },
     { value: EFilterOperator.is, label: "is" },
@@ -33,7 +99,12 @@
     { value: EFilterOperator.less_than, label: "is less than" },
   ];
   export let fields: TFilterField[];
-  export let onFilterChange: (filters: TFilter[]) => void;
+  export let onFilterChange: (
+    filters: TFilter[]
+  ) => void | Promise<void> = async (filters: TFilter[]) => {
+    activeFilters = filters;
+    await onRefetchData();
+  };
 
   function addFilter() {
     activeFilters = [
@@ -63,7 +134,7 @@
     activeFilters = [
       { field: "*", operator: EFilterOperator.contains, value: "" },
     ];
-    onFilterChange(activeFilters);
+    onRefetchData();
   }
 
   $: showClearButton =

@@ -1,9 +1,6 @@
-import {
-  toastError,
-  toastSuccess,
-} from "../../frontend/functionality/toast/toast-logic";
-import { popup } from "../../frontend/functionality/popup/popup-logic";
-import type { TResource } from "./types";
+import { toastError, toastSuccess } from "../functionality/toast/toast-logic";
+import { popup } from "../functionality/popup/popup-logic";
+import type { TResource } from "../../backend/user-crud/types";
 
 export class UCrudResourceClient<TResourceData> {
   private readonly baseUrl: string;
