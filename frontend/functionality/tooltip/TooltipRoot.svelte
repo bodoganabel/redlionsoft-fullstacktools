@@ -102,7 +102,7 @@
   on:click|stopPropagation={() => {}}
 >
   {#if $tooltipStore.content}
-    <small class="tooltip-content text-black"
+    <small class="tooltip-content text-black dark:text-white"
       >{@html $tooltipStore.content}</small
     >
   {:else if $tooltipStore.component}
