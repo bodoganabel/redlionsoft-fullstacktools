@@ -102,7 +102,9 @@
   on:click|stopPropagation={() => {}}
 >
   {#if $tooltipStore.content}
-    <p>{@html $tooltipStore.content}</p>
+    <small class="tooltip-content text-black"
+      >{@html $tooltipStore.content}</small
+    >
   {:else if $tooltipStore.component}
     <svelte:component
       this={$tooltipStore.component}
