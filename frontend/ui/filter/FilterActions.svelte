@@ -58,7 +58,7 @@
 
   {#if activeFilters.some((filter) => filter.value !== "") || activeFilters.length > 1}
     <button
-      class="text-sm variant-outline-secondary rounded-lg"
+      class="text-sm variant-soft-secondary rounded-lg"
       on:click={() => {
         activeFilters = [
           { field: "", operator: EFilterOperator.contains, value: "" },
