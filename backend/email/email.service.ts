@@ -2,7 +2,7 @@ import Handlebars from "handlebars";
 import { join } from "path";
 import { readFile } from "fs/promises";
 import * as nodemailer from "nodemailer";
-import * as sgMail from "@sendgrid/mail";
+import sgMail from "@sendgrid/mail";
 import { isProduction } from "../../common";
 
 export class EmailService {
@@ -30,9 +30,8 @@ export class EmailService {
     };
   }) {
     this.validateRequiredEnvVariables();
-    if (isProduction()) {
-      sgMail.setApiKey(this.sendGridApiKey as string);
-    }
+    // Always set SendGrid API key since we need it in production
+    sgMail.setApiKey(this.sendGridApiKey as string);
 
     this.templateFolderPath_absolute = join(
       initializer.templateFolderPath_absolute
