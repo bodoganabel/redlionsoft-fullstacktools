@@ -4,12 +4,15 @@ import {
 } from "../../../frontend/functionality/toast/toast-logic";
 import { popup } from "../../../frontend/functionality/popup/popup-logic";
 import type { TFilterTemplateResource } from "../../../frontend/ui/filter/filter.types";
-const API_BASE_URL = "/app/calendar/users/api/users-filter-templates";
+import { apiRequest } from "../../client/api-request";
+const API_BASE_URL = "/app/users/api/users-filter-templates";
 
 export async function loadTemplates(): Promise<TFilterTemplateResource[]> {
-  const response = await fetch(API_BASE_URL);
-  if (response.ok) {
-    const data = (await response.json()) as any[];
+  const { data } = await apiRequest<any[]>({
+    url: API_BASE_URL,
+    method: "GET",
+  });
+  if (data) {
     return data.sort(
       (templateA, templateB) =>
         (templateA.order ?? Infinity) - (templateB.order ?? Infinity)
@@ -22,10 +25,12 @@ export async function saveTemplate(
   templateName: string,
   currentFilters: any
 ): Promise<boolean> {
-  const response = await fetch(API_BASE_URL);
-  const existingTemplates = await response.json();
+  const { data: existingTemplates } = await apiRequest<any[]>({
+    url: API_BASE_URL,
+    method: "GET",
+  });
   const highestOrder = Math.max(
-    ...existingTemplates.map(
+    ...(existingTemplates || []).map(
       (template: TFilterTemplateResource) => template.order ?? 0
     ),
     0
@@ -46,13 +51,13 @@ export async function saveTemplate(
     createdAt: new Date().toISOString(),
   };
 
-  const saveResponse = await fetch(API_BASE_URL, {
+  const { data } = await apiRequest({
+    url: API_BASE_URL,
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(newFilterTemplate),
+    body: newFilterTemplate,
   });
 
-  if (saveResponse.ok) {
+  if (data) {
     toastSuccess("Template saved successfully");
     return true;
   }
@@ -63,19 +68,21 @@ export async function renameTemplate(
   oldName: string,
   newName: string
 ): Promise<boolean> {
-  const response = await fetch(API_BASE_URL);
-  const templates = await response.json();
-  const oldTemplate = templates.find(
+  const { data: templates } = await apiRequest<any[]>({
+    url: API_BASE_URL,
+    method: "GET",
+  });
+  const oldTemplate = (templates || []).find(
     (template: any) => template.resourceId === oldName
   );
   if (!oldTemplate) {
     return false;
   }
 
-  const saveResponse = await fetch(API_BASE_URL, {
+  const { error: saveError } = await apiRequest({
+    url: API_BASE_URL,
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+    body: {
       resourceId: newName,
       data: {
         name: newName,
@@ -83,22 +90,22 @@ export async function renameTemplate(
         isFavorite: oldTemplate.data.isFavorite,
       },
       order: oldTemplate.order,
-    }),
+    },
   });
 
-  if (!saveResponse.ok) {
-    toastError("Failed to rename template");
+  if (saveError) {
+    toastError(saveError.message || "Failed to rename template");
     return false;
   }
 
-  const deleteResponse = await fetch(API_BASE_URL, {
+  const { error: deleteError } = await apiRequest({
+    url: API_BASE_URL,
     method: "DELETE",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ resourceId: oldName }),
+    body: { resourceId: oldName },
   });
 
-  if (!deleteResponse.ok) {
-    toastError("Failed to delete old template");
+  if (deleteError) {
+    toastError(deleteError.message || "Failed to delete old template");
     return false;
   }
 
@@ -109,16 +116,16 @@ export async function renameTemplate(
 export async function reorderTemplates(
   items: { resourceId: string; order: number }[]
 ): Promise<boolean> {
-  const response = await fetch(API_BASE_URL, {
+  const { data, error } = await apiRequest({
+    url: API_BASE_URL,
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ items }),
+    body: { items },
   });
 
-  if (response.ok) {
+  if (data) {
     return true;
   }
-  toastError("Failed to reorder templates");
+  toastError(error?.message || "Failed to reorder templates");
   return false;
 }
 
@@ -126,10 +133,12 @@ export async function handleTemplateReorder(
   resourceId: string,
   newIndex: number
 ): Promise<boolean> {
-  const response = await fetch(API_BASE_URL);
-  const currentTemplates = await response.json();
+  const { data: currentTemplates } = await apiRequest<any[]>({
+    url: API_BASE_URL,
+    method: "GET",
+  });
 
-  const sortedTemplates = [...currentTemplates].sort(
+  const sortedTemplates = [...(currentTemplates || [])].sort(
     (templateA: any, templateB: any) =>
       (templateA.order ?? Infinity) - (templateB.order ?? Infinity)
   );
@@ -164,15 +173,16 @@ export async function deleteTemplate(resourceId: string): Promise<boolean> {
     id: "confirm-delete-template",
     title: `Are you sure you want to delete ${resourceId}?`,
     onAccept: async () => {
-      const response = await fetch(API_BASE_URL, {
+      const { data, error } = await apiRequest({
+        url: API_BASE_URL,
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resourceId }),
+        body: { resourceId },
       });
-      if (response.ok) {
+      if (data) {
         toastSuccess("Template deleted successfully");
         return true;
       }
+      toastError(error?.message || "Failed to delete template");
       return false;
     },
     acceptMessage: "Delete",
@@ -182,16 +192,16 @@ export async function deleteTemplate(resourceId: string): Promise<boolean> {
 }
 
 export async function favoriteTemplate(template: any): Promise<boolean> {
-  const response = await fetch(API_BASE_URL, {
+  const { data } = await apiRequest({
+    url: API_BASE_URL,
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+    body: {
       resourceId: template.resourceId,
       data: {
         isFavorite: !template.data.isFavorite,
         filters: template.data.filters,
       },
-    }),
+    },
   });
-  return response.ok;
+  return !!data;
 }
