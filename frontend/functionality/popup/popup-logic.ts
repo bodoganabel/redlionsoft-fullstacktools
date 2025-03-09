@@ -19,8 +19,8 @@ export interface IPopup {
 
 export const popupStore = writable<IPopup[]>([]);
 
-export const popup = (popup: IPopup) => {
-  const id = popup.id === undefined ? crypto.randomUUID() : popup.id;
+export const popup = (popup: IPopup): string => {
+  const id = typeof popup?.id === "undefined" ? crypto.randomUUID() : popup.id;
   const newPopup = { ...popup, id };
   popupStore.update((popups) => [...popups, newPopup]);
   return id;

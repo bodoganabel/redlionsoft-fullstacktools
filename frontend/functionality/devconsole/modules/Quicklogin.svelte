@@ -5,6 +5,7 @@
   import { onMount } from "svelte";
   import type { IQuickloginUser } from "./../devconsole.types";
   import { LOCALDB } from "../../localdb/localdb";
+  import { apiRequest } from "../../../client/api-request";
 
   export let quickloginUsers: IQuickloginUser[];
 
@@ -49,20 +50,21 @@
     class="variant-filled-primary"
     on:click={async () => {
       isFetching_login = true;
-      const result = await fetch("/auth/login", {
+      const { data, error } = await apiRequest({
+        url: "/auth/login",
         method: "POST",
-        body: JSON.stringify({
+        body: {
           email: userToLogin.email,
           password: userToLogin.password,
-        }),
+        },
       });
 
-      isFetching_login = true;
-      if (result.status === 200) {
+      isFetching_login = false;
+      if (data) {
         toast(`logged in as ${userToLogin.email}`, EToastTypes.SUCCESS);
         window.location.reload();
       } else {
-        toast(`failed to log in`, EToastTypes.ERROR);
+        toast(error?.message || `failed to log in`, EToastTypes.ERROR);
       }
     }}
   >
@@ -79,11 +81,17 @@
     class="variant-outline-secondary"
     on:click={async () => {
       isFetching_logout = true;
-      const result = await fetch("/auth/logout", {
+      const { data, error } = await apiRequest({
+        url: "/auth/logout",
         method: "DELETE",
       });
+
       isFetching_logout = false;
-      window.location.reload();
+      if (data) {
+        window.location.reload();
+      } else {
+        toast(error?.message || `failed to logout`, EToastTypes.ERROR);
+      }
     }}
     >{#if isFetching_logout}
       <Spinner size="w-12" stroke={10} />

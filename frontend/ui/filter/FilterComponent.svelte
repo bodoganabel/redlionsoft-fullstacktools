@@ -12,7 +12,7 @@
   import FilterRow from "./FilterRow.svelte";
   import FilterActions from "./FilterActions.svelte";
 
-  export let baseUrl: string; //e.g.: "/app/calendar/submissions/api/submissions-filter-templates" - don't forget to create endpoints using ucrud-server.
+  export let baseUrl: string; //e.g.: "/app/submissions/api/submissions-filter-templates" - don't forget to create endpoints using ucrud-server.
   const filterTemplateUCrudClient =
     new UCrudResourceClient<TFilterTemplateData>(baseUrl);
 

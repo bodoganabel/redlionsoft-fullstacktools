@@ -3,6 +3,7 @@
   export let availableSlots: DateTime[];
   export let format = DateTime.TIME_24_SIMPLE;
   export let onSelect: (date: DateTime) => void = () => {};
+  export let selectedDateTime: DateTime | null = null;
 </script>
 
 {#if !availableSlots || availableSlots.length === 0}
@@ -10,7 +11,7 @@
 {:else}
   {#each availableSlots as availableDateTime}
     <button
-      class="variant-outline-primary"
+      class={selectedDateTime?.toISO() === availableDateTime.toISO() ? 'variant-filled-primary' : 'variant-outline-primary'}
       on:click={async () => {
         onSelect(availableDateTime);
       }}>{availableDateTime.toLocaleString(format)}</button
