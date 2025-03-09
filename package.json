@@ -39,7 +39,6 @@
     "@skeletonlabs/skeleton": "1.10.0",
     "@skeletonlabs/tw-plugin": "0.4.0",
     "@sveltejs/kit": "2.8.1",
-    "@types/bcrypt": "5.0.2",
     "@types/jsonwebtoken": "9.0.7",
     "@types/node": "20.14.7",
     "tailwindcss": "3.3.3",
@@ -53,12 +52,11 @@
   },
   "homepage": "https://github.com/bodoganabel/redlionsoft-fullstacktools#readme",
   "dependencies": {
-    "bcrypt": "^5.1.1",
     "dotenv": "^16.4.5",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "mongodb": "^6.7.0",
-    "short-unique-id": "^5.2.0",
+    "short-unique-id": "5.2.0",
     "svelte": "^4.2.18",
     "svelte-preprocess": "^6.0.1"
   }

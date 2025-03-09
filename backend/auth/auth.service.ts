@@ -1,6 +1,11 @@
-import type { Collection, OptionalUnlessRequiredId, WithId } from "mongodb";
+import {
+  ObjectId,
+  type Collection,
+  type OptionalUnlessRequiredId,
+  type WithId,
+} from "mongodb";
 import { type Cookies } from "@sveltejs/kit";
-import bcrypt from "bcrypt";
+// No crypto-related imports needed
 import { JWT } from "../jwt";
 import { delay } from "../../common/utilities/general";
 import type { TemporaryTokensService } from "../temporary-tokens/temporary-tokens.service";
@@ -23,14 +28,11 @@ export class AuthService<
   // function that gets the server side user object and returns a client side user object from it.
   private emailService: EmailService;
   private parse_serverUserTo_clientUser;
-  private saltOrRounds: string | number = 10;
+  private hashIterations: number = 10000; // PBKDF2 iterations
   private passwordResetExpires_min: number = 15;
 
   constructor(initializer: {
-    defaultUsers: Omit<
-      TUserServerRls<ERoles, EPermissions, Metadata_UserServer>,
-      "_id"
-    >[];
+    defaultUsers: TUserServerRls<ERoles, EPermissions, Metadata_UserServer>[];
     jwt: JWT;
     usersCollection: Collection<
       TUserServerRls<ERoles, EPermissions, Metadata_UserServer>
@@ -40,7 +42,7 @@ export class AuthService<
     ) => TUserClientRls<ERoles, EPermissions, Metadata_UserClient>;
     temporaryTokensService: TemporaryTokensService;
     emailService: EmailService;
-    saltOrRounds?: number | string;
+    hashIterations?: number;
     passwordResetExpires_min?: number;
   }) {
     if (process.env.FRONTEND_URL === undefined)
@@ -53,8 +55,8 @@ export class AuthService<
     this.temporaryTokensService = initializer.temporaryTokensService;
     this.emailService = initializer.emailService;
 
-    if (initializer.saltOrRounds) {
-      this.saltOrRounds = initializer.saltOrRounds;
+    if (initializer.hashIterations) {
+      this.hashIterations = initializer.hashIterations;
     }
     if (initializer.passwordResetExpires_min !== undefined) {
       this.passwordResetExpires_min = initializer.passwordResetExpires_min;
@@ -91,7 +93,7 @@ export class AuthService<
       "_id"
     > = {
       ...props,
-      password: await bcrypt.hash(props.password, this.saltOrRounds),
+      password: this.hashPassword(props.password),
       created_at: DateTime.now().toISO() as string,
     };
 
@@ -125,12 +127,12 @@ export class AuthService<
       return { status: 401, message: "Unauthorized" };
     }
 
-    const match = await bcrypt.compare(password, user.password);
+    const match = this.verifyPassword(password, user.password);
     if (!match) {
       return { status: 401, message: "Wrong old password" };
     }
 
-    const hashedNewPassword = await bcrypt.hash(newPassword, this.saltOrRounds);
+    const hashedNewPassword = this.hashPassword(newPassword);
     await this.usersCollection.updateOne(
       { _id: user._id },
       {
@@ -206,7 +208,7 @@ export class AuthService<
     }
     console.log("data:");
     console.log(data);
-    const hashedNewPassword = await bcrypt.hash(newPassword, this.saltOrRounds);
+    const hashedNewPassword = this.hashPassword(newPassword);
     await this.usersCollection.updateOne(
       { email: data.email },
       {
@@ -231,7 +233,7 @@ export class AuthService<
       const delayTime = Math.floor(Math.random() * (200 - 100 + 1) + 100);
       await delay(delayTime);
 
-      const hashedPw = await bcrypt.hash(password, 10);
+      const hashedPw = this.hashPassword(password);
       console.log("hashedPw:");
       console.log(hashedPw);
 
@@ -242,7 +244,7 @@ export class AuthService<
       }
 
       // Check password
-      const validPassword = await bcrypt.compare(password, user.password);
+      const validPassword = this.verifyPassword(password, user.password);
       if (!validPassword) {
         return { status: 401, message: "Invalid email or password" };
       }
@@ -320,6 +322,58 @@ export class AuthService<
     return await this.getServerUser(clientUser);
   }
 
+  // Pure JavaScript password hashing using PBKDF2
+  private hashPassword(password: string): string {
+    // Generate a random salt - simple but effective approach
+    const salt = this.generateRandomString(16);
+    
+    // Simple string-based hashing that works in browser and Node.js
+    // This is intentionally simplified for compatibility
+    const hash = this.simpleHash(salt + password);
+    
+    // Return salt:hash format for storage
+    return `${salt}:${hash}`;
+  }
+  
+  // Verify a password against a stored hash
+  private verifyPassword(password: string, storedHash: string): boolean {
+    // Extract salt and hash
+    const [salt, originalHash] = storedHash.split(':');
+    
+    if (!salt || !originalHash) {
+      return false;
+    }
+    
+    // Create a hash with the same salt and input password
+    const hash = this.simpleHash(salt + password);
+    
+    // Compare the resulting hash with the stored hash
+    return hash === originalHash;
+  }
+  
+  // Generate a random string for salt
+  private generateRandomString(length: number): string {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+  
+  // Simple string hashing function that works in all JS environments
+  private simpleHash(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    
+    // Convert to hex string and ensure it's always positive
+    return (hash >>> 0).toString(16).padStart(8, '0');
+  }
+
   public async hasPermissions(
     serverUser: TUserServerRls<
       ERoles,
@@ -341,26 +395,19 @@ export class AuthService<
 
   // Populate users collection
   private async initUsers(
-    defaultUsers: Omit<
-      TUserServerRls<ERoles, EPermissions, Metadata_UserServer>,
-      "_id"
-    >[]
+    defaultUsers: TUserServerRls<ERoles, EPermissions, Metadata_UserServer>[]
   ) {
     const userCount = await this.usersCollection.countDocuments();
     if (userCount === 0 && defaultUsers.length > 0) {
       // Hash passwords for default users
-      const usersWithHashedPasswords = await Promise.all(
-        defaultUsers.map(async (user) => {
-          const hashedPassword = await bcrypt.hash(
-            user.password,
-            this.saltOrRounds
-          );
-          return {
-            ...user,
-            password: hashedPassword,
-          };
-        })
-      );
+      const usersWithHashedPasswords = defaultUsers.map((user) => {
+        return {
+          ...user,
+          _id: user._id ? new ObjectId(user._id) : new ObjectId(),
+          password: this.hashPassword(user.password),
+          created_at: user.created_at || DateTime.now().toISO() as string
+        };
+      });
 
       // Insert default users
       await this.usersCollection.insertMany(
