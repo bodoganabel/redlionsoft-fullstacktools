@@ -1,112 +1,114 @@
-import RequestCredentials from '@sveltejs/kit';
+import { AnyARecord } from "dns";
 
-
-const ERROR_NO_RESPONSE = 'No response from server';
-
-
-export type CallEndpointOptions = {
-    url?: string;
-    method?: string;
-    body?: any | null | undefined;
-    credentials?: RequestCredentials;
-    headers?: HeadersInit;
-    clientErrorMessages?: { parseError: string; message: string }[];
-    defaultErrorMessage?: string | undefined;
-    onSuccess?: (data: any) => void;
-    onError?: (errorResponse: any) => void;
+// Types
+export type ApiResponse<TData> = {
+  data: TData | null;
+  error: ApiError | null;
+  status: number | null;
 };
 
-// Adapter function for callEndpointWithParams
-export async function callEndpoint<TData, TError>(options: CallEndpointOptions) {
-    const url = options.url || '/';
-    const method = options.method || 'GET';
-    const body = options.body || null;
-    const credentials = options.credentials || 'include';
-    const headers = options.headers || { 'Content-Type': 'application/json' };
-    const clientErrorMessages = options.clientErrorMessages || [{ parseError: 'Error', message: 'Request failed' }];
-    const defaultErrorMessage = options.defaultErrorMessage;
-    const onSuccess = options.onSuccess;
-    const onError = options.onError;
+export type ApiError = {
+  message: string;
+  code?: string;
+  details?: unknown;
+};
 
-    return await callEndpointWithParams<TData, TError>(
-        url,
-        method,
-        body,
-        credentials,
-        headers,
-        clientErrorMessages,
-        defaultErrorMessage,
-        onSuccess,
-        onError
-    );
+export type ApiRequestConfig = {
+  url: string;
+  method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+  body?: unknown;
+  headers?: HeadersInit;
+  credentials?: RequestCredentials;
+};
 
-}
+export type ApiRequestOptions = {
+  errorMessages?: Record<string, string>;
+  defaultErrorMessage?: string;
+};
+
 /**
- * Async function to call an API endpoint with parameters.
+ * Makes an API request and returns a strongly typed response
+ * @example
+ * ```ts
+ * const { data, error } = await apiRequest<User>({
+ *   url: '/api/users',
+ *   method: 'POST',
+ *   body: { name: 'John' }
+ * });
  *
- * @param {string} url - The URL of the endpoint. Default is '/'.
- * @param {string} method - The HTTP method to use. Default is 'GET'.
- * @param {any | null | undefined} body - The body of the request. Default is null.
- * @param {RequestCredentials} credentials - The credentials mode for the request. Default is 'include'.
- * @param {HeadersInit} headers - The headers for the request. Default is { 'Content-Type': 'application/json' }.
- * @param {{parseError: string; message: string}[]} clientErrorMessages - Array of error messages. Default is [{ parseError: 'Error', message: 'Request failed' }].
- * @param {string | undefined} defaultErrorMessage - The default error message. Default is undefined.
- * @param {(data: TData) => void} onSuccess - Callback function for successful response.
- * @param {(errorResponse: TError) => void} onError - Callback function for error response.
- * @return {Promise<{response: Response | null, error: boolean, clientErrorMessage: string | null}>} Object containing response, error status, and client error message.
+ * if (error) {
+ *   console.error(error.message);
+ *   return;
+ * }
+ *
+ * console.log(data); // Typed as User
+ * ```
  */
-export async function callEndpointWithParams<TData, TError>(
-    url: string = '/',
-    method: string = 'GET',
-    body: any | null | undefined = null,
-    credentials: RequestCredentials = 'include',
-    headers: HeadersInit = { 'Content-Type': 'application/json' },
-    clientErrorMessages: { parseError: string; message: string }[] = [{ parseError: 'Error', message: 'Request failed' }],
-    defaultErrorMessage: string | undefined = undefined,
-    onSuccess?: (data: TData) => void,
-    onError?: (errorResponse: TError) => void
-) {
-    try {
-        const requestInit: RequestInit = {
-            method,
-            credentials,
-            headers,
-            body: body !== null ? JSON.stringify(body) : undefined,
-        };
+export async function apiRequest<TData = any>(
+  config: ApiRequestConfig,
+  options: ApiRequestOptions = {}
+): Promise<ApiResponse<TData>> {
+  const {
+    url,
+    method = "GET",
+    body,
+    headers = { "Content-Type": "application/json" },
+    credentials = "include",
+  } = config;
 
-        const response = await fetch(url, requestInit);
+  console.log("body:");
+  console.log(body);
 
-        console.log('response:');
-        console.log(response);
-        if (!response.ok) {
-            const errorResponse = await response.json();
+  const { errorMessages = {}, defaultErrorMessage = "An error occurred" } =
+    options;
 
-            const parsedError = clientErrorMessages.find(
-                (messageMap) => messageMap.parseError === errorResponse.message
-            )?.message || defaultErrorMessage || errorResponse.message || 'Error';
+  try {
+    const response = await fetch(url, {
+      method,
+      credentials,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
 
-            if (onError) onError(errorResponse);
-            return {
-                response,
-                error: true,
-                clientErrorMessage: parsedError,
-            };
-        }
+    if (!response.ok) {
+      let errorResponse;
+      try {
+        errorResponse = await response.json();
+      } catch {
+        errorResponse = { message: "Failed to parse error response" };
+      }
 
-        const data = (await response.json());
-        if (onSuccess) onSuccess(data);
-        return {
-            response,
-            data,
-            error: false,
-            clientErrorMessage: null,
-        };
-    } catch (error) {
-        console.error(error);
-        return {
-            response: null,
-            error: true,
-            clientErrorMessage: ERROR_NO_RESPONSE,
-        };
+      const error: ApiError = {
+        message:
+          errorMessages[errorResponse.message] ||
+          errorResponse.message ||
+          defaultErrorMessage,
+        code: errorResponse.code,
+        details: errorResponse,
+      };
+
+      return {
+        data: null,
+        error,
+        status: response.status,
+      };
     }
+
+    const data = await response.json();
+    return {
+      data,
+      error: null,
+      status: response.status,
+    };
+  } catch (error) {
+    return {
+      data: null,
+      error: {
+        message:
+          error instanceof Error ? error.message : "Network error occurred",
+        details: error,
+      },
+      status: null,
+    };
+  }
 }
