@@ -10,7 +10,7 @@ export const UCrudResourceBaseSchema = z.object({
   order: z.number().optional(), // Add order field to track position
 });
 
-type BaseDocument = z.infer<typeof UCrudResourceBaseSchema>;
+export type BaseDocument = z.infer<typeof UCrudResourceBaseSchema>;
 
 export type TResource<TResourceData> = BaseDocument & {
   data: TResourceData;
