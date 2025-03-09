@@ -28,9 +28,6 @@ export class UserCrudService {
     this.collection = collection;
     this.authService = authService;
     this.dataSchema = options.dataSchema;
-
-    console.log("this.dataSchema:");
-    console.log(this.dataSchema);
     this.isStoreChangeHistory = options.isStoreChangeHistory;
   }
 
