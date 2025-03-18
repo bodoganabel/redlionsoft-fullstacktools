@@ -2,7 +2,8 @@ import Handlebars from "handlebars";
 import { join } from "path";
 import { readFile } from "fs/promises";
 import * as nodemailer from "nodemailer";
-import sgMail from "@sendgrid/mail";
+import FormData from "form-data";
+import Mailgun from "mailgun.js";
 import { isProduction } from "../../common";
 
 export class EmailService {
@@ -12,7 +13,9 @@ export class EmailService {
   private mailSecure = process.env.MAIL_SECURE as string;
   private mailDefaultName = process.env.MAIL_DEFAULT_NAME as string;
   private mailDefaultEmail = process.env.MAIL_DEFAULT_EMAIL as string;
-  private sendGridApiKey = process.env.MAIL_PROD_SENDGRID_APIKEY as string;
+  private mailgunApiKey = process.env.MAIL_PROD_MAILGUN_APIKEY as string;
+  private mailgunDomain = process.env.MAIL_PROD_MAILGUN_DOMAIN as string;
+  private mailgun: ReturnType<Mailgun['client']>;
 
   private baseTemplate!: Handlebars.TemplateDelegate<any>;
 
@@ -30,8 +33,12 @@ export class EmailService {
     };
   }) {
     this.validateRequiredEnvVariables();
-    // Always set SendGrid API key since we need it in production
-    sgMail.setApiKey(this.sendGridApiKey as string);
+    // Initialize Mailgun client
+    const mailgunClient = new Mailgun(FormData);
+    this.mailgun = mailgunClient.client({
+      username: 'api',
+      key: this.mailgunApiKey,
+    });
 
     this.templateFolderPath_absolute = join(
       initializer.templateFolderPath_absolute
@@ -59,7 +66,8 @@ export class EmailService {
       "MAIL_DEFAULT_NAME",
       "MAIL_DEFAULT_EMAIL",
       "MAIL_REQUIRE_TLS",
-      "MAIL_PROD_SENDGRID_APIKEY",
+      "MAIL_PROD_MAILGUN_APIKEY",
+      "MAIL_PROD_MAILGUN_DOMAIN",
     ];
 
     requiredEnvVariables.forEach((variable) => {
@@ -102,24 +110,21 @@ export class EmailService {
     this.baseTemplate = Handlebars.compile(baseTemplateSource);
   }
 
-  private async sendWithSendGrid(
+  private async sendWithMailgun(
     to: string,
     subject: string,
     html: string,
     fallbackText?: string
   ) {
-    const msg: sgMail.MailDataRequired = {
+    const messageData = {
+      from: `${this.mailDefaultName} <${this.mailDefaultEmail}>`,
       to,
-      from: {
-        email: this.mailDefaultEmail,
-        name: this.mailDefaultName,
-      },
       subject,
       html,
-      text: fallbackText,
+      text: fallbackText || '',
     };
 
-    return sgMail.send(msg);
+    return this.mailgun.messages.create(this.mailgunDomain, messageData);
   }
 
   async sendTemplate(options: {
@@ -154,7 +159,7 @@ export class EmailService {
       // Check if we are in production to decide email sending method
       if (isProduction()) {
         try {
-          const emailResult = await this.sendWithSendGrid(
+          const emailResult = await this.sendWithMailgun(
             options.to,
             options.subject,
             html,
@@ -162,7 +167,7 @@ export class EmailService {
           );
           return { result: emailResult };
         } catch (error) {
-          throw new Error(`Email sending failed with SendGrid: ${error}`);
+          throw new Error(`Email sending failed with Mailgun: ${error}`);
         }
       } else {
         console.log("Sent test email to devmail server at: localhost:1080");
@@ -190,7 +195,7 @@ export class EmailService {
     try {
       if (isProduction()) {
         try {
-          const emailResult = await this.sendWithSendGrid(
+          const emailResult = await this.sendWithMailgun(
             options.to,
             options.subject,
             options.html,
@@ -198,7 +203,7 @@ export class EmailService {
           );
           return { result: emailResult };
         } catch (error) {
-          throw new Error(`Email sending failed with SendGrid: ${error}`);
+          throw new Error(`Email sending failed with Mailgun: ${error}`);
         }
       } else {
         console.log("Sent test email to devmail server at: localhost:1080");
