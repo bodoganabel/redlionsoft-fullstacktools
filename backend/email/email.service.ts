@@ -2,20 +2,14 @@ import Handlebars from "handlebars";
 import { join } from "path";
 import { readFile } from "fs/promises";
 import * as nodemailer from "nodemailer";
-import FormData from "form-data";
-import Mailgun from "mailgun.js";
 import { isProduction } from "../../common";
 
 export class EmailService {
   private mailHost = process.env.MAIL_HOST as string;
   private mailPort = process.env.MAIL_PORT as string;
-  private mailClientPort = process.env.MAIL_CLIENT_PORT as string;
   private mailSecure = process.env.MAIL_SECURE as string;
   private mailDefaultName = process.env.MAIL_DEFAULT_NAME as string;
   private mailDefaultEmail = process.env.MAIL_DEFAULT_EMAIL as string;
-  private mailgunApiKey = process.env.MAIL_PROD_MAILGUN_APIKEY as string;
-  private mailgunDomain = process.env.MAIL_PROD_MAILGUN_DOMAIN as string;
-  private mailgun: ReturnType<Mailgun['client']>;
 
   private baseTemplate!: Handlebars.TemplateDelegate<any>;
 
@@ -33,12 +27,6 @@ export class EmailService {
     };
   }) {
     this.validateRequiredEnvVariables();
-    // Initialize Mailgun client
-    const mailgunClient = new Mailgun(FormData);
-    this.mailgun = mailgunClient.client({
-      username: 'api',
-      key: this.mailgunApiKey,
-    });
 
     this.templateFolderPath_absolute = join(
       initializer.templateFolderPath_absolute
@@ -55,44 +43,48 @@ export class EmailService {
 
     // Check if base template exists
     this.compileBaseTemplate();
-  }
 
-  private validateRequiredEnvVariables() {
-    const requiredEnvVariables = [
-      "MAIL_HOST",
-      "MAIL_PORT",
-      "MAIL_CLIENT_PORT",
-      "MAIL_SECURE",
-      "MAIL_DEFAULT_NAME",
-      "MAIL_DEFAULT_EMAIL",
-      "MAIL_REQUIRE_TLS",
-      "MAIL_PROD_MAILGUN_APIKEY",
-      "MAIL_PROD_MAILGUN_DOMAIN",
-    ];
-
-    requiredEnvVariables.forEach((variable) => {
-      if (process.env[variable] === undefined) {
-        throw new Error(`${variable} is undefined`);
-      } else if (typeof process.env[variable] !== "string") {
-        throw new Error(`${variable} is not a string`);
-      }
-    });
+    // Verify SMTP connection if in production
+    if (isProduction()) {
+      this.verifySmtpConnection().catch((error) => {
+        console.error("⚠️ SMTP connection verification failed:", error.message);
+      });
+    }
   }
 
   private readonly transporter = nodemailer.createTransport({
     host: this.mailHost,
     port: parseInt(this.mailPort, 10),
-    secure: isProduction() ? this.mailSecure === "true" : false,
+    secure: this.mailSecure === "true",
     auth: {
       user: process.env.MAIL_USERNAME,
       pass: process.env.MAIL_PASSWORD,
     },
-    tls: !isProduction()
-      ? {
-          rejectUnauthorized: false,
-        }
-      : undefined,
+    tls: {
+      // Always require TLS for cPanel email
+      rejectUnauthorized: true,
+    },
   });
+
+  private validateRequiredEnvVariables() {
+    const requiredVars = [
+      "MAIL_HOST",
+      "MAIL_PORT",
+      "MAIL_SECURE",
+      "MAIL_USERNAME",
+      "MAIL_PASSWORD",
+      "MAIL_DEFAULT_NAME",
+      "MAIL_DEFAULT_EMAIL",
+    ];
+
+    const missingVars = requiredVars.filter((varName) => !process.env[varName]);
+
+    if (missingVars.length > 0) {
+      throw new Error(
+        `Missing required environment variables: ${missingVars.join(", ")}`
+      );
+    }
+  }
 
   private async compileBaseTemplate() {
     console.log(
@@ -108,23 +100,6 @@ export class EmailService {
     );
 
     this.baseTemplate = Handlebars.compile(baseTemplateSource);
-  }
-
-  private async sendWithMailgun(
-    to: string,
-    subject: string,
-    html: string,
-    fallbackText?: string
-  ) {
-    const messageData = {
-      from: `${this.mailDefaultName} <${this.mailDefaultEmail}>`,
-      to,
-      subject,
-      html,
-      text: fallbackText || '',
-    };
-
-    return this.mailgun.messages.create(this.mailgunDomain, messageData);
   }
 
   async sendTemplate(options: {
@@ -153,36 +128,70 @@ export class EmailService {
           ? this.baseTemplate(this.baseTemplateProps(body))
           : body;
 
-      console.log("html:");
-      console.log(html);
+      // Send the email using the transporter
+      const result = await this.transporter.sendMail({
+        from: options.useBaseTemplate
+          ? `${this.mailDefaultName} <${this.mailDefaultEmail}>`
+          : `${process.env.MAIL_DEFAULT_NAME} <${process.env.MAIL_USERNAME}>`,
+        to: options.to,
+        subject: options.subject,
+        html,
+        text: options.fallbackText,
+      });
 
-      // Check if we are in production to decide email sending method
-      if (isProduction()) {
-        try {
-          const emailResult = await this.sendWithMailgun(
-            options.to,
-            options.subject,
-            html,
-            options.fallbackText
-          );
-          return { result: emailResult };
-        } catch (error) {
-          throw new Error(`Email sending failed with Mailgun: ${error}`);
-        }
-      } else {
-        console.log("Sent test email to devmail server at: localhost:1080");
-        const result = await this.transporter.sendMail({
-          from: this.mailDefaultEmail,
-          to: options.to,
-          subject: options.subject,
-          html,
-          text: options.fallbackText,
-        });
-        return { result };
-      }
+      console.log(
+        `Email sent to ${options.to}, messageId: ${result.messageId}`
+      );
+      return { result };
     } catch (error) {
       console.error("Error sending template email:", error);
       return { result: undefined, error: String(error) };
+    }
+  }
+
+  /**
+   * Verifies SMTP connection by sending a test email to the server
+   * @returns Promise that resolves if connection is valid, rejects with error if invalid
+   */
+  async verifySmtpConnection(): Promise<boolean> {
+    try {
+      // Log detailed configuration for debugging
+      console.log("SMTP Connection Details:");
+      console.log("- Host:", this.mailHost || "UNDEFINED");
+      console.log("- Port:", this.mailPort || "UNDEFINED");
+      console.log("- Secure:", this.mailSecure || "UNDEFINED");
+      console.log("- Username:", process.env.MAIL_USERNAME || "UNDEFINED");
+      console.log("- Is Production:", isProduction());
+
+      // Verify connection
+      await this.transporter.verify();
+
+      console.log("✅ SMTP connection verified successfully");
+      return true;
+    } catch (error) {
+      const errorMessage = `SMTP connection verification failed: ${error}`;
+      console.error("❌ " + errorMessage);
+      console.error("Full error details:", error);
+      throw new Error(errorMessage);
+    }
+  }
+
+  /**
+   * Manually verify SMTP connection
+   * @returns Promise<boolean> indicating if connection is valid
+   */
+  async testSmtpConnection(): Promise<{ success: boolean; message: string }> {
+    try {
+      await this.verifySmtpConnection();
+      return {
+        success: true,
+        message: `SMTP connection verified successfully for host: ${this.mailHost}`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: String(error),
+      };
     }
   }
 
@@ -193,29 +202,18 @@ export class EmailService {
     fallbackText?: string;
   }): Promise<{ result: any; error?: string }> {
     try {
-      if (isProduction()) {
-        try {
-          const emailResult = await this.sendWithMailgun(
-            options.to,
-            options.subject,
-            options.html,
-            options.fallbackText
-          );
-          return { result: emailResult };
-        } catch (error) {
-          throw new Error(`Email sending failed with Mailgun: ${error}`);
-        }
-      } else {
-        console.log("Sent test email to devmail server at: localhost:1080");
-        const result = await this.transporter.sendMail({
-          from: this.mailDefaultEmail,
-          to: options.to,
-          subject: options.subject,
-          html: options.html,
-          text: options.fallbackText,
-        });
-        return { result };
-      }
+      const result = await this.transporter.sendMail({
+        from: `${this.mailDefaultName} <${process.env.MAIL_USERNAME}>`,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+        text: options.fallbackText,
+      });
+
+      console.log(
+        `Email sent to ${options.to}, messageId: ${result.messageId}`
+      );
+      return { result };
     } catch (error) {
       console.error("Error sending email:", error);
       return { result: undefined, error: String(error) };
