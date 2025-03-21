@@ -45,8 +45,8 @@ export class AuthService<
     hashIterations?: number;
     passwordResetExpires_min?: number;
   }) {
-    if (process.env.FRONTEND_URL === undefined)
-      throw new Error("FRONTEND_URL is not defined in .env");
+    if (process.env.APP_URL === undefined)
+      throw new Error("APP_URL is not defined in .env");
 
     this.jwt = initializer.jwt;
     this.usersCollection = initializer.usersCollection;
@@ -173,8 +173,7 @@ export class AuthService<
     if (token === null) {
       return { error: "An error occurred" };
     }
-    const resetPasswordPageUrl =
-      process.env.FRONTEND_URL + "/auth/reset-password";
+    const resetPasswordPageUrl = process.env.APP_URL + "/auth/reset-password";
 
     console.log("token,resetPasswordPageUrl:");
     console.log(token, resetPasswordPageUrl);
@@ -326,52 +325,53 @@ export class AuthService<
   private hashPassword(password: string): string {
     // Generate a random salt - simple but effective approach
     const salt = this.generateRandomString(16);
-    
+
     // Simple string-based hashing that works in browser and Node.js
     // This is intentionally simplified for compatibility
     const hash = this.simpleHash(salt + password);
-    
+
     // Return salt:hash format for storage
     return `${salt}:${hash}`;
   }
-  
+
   // Verify a password against a stored hash
   private verifyPassword(password: string, storedHash: string): boolean {
     // Extract salt and hash
-    const [salt, originalHash] = storedHash.split(':');
-    
+    const [salt, originalHash] = storedHash.split(":");
+
     if (!salt || !originalHash) {
       return false;
     }
-    
+
     // Create a hash with the same salt and input password
     const hash = this.simpleHash(salt + password);
-    
+
     // Compare the resulting hash with the stored hash
     return hash === originalHash;
   }
-  
+
   // Generate a random string for salt
   private generateRandomString(length: number): string {
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
+    const chars =
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let result = "";
     for (let i = 0; i < length; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;
   }
-  
+
   // Simple string hashing function that works in all JS environments
   private simpleHash(str: string): string {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
-    
+
     // Convert to hex string and ensure it's always positive
-    return (hash >>> 0).toString(16).padStart(8, '0');
+    return (hash >>> 0).toString(16).padStart(8, "0");
   }
 
   public async hasPermissions(
@@ -405,7 +405,7 @@ export class AuthService<
           ...user,
           _id: user._id ? new ObjectId(user._id) : new ObjectId(),
           password: this.hashPassword(user.password),
-          created_at: user.created_at || DateTime.now().toISO() as string
+          created_at: user.created_at || (DateTime.now().toISO() as string),
         };
       });
 
