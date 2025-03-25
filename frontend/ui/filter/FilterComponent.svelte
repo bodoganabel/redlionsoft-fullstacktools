@@ -147,6 +147,9 @@
 
   <div class="flex flex-col gap-3">
     {#each activeFilters as filter, index}
+      {#if index > 0}
+        <hr />
+      {/if}
       <FilterRow
         {filter}
         {operators}

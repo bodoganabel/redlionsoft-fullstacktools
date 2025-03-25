@@ -24,7 +24,7 @@
   });
 </script>
 
-<div class="flex items-center gap-2">
+<div class="flex items-center gap-2 flex-wrap">
   <select
     bind:value={filter.field}
     on:change={onUpdate}
