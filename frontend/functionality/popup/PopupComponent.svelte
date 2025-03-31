@@ -76,7 +76,7 @@
   on:click|stopPropagation={handleOutsideClick}
 >
   <div
-    class="popup card variant-filled-surface max-w-lg w-full mx-auto my-8 flex flex-col"
+    class="popup card max-w-lg w-full mx-auto my-8 flex flex-col"
     style="max-height: calc(100vh - 4rem);"
   >
     <header

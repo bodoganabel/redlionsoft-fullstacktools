@@ -16,7 +16,8 @@
   export let itemsPerPage: number = 10;
   export let currentPage: number = 1;
   export let onSaveChanged: (changedData: any) => void = (changedData) => {};
-  export let onRowClick: ((rowCurrentValue: any) => void) | undefined = undefined;
+  export let onRowClick: ((rowCurrentValue: any) => void) | undefined =
+    undefined;
 
   /* Data editing */
   let originalData = clone(data);
@@ -36,7 +37,11 @@
     return {};
   }
 
-  function handleRowChanged(rowId: any, columnKey: string | number, newValue: any) {
+  function handleRowChanged(
+    rowId: any,
+    columnKey: string | number,
+    newValue: any
+  ) {
     changedRows.update((rows: any) => {
       const entireRowData = { ...data.find((item) => item._id === rowId) };
       entireRowData[columnKey] = newValue;
@@ -95,13 +100,13 @@
   });
 
   // Get displayed items based on pagination
-  $: displayedData = pagination 
-    ? data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage) 
+  $: displayedData = pagination
+    ? data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
     : data;
 </script>
 
-<div 
-  class={classOverride || "w-full flex flex-col overflow-hidden shadow-md dark:border-gray-600 dark:border"}
+<div
+  class={classOverride || "w-full flex flex-col overflow-hidden"}
   bind:this={containerRef}
 >
   <!-- Mobile card-based layout -->
@@ -110,25 +115,33 @@
       {#if row._id}
         <!-- svelte-ignore a11y-click-events-have-key-events -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
-        <div 
-          class="card variant-filled-surface mb-4 p-3 {$changedRows[row._id] !== undefined ? 'border-l-4 border-warning-500' : ''} {onRowClick ? 'cursor-pointer' : ''}"
+        <div
+          class="card mb-4 p-3 {$changedRows[row._id] !== undefined
+            ? 'border-l-4 border-warning-500'
+            : ''} {onRowClick ? 'cursor-pointer' : ''}"
           on:click={() => {
             onRowClick !== undefined ? onRowClick(row) : undefined;
           }}
         >
           {#each columns as cell}
-            <div class="flex justify-between py-2 border-b border-surface-300-600-token">
+            <div
+              class="flex justify-between py-2 border-b border-surface-300-600-token"
+            >
               <!-- Column name/label -->
               <div class="font-medium text-sm flex-shrink-0 w-1/3 pr-2">
                 {cell.title || cell.key}
               </div>
-              
+
               <!-- Value display -->
               <div class="text-sm flex-grow">
                 {#if cell.type === EDataGridColumnTypes.TEXT}
-                  <p 
-                    style={cell.style ? cell.style(getNestedValue(row, cell.key)) : ""}
-                    class={cell.class ? cell.class(getNestedValue(row, cell.key)) : ""}
+                  <p
+                    style={cell.style
+                      ? cell.style(getNestedValue(row, cell.key))
+                      : ""}
+                    class={cell.class
+                      ? cell.class(getNestedValue(row, cell.key))
+                      : ""}
                   >
                     {cell.transform
                       ? cell.transform(getNestedValue(row, cell.key))
@@ -140,10 +153,18 @@
                     class={cell.class
                       ? cell.class(getNestedValue(row, cell.key))
                       : "input w-full"}
-                    on:input={(e) => handleRowChanged(row._id, cell.key, e.currentTarget.value)}
+                    on:input={(e) =>
+                      handleRowChanged(
+                        row._id,
+                        cell.key,
+                        e.currentTarget.value
+                      )}
                   />
                 {:else if cell.type === EDataGridColumnTypes.COMPONENT}
-                  <svelte:component this={cell.component} {...spreadProps(cell, row)} />
+                  <svelte:component
+                    this={cell.component}
+                    {...spreadProps(cell, row)}
+                  />
                 {/if}
               </div>
             </div>
@@ -157,10 +178,13 @@
 
   {#if $changedRows && Object.keys($changedRows).length}
     <div class="flex justify-center space-x-2 p-3 bg-warning-600 shadow-md">
-      <button class="variant-outline-error" on:click={resetChanges}>Reset</button>
-      <button class="variant-filled-primary" on:click={saveChanges}>Save</button>
+      <button class="variant-outline-error" on:click={resetChanges}
+        >Reset</button
+      >
+      <button class="variant-filled-primary" on:click={saveChanges}>Save</button
+      >
     </div>
   {/if}
-  
+
   <Footer {pagination} {data} bind:currentPage bind:itemsPerPage />
 </div>
