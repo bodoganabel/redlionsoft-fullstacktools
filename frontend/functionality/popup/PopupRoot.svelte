@@ -16,7 +16,7 @@
   >
     {#each popups as popup (popup.id)}
       <PopupComponent
-        id={popup.id}
+        id={popup.id || "default-popup"}
         title={popup.title || ""}
         message={popup.message || ""}
         component={popup.component}
