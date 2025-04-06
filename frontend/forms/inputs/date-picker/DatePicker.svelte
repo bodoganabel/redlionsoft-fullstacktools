@@ -1,25 +1,25 @@
 <script lang="ts">
-  import { DateTime } from "luxon";
-  import DatePickerCalendarDays from "./DatePickerCalendarDays.svelte";
-  import DatePickerCalendarFooter from "./DatePickerCalendarFooter.svelte";
-  import DatePickerCalendarHeader from "./DatePickerCalendarHeader.svelte";
-  import DatePickerWeekdays from "./DatePickerWeekdays.svelte";
+  import { DateTime } from 'luxon';
+  import DatePickerCalendarDays from './DatePickerCalendarDays.svelte';
+  import DatePickerCalendarHeader from './DatePickerCalendarHeader.svelte';
+  import DatePickerWeekdays from './DatePickerWeekdays.svelte';
 
-  export let startDayOfWeek = 1; // 0 = Sunday, 1 = Monday, etc.
-  export let weekdaysShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  // Default weekdays starting with Monday through Sunday
+  // This maintains the European/ISO standard where Monday is the first day of the week
+  export let weekdaysShort = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   export let monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
 
   export let initialDate: DateTime = DateTime.now();
@@ -32,10 +32,8 @@
   let dates: (DateTime | null)[] = [];
 
   $: if (selectedDate) updateCalendar();
-  $: orderedWeekdays = [
-    ...weekdaysShort.slice(startDayOfWeek),
-    ...weekdaysShort.slice(0, startDayOfWeek),
-  ];
+  // For Monday start (startDayOfWeek=1), this correctly puts Mon first
+  $: orderedWeekdays = weekdaysShort;
 
   function onDateSelected(newDate: DateTime) {
     selectedDate = newDate;
@@ -85,16 +83,17 @@
     });
     const daysInMonth = firstDayOfMonth.daysInMonth;
     if (daysInMonth === undefined) return;
-    const firstDayOfWeek = (firstDayOfMonth.weekday - startDayOfWeek + 7) % 7;
+    // Calculate day offset based on Luxon weekday (1=Monday, 7=Sunday)
+    // Since we're using Monday as first day, we can use weekday-1 directly
+    // This gives us 0 for Monday, 1 for Tuesday, etc.
+    const firstDayOfWeek = (firstDayOfMonth.weekday - 1);
 
     const totalDays = firstDayOfWeek + daysInMonth;
     const daysToAdd = (7 - (totalDays % 7)) % 7;
 
     dates = [
       ...Array(firstDayOfWeek).fill(null),
-      ...Array.from({ length: daysInMonth }, (_, i) =>
-        firstDayOfMonth.plus({ days: i })
-      ),
+      ...Array.from({ length: daysInMonth }, (_, i) => firstDayOfMonth.plus({ days: i })),
       ...Array(daysToAdd).fill(null),
     ];
   }
@@ -111,10 +110,5 @@
 
   <DatePickerWeekdays {orderedWeekdays} />
 
-  <DatePickerCalendarDays
-    {dates}
-    {selectedDate}
-    {minDate}
-    onDateSelect={onDateSelected}
-  />
+  <DatePickerCalendarDays {dates} {selectedDate} {minDate} onDateSelect={onDateSelected} />
 </div>
