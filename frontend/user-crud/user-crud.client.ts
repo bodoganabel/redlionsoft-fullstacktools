@@ -57,6 +57,85 @@ export class UCrudResourceClient<TResourceData> {
     return null;
   }
 
+  async updateResource(oldName: string, newName: string, newData: TResourceData): Promise<boolean> {
+    // Fetch all resources to check for existence
+    const { data: resources } = await apiRequest<TResource<TResourceData>[]>({
+      url: this.baseUrl,
+      method: "GET",
+    });
+    if (!resources) {
+      toastError("Could not load resources");
+      return false;
+    }
+    const oldResource = resources.find((r) => r.resourceId === oldName);
+    const newResource = resources.find((r) => r.resourceId === newName);
+
+    // If oldName === newName, just update the resource
+    if (oldName === newName) {
+      const { data, error } = await apiRequest({
+        url: this.baseUrl,
+        method: "PUT",
+        body: {
+          resourceId: newName,
+          data: newData,
+        },
+      });
+      if (data) {
+        toastSuccess(`${newName} updated successfully`);
+        return true;
+      }
+      toastError(error?.message || "Failed to update resource");
+      return false;
+    }
+
+    // If newName exists, overwrite it
+    if (newResource) {
+      // Overwrite newName with newData
+      const { data, error } = await apiRequest({
+        url: this.baseUrl,
+        method: "PUT",
+        body: {
+          resourceId: newName,
+          data: newData,
+        },
+      });
+      if (!data) {
+        toastError(error?.message || `Failed to overwrite resource '${newName}'`);
+        return false;
+      }
+    } else {
+      // Create new resource with newName
+      const { data, error } = await apiRequest({
+        url: this.baseUrl,
+        method: "PUT",
+        body: {
+          resourceId: newName,
+          data: newData,
+        },
+      });
+      if (!data) {
+        toastError(error?.message || `Failed to create resource '${newName}'`);
+        return false;
+      }
+    }
+
+    // Optionally delete the old resource if it exists and name changed
+    if (oldResource && oldName !== newName) {
+      const { error: delError } = await apiRequest({
+        url: this.baseUrl,
+        method: "DELETE",
+        body: { resourceId: oldName },
+      });
+      if (delError) {
+        toastError(delError?.message || `Failed to delete old resource '${oldName}'`);
+        // Still return true since update succeeded, but warn in UI
+      }
+    }
+    toastSuccess("Resource updated and renamed successfully");
+    return true;
+  }
+
+  // Existing renameResource function below (unchanged)
   async renameResource(oldName: string, newName: string): Promise<boolean> {
     const { data: resources } = await apiRequest<any[]>({
       url: this.baseUrl,
