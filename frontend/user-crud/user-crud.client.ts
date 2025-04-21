@@ -162,29 +162,20 @@ export class UCrudResourceClient<TResourceData> {
 
   async deleteResource(
     resource: TResource<TResourceData>,
-    onConfirmDelete: () => void | Promise<void>
   ): Promise<boolean> {
-    const confirmResult = popup({
-      id: "confirm-delete-resource",
-      title: `Are you sure you want to delete ${resource.resourceId}?`,
-      onAccept: async () => {
-        const { data, error } = await apiRequest({
-          url: this.baseUrl,
-          method: "DELETE",
-          body: { resourceId: resource.resourceId },
-        });
-        await onConfirmDelete();
-        if (data) {
-          toastSuccess("Resource deleted successfully");
-          return true;
-        }
-        toastError(error?.message || "Failed to delete resource");
-        return false;
-      },
-      acceptMessage: "Delete",
-      closeMessage: "Cancel",
+
+    const { data, error } = await apiRequest({
+      url: this.baseUrl,
+      method: "DELETE",
+      body: { resourceId: resource.resourceId },
     });
-    return !!confirmResult;
+
+    if (data) {
+      toastSuccess("Resource deleted successfully");
+      return true;
+    }
+    toastError(error?.message || "Failed to delete resource");
+    return false;
   }
 
   async favoriteResource(resource: TResource<TResourceData>): Promise<boolean> {
