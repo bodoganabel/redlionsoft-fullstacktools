@@ -150,7 +150,7 @@ export class UserCrudService {
 
       const results = await this.collection
         .find({ userId: user._id })
-        .sort({ order: 1 }) // Sort by order ascending
+        .sort({ order: -1 }) // Sort by order descending (smallest last)
         .toArray();
       return json(results, { status: 200 });
     } catch (error) {
