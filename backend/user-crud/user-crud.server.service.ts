@@ -189,8 +189,12 @@ export class UserCrudService {
           updatedAt: new Date().toISOString(),
         };
 
-        // Preserve the existing order when updating
-        if (existingDoc?.order !== undefined) {
+        // Always preserve the existing order unless the client provides a new one
+        console.log('data.order, existingDoc.order:');
+        console.log(data.order, existingDoc?.order);
+        if (data.order !== undefined) {
+          updateDoc.order = data.order;
+        } else if (existingDoc?.order !== undefined) {
           updateDoc.order = existingDoc.order;
         }
 

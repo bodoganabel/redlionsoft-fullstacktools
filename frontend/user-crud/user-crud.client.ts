@@ -92,12 +92,12 @@ export class UCrudResourceClient<TResourceData> {
 
     // If newName exists, overwrite it
     if (newResource) {
-      // Overwrite newName with newData
+      // Overwrite newName with newData, but preserve order from oldResource if available
       const { data, error } = await apiRequest({
         url: this.baseUrl,
         method: "PUT",
         body: {
-          order: newResource.order,
+          order: oldResource?.order ?? newResource.order,
           resourceId: newName,
           data: newData,
         },
@@ -107,11 +107,12 @@ export class UCrudResourceClient<TResourceData> {
         return false;
       }
     } else {
-      // Create new resource with newName
+      // Create new resource with newName and preserve order from oldResource if available
       const { data, error } = await apiRequest({
         url: this.baseUrl,
         method: "PUT",
         body: {
+          order: oldResource?.order,
           resourceId: newName,
           data: newData,
         },
