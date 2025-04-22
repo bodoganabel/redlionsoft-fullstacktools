@@ -18,7 +18,7 @@ export class UCrudResourceClient<TResourceData> {
     if (data) {
       const sortedData = data.sort(
         (resourceA, resourceB) =>
-          (resourceA.order ?? Infinity) - (resourceB.order ?? Infinity)
+          (resourceB.order ?? -Infinity) - (resourceA.order ?? -Infinity)
       );
       return sortedData;
     }
