@@ -31,27 +31,26 @@ export class UserCrudService {
     this.isStoreChangeHistory = options.isStoreChangeHistory;
   }
 
-  private validateData(data: unknown): z.infer<typeof this.dataSchema> | null {
+  private validateData(data: unknown): z.infer<typeof this.dataSchema> | string | null {
     try {
       devOnly(() => {
         console.log("Validating data:", data);
       });
 
       const validated = this.dataSchema.parse(data);
-
       devOnly(() => {
         console.log("Validation passed:", validated);
       });
 
       return validated;
     } catch (error) {
-      devOnly(() => {
-        console.error("Validation error:", error);
-        if (error instanceof z.ZodError) {
-          console.error("Zod validation errors:");
-          console.error(error.format());
-        }
-      });
+      if (error instanceof z.ZodError) {
+        // Human-readable error summary
+        console.log('Zod validation errors:');
+        console.log(error.errors.map(e => `Field '${e.path.join('.') || '(root)'}': ${e.message}`).join('; '))
+        console.error(error.format());
+        return null;
+      }
       return null;
     }
   }
@@ -170,18 +169,13 @@ export class UserCrudService {
 
       const data = await request.json();
 
-      console.log("data :");
-      console.log(data);
-
       if (!data.resourceId?.trim()) {
         return json({ error: "Resource ID cannot be empty" }, { status: 400 });
       }
 
-      console.log("updateData:");
-      console.log(data);
-
       const validatedData = this.validateData(data.data);
-      if (!validatedData) {
+
+      if (validatedData === null) {
         return json({ error: "Invalid data format" }, { status: 400 });
       }
 
@@ -190,10 +184,10 @@ export class UserCrudService {
         const existingDoc = await this.collection.findOne(query);
 
         const updateDoc: Partial<WithAnyData<z.infer<typeof this.dataSchema>>> =
-          {
-            data: validatedData,
-            updatedAt: new Date().toISOString(),
-          };
+        {
+          data: validatedData,
+          updatedAt: new Date().toISOString(),
+        };
 
         // Preserve the existing order when updating
         if (existingDoc?.order !== undefined) {
@@ -217,12 +211,12 @@ export class UserCrudService {
             $set: existingDoc
               ? updateDoc
               : {
-                  ...updateDoc,
-                  userId: user._id,
-                  resourceId: data.resourceId,
-                  createdAt: new Date().toISOString(),
-                  changeHistory: [],
-                },
+                ...updateDoc,
+                userId: user._id,
+                resourceId: data.resourceId,
+                createdAt: new Date().toISOString(),
+                changeHistory: [],
+              },
           },
           { returnDocument: "after", upsert: true }
         );

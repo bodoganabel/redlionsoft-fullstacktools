@@ -35,6 +35,7 @@ export class UCrudResourceClient<TResourceData> {
       0
     );
 
+
     const newResource: TResource<TResourceData> = {
       data: data,
       resourceId: resourceName,
@@ -76,6 +77,7 @@ export class UCrudResourceClient<TResourceData> {
         url: this.baseUrl,
         method: "PUT",
         body: {
+          order: oldResource?.order ?? undefined,
           resourceId: newName,
           data: newData,
         },
@@ -95,6 +97,7 @@ export class UCrudResourceClient<TResourceData> {
         url: this.baseUrl,
         method: "PUT",
         body: {
+          order: newResource.order,
           resourceId: newName,
           data: newData,
         },
