@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { columnWidthStyle } from "./data-grid.utilities";
-  import { EDataGridColumnTypes, type IColumnType } from "./data-grid.types";
+  import { columnWidthStyle } from './data-grid.utilities';
+  import { EDataGridColumnTypes, type IColumnType } from './data-grid.types';
 
   export let cells: IColumnType<any>[];
   export let cellWidthInPixels: number;
@@ -11,9 +11,7 @@
 
   // Utility function to get a nested value
   function getNestedValue(obj: any, path: string): any {
-    return path
-      .split(".")
-      .reduce((acc, key) => (acc ? acc[key] : undefined), obj);
+    return path.split('.').reduce((acc, key) => (acc ? acc[key] : undefined), obj);
   }
 
   function spreadProps(cell: any, row: any) {
@@ -44,8 +42,8 @@
     >
       {#if cell.type === EDataGridColumnTypes.TEXT}
         <p
-          style={cell.style ? cell.style(getNestedValue(row, cell.key)) : ""}
-          class={cell.class ? cell.class(getNestedValue(row, cell.key)) : ""}
+          style={cell.style ? cell.style(getNestedValue(row, cell.key)) : ''}
+          class={cell.class ? cell.class(getNestedValue(row, cell.key)) : ''}
         >
           {cell.transform
             ? cell.transform(getNestedValue(row, cell.key))
@@ -54,10 +52,9 @@
       {:else if cell.type === EDataGridColumnTypes.INPUT}
         <input
           value={getNestedValue(row, cell.key)}
-          class={cell.class
-            ? cell.class(getNestedValue(row, cell.key))
-            : "input"}
-          on:input={(e) => handleRowChange(cell.key, e.currentTarget.value)}
+          class={cell.class ? cell.class(getNestedValue(row, cell.key)) : 'input'}
+          on:input|stopPropagation={(e) => handleRowChange(cell.key, e.currentTarget.value)}
+          on:click|stopPropagation={() => {}}
         />
       {:else if cell.type === EDataGridColumnTypes.COMPONENT}
         <svelte:component this={cell.component} {...spreadProps(cell, row)} />
