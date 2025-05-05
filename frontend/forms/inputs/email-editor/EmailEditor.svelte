@@ -23,6 +23,9 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   import EmailAttachments from './components/EmailAttachments.svelte';
   import { emailEditorStore } from './email-editor.store';
   import EmailTemplateManagerButton from './components/EmailTemplateManagerButton.svelte';
+  import { UCrudResourceClient } from '../../../user-crud/user-crud.client';
+
+  export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
 
   const formContext = createFormContext();
 
@@ -169,6 +172,7 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
           bind:editor
           {handleTemplateSelect}
           selectedFiles={$emailEditorStore.attachedFiles}
+          {emailTemplateUCrudClient}
         />
       </div>
     </div>

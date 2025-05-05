@@ -6,10 +6,12 @@
   import type { Editor } from '@tiptap/core';
   import type { TResource } from '../../../../../backend/user-crud/types';
   import type { TEmailTemplate } from '../email-template.types';
+  import { UCrudResourceClient } from '../../../../user-crud/user-crud.client';
 
   export let selectedFiles: File[];
   export let editor: Editor;
   export let handleTemplateSelect: (template: TResource<TEmailTemplate>) => void;
+  export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
 
   function openTemplateManager() {
     popup({
@@ -20,6 +22,7 @@
         currentDraftEmailContent: editor?.getHTML?.() ?? '',
         currentDraftAttachedFiles: selectedFiles,
         onTemplateSelect: handleTemplateSelect,
+        emailTemplateUCrudClient,
       },
       isOutsideClickClose: true,
     });

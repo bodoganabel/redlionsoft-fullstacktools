@@ -7,13 +7,14 @@
   import EditEmailTemplate from './EditEmailTemplate.svelte';
   import { toastError, toastSuccess } from '../../../functionality/toast/toast-logic';
   import IconDragHandle from '../../../icons/IconDragHandle.svelte';
-    import { TResource } from '../../../../backend/user-crud/types';
-    import SpinnerRls from '../../../elements/SpinnerRls.svelte';
+  import type { TResource } from '../../../../backend/user-crud/types';
+  import SpinnerRls from '../../../elements/SpinnerRls.svelte';
+  import { UCrudResourceClient } from '../../../user-crud/user-crud.client';
 
   export let currentDraftEmailContent: string;
   export let currentDraftAttachedFiles: File[];
   export let onTemplateSelect: (template: TResource<TEmailTemplate>) => Promise<void>;
-    export let emailTemplateUCrudClient: ;
+  export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
 
   onMount(async () => {
     console.log('currentDraftAttachedFiles - just after opening popup:');
@@ -152,7 +153,7 @@
     {/if}
     <div class="flex flex-col gap-0">
       {#if isLoadingEmailTemplates}
-        <div class="flex justify-center items-center">
+        <div class="mt-3 flex justify-center items-center size-8">
           <SpinnerRls />
         </div>
       {/if}
