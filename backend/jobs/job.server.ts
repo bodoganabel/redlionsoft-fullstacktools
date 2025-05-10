@@ -1,20 +1,20 @@
 import { json } from "@sveltejs/kit";
 import type { AuthService } from "../auth/auth.service";
 import { JobService } from "./job.service";
+import { z } from "zod";
 
-export const createJobEndpoint = (authService: AuthService<any, any, any, any>) => {
-    const jobService = new JobService(authService);
+export const createJobEndpoint = <TJobMetadataSchema extends z.ZodType>(authService: AuthService<any, any, any, any>, jobService: JobService<TJobMetadataSchema>) => {
 
     // Create a new job
     const POST = async ({ request, cookies }: any) => {
         const user = await authService.getServerUserFromCookies(cookies);
 
         if (!user) {
-            return json({ 
-                error: { 
-                    message: "User not authenticated", 
-                    code: "AUTH_REQUIRED" 
-                } 
+            return json({
+                error: {
+                    message: "User not authenticated",
+                    code: "AUTH_REQUIRED"
+                }
             }, { status: 401 });
         }
 
@@ -26,11 +26,11 @@ export const createJobEndpoint = (authService: AuthService<any, any, any, any>) 
         const user = await authService.getServerUserFromCookies(cookies);
 
         if (!user) {
-            return json({ 
-                error: { 
-                    message: "User not authenticated", 
-                    code: "AUTH_REQUIRED" 
-                } 
+            return json({
+                error: {
+                    message: "User not authenticated",
+                    code: "AUTH_REQUIRED"
+                }
             }, { status: 401 });
         }
 
@@ -42,11 +42,11 @@ export const createJobEndpoint = (authService: AuthService<any, any, any, any>) 
         const user = await authService.getServerUserFromCookies(cookies);
 
         if (!user) {
-            return json({ 
-                error: { 
-                    message: "User not authenticated", 
-                    code: "AUTH_REQUIRED" 
-                } 
+            return json({
+                error: {
+                    message: "User not authenticated",
+                    code: "AUTH_REQUIRED"
+                }
             }, { status: 401 });
         }
 
@@ -58,11 +58,11 @@ export const createJobEndpoint = (authService: AuthService<any, any, any, any>) 
         const user = await authService.getServerUserFromCookies(cookies);
 
         if (!user) {
-            return json({ 
-                error: { 
-                    message: "User not authenticated", 
-                    code: "AUTH_REQUIRED" 
-                } 
+            return json({
+                error: {
+                    message: "User not authenticated",
+                    code: "AUTH_REQUIRED"
+                }
             }, { status: 401 });
         }
 
@@ -74,11 +74,11 @@ export const createJobEndpoint = (authService: AuthService<any, any, any, any>) 
         const user = await authService.getServerUserFromCookies(cookies);
 
         if (!user) {
-            return json({ 
-                error: { 
-                    message: "User not authenticated", 
-                    code: "AUTH_REQUIRED" 
-                } 
+            return json({
+                error: {
+                    message: "User not authenticated",
+                    code: "AUTH_REQUIRED"
+                }
             }, { status: 401 });
         }
 
@@ -92,12 +92,4 @@ export const createJobEndpoint = (authService: AuthService<any, any, any, any>) 
         DELETE,
         PATCH
     };
-};
-
-// Helper function to create a job service with custom metadata schema
-export const createJobServiceWithMetadata = <T>(
-    authService: AuthService<any, any, any, any>, 
-    metadataSchema: any
-) => {
-    return JobService.createWithMetadataSchema<T>(authService, metadataSchema);
 };

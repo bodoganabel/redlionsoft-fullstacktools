@@ -8,7 +8,6 @@ export enum EJobStatuses {
     CANCELED = "CANCELED"
 };
 
-
 // Base schema without metadata
 export const ServerJobBaseSchema = z.object({
     _id: z.string().optional(),
@@ -17,32 +16,41 @@ export const ServerJobBaseSchema = z.object({
     description: z.string().optional(),
     createdAt: z.string().optional(),
     targetDateIso: z.string(),
-    targetFunction: z.function(),
-    targetFunctionArgs: z.array(z.any()),
     status: z.nativeEnum(EJobStatuses),
     retries: z.number(),
     retryCount: z.number(),
+    //target: The actual function to be executed will be added in metadata
 });
 
 // Default metadata schema (for backward compatibility)
-export const DefaultMetadataSchema = z.any();
+export const DefaultMetadataSchema = z.record(z.any());
 
-// Function to create a job schema with custom metadata schema
-export function createServerJobSchema<T extends z.ZodType = typeof DefaultMetadataSchema>(
-    metadataSchema: T = DefaultMetadataSchema as unknown as T
+/**
+ * Creates a job schema with custom metadata schema
+ * @template TMetadata The Zod schema type for metadata
+ * @param metadataSchema The Zod schema for metadata validation
+ * @returns A Zod schema for server jobs with the specified metadata schema
+ */
+export function createServerJobSchema<TMetadata extends z.ZodType>(
+    metadataSchema: TMetadata
 ) {
     return ServerJobBaseSchema.extend({
         metadata: metadataSchema,
     });
 }
 
-// Default ServerJobSchema for backward compatibility
-export const ServerJobSchema = createServerJobSchema();
+// Type for a server job with strongly typed metadata
+export type TServerJob<TMetadataType = Record<string, any>> =
+    z.infer<typeof ServerJobBaseSchema> & {
+        metadata: TMetadataType;
+    };
 
-// Type for a server job with default metadata
-export type TServerJob = z.infer<typeof ServerJobSchema>;
+/**
+ * Type helper to extract the metadata type from a job schema
+ * @template TSchema The Zod schema type
+ */
+export type ExtractJobMetadataType<TSchema extends z.ZodType> =
+    z.infer<TSchema> extends { metadata: infer TMetadata } ? TMetadata : never;
 
-// Type for a server job with custom metadata
-export type TServerJobWithMetadata<T> = Omit<z.infer<typeof ServerJobBaseSchema>, 'metadata'> & {
-    metadata: T;
-};
+// For backward compatibility
+export const ServerJobSchema = createServerJobSchema(DefaultMetadataSchema);

@@ -4,27 +4,30 @@ import type { Cookies } from "@sveltejs/kit";
 import { DateTime } from "luxon";
 import { z } from "zod";
 import { Database } from "../database";
-import { EJobStatuses, ServerJobSchema, type TServerJob } from "./job.types";
+import { createServerJobSchema, EJobStatuses, type TServerJob, type ExtractJobMetadataType } from "./job.types";
 import type { AuthService } from "../auth/auth.service";
 import { devOnly } from "../../common/utilities/general";
 
 
-export class JobService {
-    private collection!: Collection<TServerJob>;
+export class JobService<TJobMetadataSchema extends z.ZodType> {
+    private collection!: Collection<TServerJob<ExtractJobMetadataType<TJobMetadataSchema>>>;
     private authService: AuthService<any, any, any, any>;
     private jobSchema: z.ZodType;
     private collectionName = "serverJobs";
+    private actionExecutor: (job: TServerJob<ExtractJobMetadataType<TJobMetadataSchema>>) => Promise<void>;
 
     constructor(
         authService: AuthService<any, any, any, any>,
-        options?: {
+        actionExecutor: (job: TServerJob<ExtractJobMetadataType<TJobMetadataSchema>>) => Promise<void>,
+        options: {
             collectionName?: string;
-            jobSchema?: z.ZodType;
+            metadataSchema: TJobMetadataSchema;
         }
     ) {
         this.authService = authService;
         this.collectionName = options?.collectionName || this.collectionName;
-        this.jobSchema = options?.jobSchema || ServerJobSchema;
+        this.jobSchema = createServerJobSchema(options.metadataSchema);
+        this.actionExecutor = actionExecutor;
     }
 
     /**
@@ -32,7 +35,7 @@ export class JobService {
      */
     private async initCollection() {
         if (!this.collection) {
-            this.collection = await Database.createCollection<TServerJob>(this.collectionName) as any;
+            this.collection = await Database.createCollection(this.collectionName) as Collection<TServerJob<ExtractJobMetadataType<TJobMetadataSchema>>>;
         }
         return this.collection;
     }
@@ -81,10 +84,10 @@ export class JobService {
             }
 
             const requestData = await request.json();
-            const jobData = requestData.job;
+            const jobData = requestData;
 
             // Add user ID and default values
-            jobData.userId = user._id;
+            jobData.userId = user._id.toString();
             jobData.createdAt = jobData.createdAt || DateTime.now().toISO();
             jobData.status = jobData.status || EJobStatuses.PENDING;
             jobData.retries = jobData.retries || 3;
@@ -415,7 +418,7 @@ export class JobService {
 
             try {
                 // Execute the job function with the provided arguments
-                const result = await job.targetFunction(...job.targetFunctionArgs);
+                const result = await this.actionExecutor(job);
 
                 // Update job status to completed
                 await this.collection.updateOne(
@@ -499,7 +502,7 @@ export class JobService {
                     );
 
                     // Execute the job function
-                    const result = await job.targetFunction(...job.targetFunctionArgs);
+                    const result = await this.actionExecutor(job);
 
                     // Update job as completed
                     await this.collection.updateOne(
@@ -535,18 +538,5 @@ export class JobService {
         } catch (error) {
             console.error("Failed to process pending jobs:", error);
         }
-    }
-
-    /**
-     * Create a job with custom metadata schema
-     */
-    static createWithMetadataSchema<T>(authService: AuthService<any, any, any, any>, metadataSchema: z.ZodType<T>) {
-        const jobSchema = ServerJobSchema.extend({
-            metadata: metadataSchema
-        });
-
-        return new JobService(authService, {
-            jobSchema
-        });
     }
 }
