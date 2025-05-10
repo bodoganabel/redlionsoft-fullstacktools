@@ -475,6 +475,26 @@ export class JobService<TJobMetadataSchema extends z.ZodType> {
         }
     }
 
+
+    async getPendingJobs(): Promise<TServerJob[]> {
+        try {
+            await this.initCollection();
+
+            const now = DateTime.now().toISO();
+
+            // Find jobs that are pending and due to run
+            const pendingJobs = await this.collection.find({
+                status: EJobStatuses.PENDING,
+                targetDateIso: { $lte: now }
+            }).toArray();
+
+            return pendingJobs as TServerJob[];
+        } catch (error) {
+            console.error("Failed to get pending jobs:", error);
+            return [];
+        }
+    }
+
     /**
      * Process pending jobs that are due to run
      * This should be called by a cron job or similar

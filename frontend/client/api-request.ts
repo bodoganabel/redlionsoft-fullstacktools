@@ -1,5 +1,3 @@
-import { AnyARecord } from "dns";
-
 // Types
 export type ApiResponse<TData> = {
   data: TData | null;
