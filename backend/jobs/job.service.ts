@@ -69,25 +69,12 @@ export class JobService<TJobMetadataSchema extends z.ZodType> {
     /**
      * Create a new job
      */
-    async createJob(request: Request, cookies: Cookies): Promise<Response> {
+    async createJob(jobData: TServerJob<TJobMetadataSchema>): Promise<Response> {
         try {
             await this.initCollection();
 
-            const user = await this.authService.getServerUserFromCookies(cookies);
-            if (!user) {
-                return json({
-                    error: {
-                        message: "Unauthorized",
-                        code: "AUTH_REQUIRED"
-                    }
-                }, { status: 401 });
-            }
-
-            const requestData = await request.json();
-            const jobData = requestData;
-
             // Add user ID and default values
-            jobData.userId = user._id.toString();
+            jobData.userId = jobData.userId.toString();
             jobData.createdAt = jobData.createdAt || DateTime.now().toISO();
             jobData.status = jobData.status || EJobStatuses.PENDING;
             jobData.retries = jobData.retries || 3;

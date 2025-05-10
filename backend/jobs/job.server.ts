@@ -18,7 +18,8 @@ export const createJobEndpoint = <TJobMetadataSchema extends z.ZodType>(authServ
             }, { status: 401 });
         }
 
-        return await jobService.createJob(request, cookies);
+        const jobData = await request.json();
+        return await jobService.createJob(jobData);
     };
 
     // Get jobs
