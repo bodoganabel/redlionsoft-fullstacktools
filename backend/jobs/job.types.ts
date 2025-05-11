@@ -45,12 +45,5 @@ export type TServerJob<TMetadataType = Record<string, any>> =
         metadata: TMetadataType;
     };
 
-/**
- * Type helper to extract the metadata type from a job schema
- * @template TSchema The Zod schema type
- */
-export type ExtractJobMetadataType<TSchema extends z.ZodType> =
-    z.infer<TSchema> extends { metadata: infer TMetadata } ? TMetadata : never;
-
 // For backward compatibility
 export const ServerJobSchema = createServerJobSchema(DefaultMetadataSchema);

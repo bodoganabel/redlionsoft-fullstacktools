@@ -4,24 +4,24 @@ import type { Cookies } from "@sveltejs/kit";
 import { DateTime } from "luxon";
 import { z } from "zod";
 import { Database } from "../database";
-import { createServerJobSchema, EJobStatuses, type TServerJob, type ExtractJobMetadataType } from "./job.types";
+import { createServerJobSchema, EJobStatuses, type TServerJob } from "./job.types";
 import type { AuthService } from "../auth/auth.service";
 import { devOnly } from "../../common/utilities/general";
 
 
-export class JobService<TJobMetadataSchema extends z.ZodType> {
-    private collection!: Collection<TServerJob<ExtractJobMetadataType<TJobMetadataSchema>>>;
+export class JobService<TJobMetadata> {
+    private collection!: Collection;
     private authService: AuthService<any, any, any, any>;
     private jobSchema: z.ZodType;
     private collectionName = "serverJobs";
-    private actionExecutor: (job: TServerJob<ExtractJobMetadataType<TJobMetadataSchema>>) => Promise<void>;
+    private actionExecutor: (job: TServerJob<TJobMetadata>) => Promise<void>;
 
     constructor(
         authService: AuthService<any, any, any, any>,
-        actionExecutor: (job: TServerJob<ExtractJobMetadataType<TJobMetadataSchema>>) => Promise<void>,
+        actionExecutor: (job: TServerJob<TJobMetadata>) => Promise<void>,
         options: {
             collectionName?: string;
-            metadataSchema: TJobMetadataSchema;
+            metadataSchema: z.ZodType;
         }
     ) {
         this.authService = authService;
@@ -35,7 +35,7 @@ export class JobService<TJobMetadataSchema extends z.ZodType> {
      */
     private async initCollection() {
         if (!this.collection) {
-            this.collection = await Database.createCollection(this.collectionName) as Collection<TServerJob<ExtractJobMetadataType<TJobMetadataSchema>>>;
+            this.collection = await Database.createCollection(this.collectionName) as Collection<TServerJob<TJobMetadata>> as unknown as Collection;
         }
         return this.collection;
     }
@@ -69,7 +69,7 @@ export class JobService<TJobMetadataSchema extends z.ZodType> {
     /**
      * Create a new job
      */
-    async createJob(jobData: TServerJob<TJobMetadataSchema>): Promise<Response> {
+    async createJob(jobData: TServerJob<TJobMetadata>): Promise<Response> {
         try {
             await this.initCollection();
 
@@ -386,7 +386,7 @@ export class JobService<TJobMetadataSchema extends z.ZodType> {
             const job = await this.collection.findOne({
                 _id: objectId as any,
                 userId: user._id
-            });
+            }) as unknown as TServerJob<TJobMetadata> | null;
 
             if (!job) {
                 return json({
@@ -463,7 +463,7 @@ export class JobService<TJobMetadataSchema extends z.ZodType> {
     }
 
 
-    async getPendingJobs(): Promise<TServerJob[]> {
+    async getPendingJobs(): Promise<TServerJob<TJobMetadata>[]> {
         try {
             await this.initCollection();
 
@@ -475,7 +475,7 @@ export class JobService<TJobMetadataSchema extends z.ZodType> {
                 targetDateIso: { $lte: now }
             }).toArray();
 
-            return pendingJobs as TServerJob[];
+            return pendingJobs as unknown as TServerJob<TJobMetadata>[] | [];
         } catch (error) {
             console.error("Failed to get pending jobs:", error);
             return [];
@@ -496,7 +496,7 @@ export class JobService<TJobMetadataSchema extends z.ZodType> {
             const pendingJobs = await this.collection.find({
                 status: EJobStatuses.PENDING,
                 targetDateIso: { $lte: now }
-            }).toArray();
+            }).toArray() as unknown as TServerJob<TJobMetadata>[] | [];
 
             console.log(`Processing ${pendingJobs.length} pending jobs`);
 
