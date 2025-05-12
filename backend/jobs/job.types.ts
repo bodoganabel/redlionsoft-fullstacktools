@@ -2,10 +2,8 @@ import { z } from "zod";
 
 export enum EJobStatuses {
     PENDING = "PENDING",
-    RUNNING = "RUNNING",
     COMPLETED = "COMPLETED",
-    FAILED = "FAILED",
-    CANCELED = "CANCELED"
+    FAILED = "FAILED"
 };
 
 // Base schema without metadata
@@ -17,8 +15,12 @@ export const ServerJobBaseSchema = z.object({
     createdAt: z.string().optional(),
     targetDateIso: z.string(),
     status: z.nativeEnum(EJobStatuses),
-    retries: z.number(),
-    retryCount: z.number(),
+    retriesHappened: z.number(),
+    retriesAllowed: z.number(),
+    results: z.array(z.object({
+        message: z.string(),
+        dateIso: z.string(),
+    })).optional(),
     //target: The actual function to be executed will be added in metadata
 });
 

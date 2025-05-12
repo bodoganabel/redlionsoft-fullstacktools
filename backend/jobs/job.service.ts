@@ -14,11 +14,11 @@ export class JobService<TJobMetadata> {
     private authService: AuthService<any, any, any, any>;
     private jobSchema: z.ZodType;
     private collectionName = "serverJobs";
-    private actionExecutor: (job: TServerJob<TJobMetadata>) => Promise<void>;
+    private actionExecutor: (job: TServerJob<TJobMetadata>) => Promise<{ error: null | string, data: null | string }>;
 
     constructor(
         authService: AuthService<any, any, any, any>,
-        actionExecutor: (job: TServerJob<TJobMetadata>) => Promise<void>,
+        actionExecutor: (job: TServerJob<TJobMetadata>) => Promise<{ error: null | string, data: null | string }>,
         options: {
             collectionName?: string;
             metadataSchema: z.ZodType;
@@ -77,8 +77,8 @@ export class JobService<TJobMetadata> {
             jobData.userId = jobData.userId.toString();
             jobData.createdAt = jobData.createdAt || DateTime.now().toISO();
             jobData.status = jobData.status || EJobStatuses.PENDING;
-            jobData.retries = jobData.retries || 3;
-            jobData.retryCount = jobData.retryCount || 0;
+            jobData.retriesHappened = jobData.retriesHappened || 0;
+            jobData.retriesAllowed = jobData.retriesAllowed || 3;
 
             const validatedJobData = this.validateJobData(jobData);
             if (!validatedJobData) {
@@ -171,48 +171,12 @@ export class JobService<TJobMetadata> {
     /**
      * Update an existing job
      */
-    async updateJob(request: Request, cookies: Cookies): Promise<Response> {
+    async updateJob(oldJob: TServerJob<TJobMetadata>, newJob: Partial<TServerJob<TJobMetadata>>): Promise<Response> {
         try {
             await this.initCollection();
-
-            const user = await this.authService.getServerUserFromCookies(cookies);
-            if (!user) {
-                return json({
-                    error: {
-                        message: "Unauthorized",
-                        code: "AUTH_REQUIRED"
-                    }
-                }, { status: 401 });
-            }
-
-            const requestData = await request.json();
-            const { jobId, job } = requestData;
-
-            if (!jobId) {
-                return json({
-                    error: {
-                        message: "Job ID is required",
-                        code: "MISSING_FIELD"
-                    }
-                }, { status: 400 });
-            }
-
-            let objectId;
-            try {
-                objectId = new ObjectId(jobId);
-            } catch (error) {
-                return json({
-                    error: {
-                        message: "Invalid job ID format",
-                        code: "VALIDATION_ERROR"
-                    }
-                }, { status: 400 });
-            }
-
             // Find the existing job
             const existingJob = await this.collection.findOne({
-                _id: objectId as any,
-                userId: user._id
+                _id: oldJob._id as any,
             });
 
             if (!existingJob) {
@@ -226,8 +190,8 @@ export class JobService<TJobMetadata> {
 
             // Merge with existing job and validate
             const updatedJob = {
-                ...existingJob,
-                ...job,
+                ...oldJob,
+                ...newJob,
                 _id: existingJob._id,  // Ensure ID doesn't change
                 userId: existingJob.userId,  // Ensure user doesn't change
                 updatedAt: DateTime.now().toISO()
@@ -245,7 +209,7 @@ export class JobService<TJobMetadata> {
 
             // Update the job
             const result = await this.collection.findOneAndUpdate(
-                { _id: objectId as any, userId: user._id },
+                { _id: existingJob._id },
                 { $set: validatedJobData },
                 { returnDocument: "after" }
             );
@@ -341,127 +305,6 @@ export class JobService<TJobMetadata> {
         }
     }
 
-    /**
-     * Execute a job immediately
-     */
-    async executeJob(request: Request, cookies: Cookies): Promise<Response> {
-        try {
-            await this.initCollection();
-
-            const user = await this.authService.getServerUserFromCookies(cookies);
-            if (!user) {
-                return json({
-                    error: {
-                        message: "Unauthorized",
-                        code: "AUTH_REQUIRED"
-                    }
-                }, { status: 401 });
-            }
-
-            const requestData = await request.json();
-            const { jobId } = requestData;
-
-            if (!jobId) {
-                return json({
-                    error: {
-                        message: "Job ID is required",
-                        code: "MISSING_FIELD"
-                    }
-                }, { status: 400 });
-            }
-
-            let objectId;
-            try {
-                objectId = new ObjectId(jobId);
-            } catch (error) {
-                return json({
-                    error: {
-                        message: "Invalid job ID format",
-                        code: "VALIDATION_ERROR"
-                    }
-                }, { status: 400 });
-            }
-
-            // Find the job
-            const job = await this.collection.findOne({
-                _id: objectId as any,
-                userId: user._id
-            }) as unknown as TServerJob<TJobMetadata> | null;
-
-            if (!job) {
-                return json({
-                    error: {
-                        message: "Job not found",
-                        code: "RESOURCE_NOT_FOUND"
-                    }
-                }, { status: 404 });
-            }
-
-            // Update job status to running
-            await this.collection.updateOne(
-                { _id: objectId as any },
-                { $set: { status: EJobStatuses.RUNNING } }
-            );
-
-            try {
-                // Execute the job function with the provided arguments
-                const result = await this.actionExecutor(job);
-
-                // Update job status to completed
-                await this.collection.updateOne(
-                    { _id: objectId as any },
-                    {
-                        $set: {
-                            status: EJobStatuses.COMPLETED,
-                            completedAt: DateTime.now().toISO(),
-                            result: result
-                        }
-                    }
-                );
-
-                return json({
-                    data: { success: true, result }
-                }, { status: 200 });
-            } catch (error) {
-                console.error("Job execution failed:", error);
-                const errorMessage = error instanceof Error ? error.message : "Unknown error";
-
-                // Increment retry count
-                const updatedJob = await this.collection.findOneAndUpdate(
-                    { _id: objectId as any },
-                    {
-                        $inc: { retryCount: 1 },
-                        $set: {
-                            status: job.retryCount >= job.retries ? EJobStatuses.FAILED : EJobStatuses.PENDING,
-                            lastError: errorMessage,
-                            lastErrorTimestamp: DateTime.now().toISO()
-                        }
-                    },
-                    { returnDocument: "after" }
-                );
-
-                return json({
-                    error: {
-                        message: "Job execution failed",
-                        code: "EXECUTION_FAILED",
-                        details: {
-                            error: errorMessage,
-                            job: updatedJob
-                        }
-                    }
-                }, { status: 500 });
-            }
-        } catch (error) {
-            console.error("Failed to execute job:", error);
-            return json({
-                error: {
-                    message: "Failed to execute job",
-                    code: "EXECUTION_FAILED"
-                }
-            }, { status: 500 });
-        }
-    }
-
 
     async getPendingJobs(): Promise<TServerJob<TJobMetadata>[]> {
         try {
@@ -502,11 +345,36 @@ export class JobService<TJobMetadata> {
 
             for (const job of pendingJobs) {
                 try {
-                    // Mark job as running
-                    await this.collection.updateOne(
-                        { _id: job._id as any },
-                        { $set: { status: EJobStatuses.RUNNING } }
-                    );
+
+
+                    if (job.retriesHappened >= job.retriesAllowed) {
+                        const newResultAray = [...job.results || []];
+                        newResultAray.push({
+                            message: "Too many retries",
+                            dateIso: DateTime.now().toISO()
+                        })
+
+
+                        const $set: Partial<TServerJob<TJobMetadata>> = {
+                            status: EJobStatuses.FAILED,
+                            results: newResultAray,
+                        }
+                        await this.collection.updateOne(
+                            { _id: job._id as any },
+                            { $set }
+                        );
+                        continue;
+                    } else {
+                        const $set: Partial<TServerJob<TJobMetadata>> = {
+                            retriesHappened: job.retriesHappened + 1
+                        }
+                        await this.collection.updateOne(
+                            { _id: job._id as any },
+                            {
+                                $set
+                            }
+                        );
+                    }
 
                     // Execute the job function
                     const result = await this.actionExecutor(job);
@@ -516,30 +384,19 @@ export class JobService<TJobMetadata> {
                         { _id: job._id as any },
                         {
                             $set: {
-                                status: EJobStatuses.COMPLETED,
-                                completedAt: DateTime.now().toISO(),
-                                result: result
+                                status: result.error === null ? EJobStatuses.COMPLETED : EJobStatuses.PENDING,
+                                results: [...job.results || [], {
+                                    message: result.error || result.data,
+                                    dateIso: DateTime.now().toISO()
+                                }]
                             }
                         }
                     );
 
-                    console.log(`Job ${job._id} completed successfully`);
+                    console.log(`Job ${job._id} execution ${result.error === null ? "success" : "failed, retrying later"}`);
                 } catch (error) {
-                    console.error(`Job ${job._id} execution failed:`, error);
+                    console.error(`Job ${job._id} execution failed with error:`, error);
                     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-
-                    // Increment retry count and update status
-                    await this.collection.updateOne(
-                        { _id: job._id as any },
-                        {
-                            $inc: { retryCount: 1 },
-                            $set: {
-                                status: job.retryCount >= job.retries ? EJobStatuses.FAILED : EJobStatuses.PENDING,
-                                lastError: errorMessage,
-                                lastErrorTimestamp: DateTime.now().toISO()
-                            }
-                        }
-                    );
                 }
             }
         } catch (error) {

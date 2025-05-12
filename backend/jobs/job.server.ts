@@ -2,8 +2,10 @@ import { json } from "@sveltejs/kit";
 import type { AuthService } from "../auth/auth.service";
 import { JobService } from "./job.service";
 import { z } from "zod";
+import type { TServerJob } from "./job.types";
 
-export const createJobEndpoint = <TJobMetadataSchema extends z.ZodType>(authService: AuthService<any, any, any, any>, jobService: JobService<TJobMetadataSchema>) => {
+
+export const createJobEndpoint = (authService: AuthService<any, any, any, any>, jobService: JobService<TServerJob>) => {
 
     // Create a new job
     const POST = async ({ request, cookies }: any) => {
@@ -51,7 +53,10 @@ export const createJobEndpoint = <TJobMetadataSchema extends z.ZodType>(authServ
             }, { status: 401 });
         }
 
-        return await jobService.updateJob(request, cookies);
+        const requestData = await request.json();
+        const { job, newJob } = requestData;
+
+        return await jobService.updateJob(job, newJob);
     };
 
     // Delete job
@@ -83,7 +88,8 @@ export const createJobEndpoint = <TJobMetadataSchema extends z.ZodType>(authServ
             }, { status: 401 });
         }
 
-        return await jobService.executeJob(request, cookies);
+        console.error("Not implemented yet")
+
     };
 
     return {
