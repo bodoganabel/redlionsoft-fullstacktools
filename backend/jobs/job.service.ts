@@ -341,8 +341,6 @@ export class JobService<TJobMetadata> {
                 targetDateIso: { $lte: now }
             }).toArray() as unknown as TServerJob<TJobMetadata>[] | [];
 
-            console.log(`Processing ${pendingJobs.length} pending jobs`);
-
             for (const job of pendingJobs) {
                 try {
 
