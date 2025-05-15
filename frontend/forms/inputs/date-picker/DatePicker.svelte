@@ -26,6 +26,7 @@
   export let selectedDate: DateTime = initialDate;
   export let onSelect: (date: DateTime) => void = () => {};
   export let minDate: DateTime | undefined = undefined;
+  export let onMonthChange: (firstDayOfTheMonth: DateTime) => void;
 
   let currentMonth = selectedDate.month - 1; // Luxon's months are 1-based
   let currentYear = selectedDate.year;
@@ -61,6 +62,7 @@
     }).minus({ months: 1 });
     currentMonth = previousMonth.month - 1;
     currentYear = previousMonth.year;
+    onMonthChange(previousMonth);
     updateCalendar();
   }
 
@@ -72,6 +74,7 @@
     }).plus({ months: 1 });
     currentMonth = nextMonth.month - 1;
     currentYear = nextMonth.year;
+    onMonthChange(nextMonth);
     updateCalendar();
   }
 
@@ -86,7 +89,7 @@
     // Calculate day offset based on Luxon weekday (1=Monday, 7=Sunday)
     // Since we're using Monday as first day, we can use weekday-1 directly
     // This gives us 0 for Monday, 1 for Tuesday, etc.
-    const firstDayOfWeek = (firstDayOfMonth.weekday - 1);
+    const firstDayOfWeek = firstDayOfMonth.weekday - 1;
 
     const totalDays = firstDayOfWeek + daysInMonth;
     const daysToAdd = (7 - (totalDays % 7)) % 7;
