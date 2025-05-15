@@ -24,6 +24,8 @@
 
   export let initialDate: DateTime = DateTime.now();
   export let selectedDate: DateTime = initialDate;
+  export let enabledDates: DateTime[] | null = null; // If null, all dates are enabled
+
   export let onSelect: (date: DateTime) => void = () => {};
   export let minDate: DateTime | undefined = undefined;
   export let onMonthChange: (firstDayOfTheMonth: DateTime) => void;
@@ -113,5 +115,5 @@
 
   <DatePickerWeekdays {orderedWeekdays} />
 
-  <DatePickerCalendarDays {dates} {selectedDate} {minDate} onDateSelect={onDateSelected} />
+  <DatePickerCalendarDays {dates} {selectedDate} {minDate} {enabledDates} onDateSelect={onDateSelected} />
 </div>

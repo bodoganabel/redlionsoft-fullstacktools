@@ -6,14 +6,26 @@
   export let dates: (DateTime | null)[];
   export let selectedDate: DateTime;
   export let minDate: DateTime | undefined;
+  export let enabledDates: DateTime[] | null = null;
   export let onDateSelect: (date: DateTime) => void;
 
   const scale = tweened(1, { duration: 200, easing: cubicOut });
 
   function isSelectable(date: DateTime | null): boolean {
     if (!date) return false;
-    if (minDate === undefined) return true;
-    return date >= minDate.startOf("day");
+    
+    // Check minDate constraint
+    if (minDate !== undefined && date < minDate.startOf("day")) {
+      return false;
+    }
+    
+    // If enabledDates is null, all dates are enabled
+    if (enabledDates === null) return true;
+    
+    // Check if the date is in enabledDates
+    return enabledDates.some(enabledDate => 
+      enabledDate.hasSame(date, "day")
+    );
   }
 
   function isActive(date: DateTime | null): boolean {
