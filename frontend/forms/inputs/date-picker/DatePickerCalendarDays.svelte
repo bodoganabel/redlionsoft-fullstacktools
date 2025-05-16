@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { tweened } from "svelte/motion";
-  import { cubicOut } from "svelte/easing";
-  import { DateTime } from "luxon";
+  import { tweened } from 'svelte/motion';
+  import { cubicOut } from 'svelte/easing';
+  import { DateTime } from 'luxon';
 
   export let dates: (DateTime | null)[];
   export let selectedDate: DateTime;
@@ -13,24 +13,22 @@
 
   function isSelectable(date: DateTime | null): boolean {
     if (!date) return false;
-    
+
     // Check minDate constraint
-    if (minDate !== undefined && date < minDate.startOf("day")) {
+    if (minDate !== undefined && date < minDate.startOf('day')) {
       return false;
     }
-    
+
     // If enabledDates is null, all dates are enabled
     if (enabledDates === null) return true;
-    
+
     // Check if the date is in enabledDates
-    return enabledDates.some(enabledDate => 
-      enabledDate.hasSame(date, "day")
-    );
+    return enabledDates.some((enabledDate) => enabledDate.hasSame(date, 'day'));
   }
 
   function isActive(date: DateTime | null): boolean {
     if (!date) return false;
-    return selectedDate.hasSame(date, "day");
+    return selectedDate.hasSame(date, 'day');
   }
 
   async function handleClick(date: DateTime) {
@@ -49,19 +47,17 @@
     <div
       class="day p-1 flex justify-center items-center aspect-square text-center rounded-lg cursor-pointer font-semibold scale-animation border-solid border-blue-700"
       style:transform={`scale(${isActive(date) ? $scale : 1})`}
-      class:border-2={date && date.hasSame(DateTime.now(), "day")
-        ? "1px solid currentColor"
+      class:border-2={date && date.hasSame(DateTime.now(), 'day')
+        ? '1px solid currentColor'
         : undefined}
       class:bg-gray-200={date !== null && !isActive(date) && isSelectable(date)}
-      class:dark:bg-gray-800={date !== null &&
-        !isActive(date) &&
-        isSelectable(date)}
+      class:dark:bg-gray-800={date !== null && !isActive(date) && isSelectable(date)}
       class:text-gray-400={!isSelectable(date)}
       class:bg-blue-500={isActive(date)}
       class:text-white={isActive(date)}
       on:click={() => date && handleClick(date)}
     >
-      {date ? date.day : ""}
+      {date ? date.day : ''}
     </div>
   {/each}
 </div>

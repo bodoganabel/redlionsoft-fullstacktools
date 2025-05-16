@@ -34,6 +34,12 @@
   let currentYear = selectedDate.year;
   let dates: (DateTime | null)[] = [];
 
+  // On enabledDates change, update the calendar
+  $: {
+    enabledDates = enabledDates;
+    updateCalendar();
+  }
+
   $: if (selectedDate) updateCalendar();
   // For Monday start (startDayOfWeek=1), this correctly puts Mon first
   $: orderedWeekdays = weekdaysShort;
@@ -115,5 +121,11 @@
 
   <DatePickerWeekdays {orderedWeekdays} />
 
-  <DatePickerCalendarDays {dates} {selectedDate} {minDate} {enabledDates} onDateSelect={onDateSelected} />
+  <DatePickerCalendarDays
+    {dates}
+    {selectedDate}
+    {minDate}
+    onDateSelect={onDateSelected}
+    bind:enabledDates
+  />
 </div>
