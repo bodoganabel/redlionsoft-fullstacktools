@@ -75,7 +75,7 @@ export class AuthService<
       try {
         await this.signup(devUser);
         successfullyCreatedUsers.push(devUser.email);
-      } catch (error) {}
+      } catch (error) { }
     });
   }
 
@@ -279,6 +279,11 @@ export class AuthService<
       console.log(error);
       return { status: 500, message: "An error occurred" };
     }
+  }
+
+
+  public getClientUserFromServerUser(serverUser: TUserServerRls<ERoles, EPermissions, Metadata_UserServer>) {
+    return this.parse_serverUserTo_clientUser(serverUser);
   }
 
   /* Call this from hooks/handle */
