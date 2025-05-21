@@ -9,12 +9,12 @@
       nameInput.setSelectionRange(len, len);
     }
   });
-  import InfoCardRls from '$redlionsoft/frontend/elements/InfoCardRls.svelte';
   import { POPUP_EMAIL_TEMPLATE_EDIT_ID, type TEmailTemplate } from './email-template.types';
-  import { popup, popupClose } from '$redlionsoft/frontend/functionality/popup/popup-logic';
-  import { toastError } from '$redlionsoft/frontend/functionality/toast/toast-logic';
-  import { emailTemplateUCrudClient } from '$src/routes/(private)/email-templates/client';
-  import type { TResource } from '$redlionsoft/backend/user-crud/types';
+  import { popup, popupClose } from '../../../functionality/popup/popup-logic';
+  import { toastError } from '../../../functionality/toast/toast-logic';
+  import type { TResource } from '../../../../backend/user-crud/types';
+  import InfoCardRls from '../../../elements/InfoCardRls.svelte';
+  import { UCrudResourceClient } from '../../../user-crud/user-crud.client';
 
   export let originalTemplate: TResource<TEmailTemplate>;
   export let emailContent: string;
@@ -23,6 +23,7 @@
   export let existingTemplates: TResource<TEmailTemplate>[];
   export let isNewTemplate: boolean;
   export let isOverwriteContent: boolean;
+  export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
 
   $: overwriteMessage = isOverwriteContent
     ? "<small class='text-error-500'>This will overwrite the template's content with the current email draft and attachments.</small>"
@@ -31,7 +32,6 @@
   let templateName = initialTemplateName;
 
   async function onTemplateSave(templateData: TEmailTemplate): Promise<void> {
-    console.log('onTemplateSave');
     if (templateName === '') {
       toastError('Template name cannot be empty');
       return;
@@ -39,8 +39,6 @@
     if (isNewTemplate) {
       await emailTemplateUCrudClient.saveResource(templateName, templateData);
     } else {
-      console.log('templateData,originalTemplate.data:');
-      console.log(templateData, originalTemplate.data);
       await emailTemplateUCrudClient.updateResource(
         initialTemplateName,
         templateName,
