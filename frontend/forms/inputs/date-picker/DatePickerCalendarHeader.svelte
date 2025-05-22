@@ -9,8 +9,12 @@
   export let onNextMonth: () => void;
 </script>
 
-<div class="flex justify-center items-center mb-2 space-x-1">
-  <button class="p-1 btn-icon text-xl w-6" on:click={onPrevMonth}><IconLeftChevron /></button>
-  <span class="font-medium">{monthNames[currentMonth]} {currentYear}</span>
-  <button class="p-1 btn-icon text-xl w-6" on:click={onNextMonth}><IconRightChevron /></button>
+<div class="flex justify-center items-center mb-2 gap-3">
+  <button class="p-1 btn-icon variant-filled-primary text-xl size-8" on:click={onPrevMonth}
+    ><IconLeftChevron /></button
+  >
+  <span class="font-medium text-lg">{monthNames[currentMonth]} {currentYear}</span>
+  <button class="p-1 btn-icon variant-filled-primary text-xl size-8" on:click={onNextMonth}
+    ><IconRightChevron /></button
+  >
 </div>

@@ -119,7 +119,9 @@
     onNextMonth={nextMonth}
   />
 
-  <DatePickerWeekdays {orderedWeekdays} />
+  <div class="mt-3">
+    <DatePickerWeekdays {orderedWeekdays} />
+  </div>
 
   <DatePickerCalendarDays
     {dates}
