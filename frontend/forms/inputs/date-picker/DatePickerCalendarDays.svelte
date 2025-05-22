@@ -6,6 +6,7 @@
   export let dates: (DateTime | null)[];
   export let selectedDate: DateTime;
   export let minDate: DateTime | undefined;
+  export let maxDate: DateTime | undefined;
   export let enabledDates: DateTime[] | null = null;
   export let onDateSelect: (date: DateTime) => void;
 
@@ -16,6 +17,11 @@
 
     // Check minDate constraint
     if (minDate !== undefined && date < minDate.startOf('day')) {
+      return false;
+    }
+
+    // Check maxDate constraint
+    if (maxDate !== undefined && date > maxDate.endOf('day')) {
       return false;
     }
 

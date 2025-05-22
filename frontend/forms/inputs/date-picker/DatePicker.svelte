@@ -28,6 +28,7 @@
 
   export let onSelect: (date: DateTime) => void = () => {};
   export let minDate: DateTime | undefined = undefined;
+  export let maxDate: DateTime | undefined = undefined;
   export let onMonthChange: (firstDayOfTheMonth: DateTime) => void;
 
   let currentMonth = selectedDate.month - 1; // Luxon's months are 1-based
@@ -117,6 +118,8 @@
     {currentYear}
     onPrevMonth={prevMonth}
     onNextMonth={nextMonth}
+    {minDate}
+    {maxDate}
   />
 
   <div class="mt-3">
@@ -127,6 +130,7 @@
     {dates}
     {selectedDate}
     {minDate}
+    {maxDate}
     onDateSelect={onDateSelected}
     bind:enabledDates
   />
