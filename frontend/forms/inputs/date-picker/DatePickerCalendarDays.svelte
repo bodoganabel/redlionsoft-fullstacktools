@@ -45,7 +45,7 @@
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
     <div
-      class="day p-1 flex justify-center items-center aspect-square text-center rounded-lg cursor-pointer font-semibold scale-animation border-solid border-blue-700"
+      class="day p-1 flex justify-center items-center aspect-square text-center rounded-lg cursor-pointer font-semibold scale-animation border-solid border-surface-800"
       style:transform={`scale(${isActive(date) ? $scale : 1})`}
       class:border-2={date && date.hasSame(DateTime.now(), 'day')
         ? '1px solid currentColor'
@@ -53,9 +53,10 @@
       class:bg-gray-200={date !== null && !isActive(date) && isSelectable(date)}
       class:dark:bg-gray-800={date !== null && !isActive(date) && isSelectable(date)}
       class:text-gray-400={!isSelectable(date)}
-      class:bg-blue-500={isActive(date)}
+      class:bg-primary-500={isActive(date)}
       class:text-white={isActive(date)}
       on:click={() => date && handleClick(date)}
+      class:underline={date && date.hasSame(DateTime.now(), 'day')}
     >
       {date ? date.day : ''}
     </div>
