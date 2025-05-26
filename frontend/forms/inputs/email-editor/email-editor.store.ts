@@ -23,6 +23,8 @@ const MAX_ATTACHMENT_SIZE_MB = 25;
 const MAX_EMAIL_BODY_SIZE_MB = 20;
 
 function createEmailEditorStore() {
+  // Debounce timers for variable detection
+  let debouncedVariableDetectionTimer: ReturnType<typeof setTimeout>;
   const initialState: EmailEditorState = {
     recipient: '',
     subject: '',
@@ -64,34 +66,78 @@ function createEmailEditorStore() {
   }
 
   function updateSubject(subject: string) {
+    // Update the subject immediately
     update((state) => ({ ...state, subject, subjectError: null }));
+    
+    // Debounce the variable detection
+    debouncedDetectVariables();
   }
 
   function updateHtmlBody(htmlBody: string) {
     const { emailBodySizeMB, bodyTooLarge } = calculateBodySize(htmlBody);
-    update((state) => ({ ...state, htmlBody, emailBodySizeMB, bodyTooLarge, bodyError: null }));
+    
+    // Update the HTML body immediately
+    update((state) => ({
+      ...state,
+      htmlBody,
+      emailBodySizeMB,
+      bodyTooLarge,
+      bodyError: null
+    }));
+    
     updateSizeLimit();
     
-    // Extract template variables from HTML content
-    const extractedVariables = extractTemplateVariables(htmlBody);
-    if (extractedVariables.length > 0) {
-      updateTemplateVariables(extractedVariables);
-    }
+    // Debounce the variable detection
+    debouncedDetectVariables();
   }
   
   // Using the utility function instead of local implementation
   
+  /**
+   * Debounced function to detect template variables in both subject and body
+   */
+  const debouncedDetectVariables = debounce(() => {
+    detectTemplateVariables();
+  }, 800); // 800ms debounce time
+  
+  /**
+   * Detect template variables in both subject and body
+   */
+  function detectTemplateVariables() {
+    let currentState: EmailEditorState | undefined;
+    const unsubscribe = subscribe(state => {
+      currentState = state;
+    });
+    unsubscribe();
+    
+    if (!currentState) return;
+    
+    // Extract variables from both subject and body
+    const subjectVariables = extractTemplateVariables(currentState.subject);
+    const bodyVariables = extractTemplateVariables(currentState.htmlBody);
+    
+    // Combine all variables
+    const allVariables = [...subjectVariables, ...bodyVariables];
+    
+    if (allVariables.length > 0) {
+      updateTemplateVariables(allVariables);
+    }
+  }
+  
   function updateTemplateVariables(variables: string[]) {
     update((state) => {
+      // Remove duplicates from the variables array
+      const uniqueVariables = [...new Set(variables)];
+      
       // Use utility function to initialize variable values
       const newVariableValues = initializeTemplateVariableValues(
         state.templateVariableValues,
-        variables
+        uniqueVariables
       );
       
       return {
         ...state,
-        templateVariables: variables,
+        templateVariables: uniqueVariables,
         templateVariableValues: newVariableValues
       };
     });
@@ -181,6 +227,19 @@ function createEmailEditorStore() {
     return applyTemplateVariables(state.htmlBody, state.templateVariableValues);
   }
   
+  function getProcessedSubject(): string {
+    let state: EmailEditorState | undefined;
+    const unsubscribe = subscribe(currentState => {
+      state = currentState;
+    });
+    unsubscribe();
+    
+    if (!state) return '';
+    
+    // Use utility function to apply template variables
+    return applyTemplateVariables(state.subject, state.templateVariableValues);
+  }
+  
   return {
     subscribe,
     updateRecipient,
@@ -193,6 +252,7 @@ function createEmailEditorStore() {
     updateTemplateVariables,
     updateTemplateVariableValue,
     getProcessedHtmlBody,
+    getProcessedSubject,
   };
 }
 
