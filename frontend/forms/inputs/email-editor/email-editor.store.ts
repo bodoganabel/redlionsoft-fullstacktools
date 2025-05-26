@@ -96,9 +96,12 @@ function createEmailEditorStore() {
   /**
    * Debounced function to detect template variables in both subject and body
    */
-  const debouncedDetectVariables = debounce(() => {
-    detectTemplateVariables();
-  }, 800); // 800ms debounce time
+  function debouncedDetectVariables() {
+    clearTimeout(debouncedVariableDetectionTimer);
+    debouncedVariableDetectionTimer = setTimeout(() => {
+      detectTemplateVariables();
+    }, 800); // 800ms debounce time
+  }
   
   /**
    * Detect template variables in both subject and body
@@ -119,9 +122,9 @@ function createEmailEditorStore() {
     // Combine all variables
     const allVariables = [...subjectVariables, ...bodyVariables];
     
-    if (allVariables.length > 0) {
-      updateTemplateVariables(allVariables);
-    }
+    // Always update template variables, even if the array is empty
+    // This ensures we clear variables when none are present
+    updateTemplateVariables(allVariables);
   }
   
   function updateTemplateVariables(variables: string[]) {

@@ -298,7 +298,7 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   {/if}
 
   <!-- Template Variables Section -->
-  {#if $emailEditorStore.templateVariables.length > 0}
+  {#if $emailEditorStore.templateVariables && $emailEditorStore.templateVariables.length > 0}
     <div class="mt-6 p-4 border border-surface-300 rounded-lg">
       <h3 class="text-lg font-semibold mb-3">Template Variables</h3>
       <p class="text-sm mb-4">
