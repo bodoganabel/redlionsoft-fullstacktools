@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
+import { extractTemplateVariables, applyTemplateVariables, initializeTemplateVariableValues } from '../../../utils/template-variables';
 
 export interface EmailEditorState {
   recipient: string;
@@ -72,41 +73,21 @@ function createEmailEditorStore() {
     updateSizeLimit();
     
     // Extract template variables from HTML content
-    const extractedVariables = extractVariablesFromHtml(htmlBody);
+    const extractedVariables = extractTemplateVariables(htmlBody);
     if (extractedVariables.length > 0) {
       updateTemplateVariables(extractedVariables);
     }
   }
   
-  /**
-   * Extract variables from HTML content that are wrapped in double brackets
-   * Example: {{name}} will extract 'name' as a variable
-   */
-  function extractVariablesFromHtml(html: string): string[] {
-    const regex = /\{\{([^}]+)\}\}/g;
-    const matches: (string | undefined)[] = [];
-    let match;
-    
-    while ((match = regex.exec(html)) !== null) {
-      // match[1] contains the content inside the brackets
-      if (!matches.includes(match[1])) {
-        matches.push(match[1]);
-      }
-    }
-    
-    return matches.filter((match): match is string => match !== undefined);
-  }
+  // Using the utility function instead of local implementation
   
   function updateTemplateVariables(variables: string[]) {
     update((state) => {
-      // Create a new variable values object that preserves existing values
-      // and initializes new variables with empty strings
-      const newVariableValues = { ...state.templateVariableValues };
-      variables.forEach((variable) => {
-        if (newVariableValues[variable] === undefined) {
-          newVariableValues[variable] = '';
-        }
-      });
+      // Use utility function to initialize variable values
+      const newVariableValues = initializeTemplateVariableValues(
+        state.templateVariableValues,
+        variables
+      );
       
       return {
         ...state,
@@ -183,6 +164,23 @@ function createEmailEditorStore() {
     set({ ...initialState });
   }
 
+  /**
+   * Apply template variables to the HTML body and return the processed content
+   * This doesn't modify the store's htmlBody, it just returns the processed content
+   */
+  function getProcessedHtmlBody(): string {
+    let state: EmailEditorState | undefined;
+    const unsubscribe = subscribe(currentState => {
+      state = currentState;
+    });
+    unsubscribe();
+    
+    if (!state) return '';
+    
+    // Use utility function to apply template variables
+    return applyTemplateVariables(state.htmlBody, state.templateVariableValues);
+  }
+  
   return {
     subscribe,
     updateRecipient,
@@ -194,6 +192,7 @@ function createEmailEditorStore() {
     reset,
     updateTemplateVariables,
     updateTemplateVariableValue,
+    getProcessedHtmlBody,
   };
 }
 

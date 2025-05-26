@@ -25,6 +25,7 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   import { emailEditorStore } from './email-editor.store';
   import EmailTemplateManagerButton from './components/EmailTemplateManagerButton.svelte';
   import { UCrudResourceClient } from '../../../user-crud/user-crud.client';
+  import TemplateVariablesEditor from '../../../components/template-variables/TemplateVariablesEditor.svelte';
 
   export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
 
@@ -304,49 +305,25 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
         These variables were found in your email template. Enter values to replace them in the
         email.
       </p>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {#each $emailEditorStore.templateVariables as variable}
-          <div class="flex flex-col">
-            <label class="text-sm font-medium mb-1" for={`var-${variable}`}>{variable}</label>
-            <input
-              id={`var-${variable}`}
-              class="input"
-              type="text"
-              bind:value={$emailEditorStore.templateVariableValues[variable]}
-              on:input={() => {
-                emailEditorStore.updateTemplateVariableValue(
-                  variable, 
-                  $emailEditorStore.templateVariableValues[variable] || ''
-                );
-                
-                if (editor && !$isHtmlMode) {
-                  const updatedHtml = updateHtmlWithVariableValues(
-                    editor.getHTML(),
-                    $emailEditorStore.templateVariableValues
-                  );
-                  editor.commands.setContent(updatedHtml);
-                  emailEditorStore.updateHtmlBody(updatedHtml);
-                } else if ($isHtmlMode && htmlTextarea) {
-                  const updatedHtml = updateHtmlWithVariableValues(
-                    htmlTextarea.value,
-                    $emailEditorStore.templateVariableValues
-                  );
-                  htmlTextarea.value = updatedHtml;
-                  emailEditorStore.updateHtmlBody(updatedHtml);
-                }
-                
-                // Save draft with updated variables
-                emailEditorStore.debouncedSaveDraft(
-                  $emailEditorStore.subject, 
-                  $emailEditorStore.htmlBody, 
-                  $emailEditorStore.templateVariableValues
-                );
-              }}
-            />
-          </div>
-        {/each}
-      </div>
+      
+      <TemplateVariablesEditor 
+        variables={$emailEditorStore.templateVariables}
+        values={$emailEditorStore.templateVariableValues}
+        on:change={(event) => {
+          // Update the variable value in the store
+          emailEditorStore.updateTemplateVariableValue(
+            event.detail.variable,
+            event.detail.value || ''
+          );
+          
+          // Save draft with updated variables
+          emailEditorStore.debouncedSaveDraft(
+            $emailEditorStore.subject,
+            $emailEditorStore.htmlBody,
+            $emailEditorStore.templateVariableValues
+          );
+        }}
+      />
     </div>
   {/if}
 </div>
