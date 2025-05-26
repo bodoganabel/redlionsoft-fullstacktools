@@ -6,6 +6,7 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
 <script lang="ts">
   import './EmailEditor.css';
   import { onMount, onDestroy } from 'svelte';
+  import { writable } from 'svelte/store';
   import { Editor } from '@tiptap/core';
   import StarterKit from '@tiptap/starter-kit';
   import { Color } from '@tiptap/extension-color';
@@ -32,7 +33,23 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   let element: HTMLElement;
   let editor: Editor;
 
-  $: $emailEditorStore;
+  // HTML mode toggle
+  let isHtmlMode = writable(false);
+  let htmlTextarea: HTMLTextAreaElement;
+
+  /**
+   * Update the HTML content by replacing variables with their values
+   */
+  function updateHtmlWithVariableValues(html: string, values: Record<string, string>): string {
+    let updatedHtml = html;
+
+    Object.entries(values).forEach(([variable, value]) => {
+      const regex = new RegExp(`\{\{${variable}\}\}`, 'g');
+      updatedHtml = updatedHtml.replace(regex, value || `{{${variable}}}`);
+    });
+
+    return updatedHtml;
+  }
 
   function handleTemplateSelect(template: TResource<TEmailTemplate>) {
     popupClose(POPUP_TEMPLATE_MANAGER);
@@ -78,16 +95,21 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
     }
   }
   function loadDraft() {
-    const raw = localStorage.getItem(DRAFT_KEY);
-    if (!raw) return;
-    try {
-      const draft = JSON.parse(raw);
-      if (draft.subject) emailEditorStore.updateSubject(draft.subject);
-      if (draft.body && editor?.commands?.setContent) {
-        editor.commands.setContent(draft.body);
-        emailEditorStore.updateHtmlBody(draft.body);
+    emailEditorStore.loadDraft({
+      setSubject: (subject) => emailEditorStore.updateSubject(subject),
+      setHtmlBody: (htmlBody) => {
+        if (editor?.commands?.setContent) {
+          editor.commands.setContent(htmlBody);
+          emailEditorStore.updateHtmlBody(htmlBody);
+        }
+      },
+      setTemplateVariableValues: (values) => {
+        // The store will handle updating the template variable values
+        Object.entries(values).forEach(([variable, value]) => {
+          emailEditorStore.updateTemplateVariableValue(variable, value);
+        });
       }
-    } catch {}
+    });
   }
   // Simple debounce helper
   function debounce(fn: (...args: any[]) => void, ms: number) {
@@ -104,6 +126,7 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   );
 
   onMount(() => {
+    // Initialize the editor
     editor = new Editor({
       element,
       extensions: [
@@ -124,6 +147,11 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
         const htmlBody = editor.getHTML();
         emailEditorStore.updateHtmlBody(htmlBody);
         debouncedSaveDraft($emailEditorStore.subject, htmlBody);
+
+        // If we're in HTML mode, update the textarea
+        if ($isHtmlMode && htmlTextarea) {
+          htmlTextarea.value = htmlBody;
+        }
       },
       onCreate: () => {
         loadDraft();
@@ -133,8 +161,29 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
 
   // Save draft when subject changes (debounced)
   $: if (editor && editor.getHTML) {
-    debouncedSaveDraft($emailEditorStore.subject, editor.getHTML());
+    emailEditorStore.debouncedSaveDraft(
+      $emailEditorStore.subject, 
+      editor.getHTML(), 
+      $emailEditorStore.templateVariableValues
+    );
   }
+
+  // Handle HTML mode changes
+  $: if ($isHtmlMode && htmlTextarea && editor) {
+    // When in HTML mode, ensure textarea has current content
+    htmlTextarea.value = $emailEditorStore.htmlBody;
+  }
+
+  // Apply HTML content to editor when switching back from HTML mode
+  $: if (!$isHtmlMode && editor && htmlTextarea?.value) {
+    // Only update if there's actual content and it differs from current
+    if (htmlTextarea.value && htmlTextarea.value !== editor.getHTML()) {
+      editor.commands.setContent(htmlTextarea.value);
+      emailEditorStore.updateHtmlBody(htmlTextarea.value);
+    }
+  }
+
+  // The store now automatically extracts variables when htmlBody is updated
 
   onDestroy(() => {
     if (editor) {
@@ -193,8 +242,44 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
     <EmailToolbar bind:editor />
   {/if}
   <hr />
-  <h2 class="mt-2 text-left">Email Body</h2>
-  <div class="textarea mt-2 bg-surface-50" bind:this={element} />
+  <div class="flex justify-between items-center mt-2">
+    <h2 class="text-left">Email Body</h2>
+    <div class="flex gap-2">
+      <button
+        class="btn btn-sm {!$isHtmlMode ? 'variant-filled-primary' : 'variant-outline-primary'}"
+        on:click={() => isHtmlMode.set(false)}
+      >
+        Simple Mode
+      </button>
+      <button
+        class="btn btn-sm {$isHtmlMode ? 'variant-filled-primary' : 'variant-outline-primary'}"
+        on:click={() => {
+          console.log('btch');
+          if (!$isHtmlMode && editor !== undefined) {
+            // When switching to HTML mode, update textarea with current HTML
+            htmlTextarea.value = editor.getHTML();
+          }
+          isHtmlMode.set(true);
+        }}
+      >
+        HTML Mode
+      </button>
+    </div>
+  </div>
+
+  <textarea
+    bind:this={htmlTextarea}
+    class="textarea mt-2 bg-surface-50 font-mono text-sm"
+    style="min-height: 300px; width: 100%;"
+    class:hidden={!$isHtmlMode}
+    on:input={(e) => {
+      // Update the store when HTML is edited directly
+      if ($isHtmlMode) {
+        emailEditorStore.updateHtmlBody(e.currentTarget.value);
+      }
+    }}
+  />
+  <div class="textarea mt-2 bg-surface-50" bind:this={element} class:hidden={$isHtmlMode} />
 
   {#if $emailEditorStore.bodyTooLarge}
     <div
@@ -208,6 +293,60 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
         Please reduce the email body size by using fewer images or smaller images, or by using
         Google Drive links.
       </p>
+    </div>
+  {/if}
+
+  <!-- Template Variables Section -->
+  {#if $emailEditorStore.templateVariables.length > 0}
+    <div class="mt-6 p-4 border border-surface-300 rounded-lg">
+      <h3 class="text-lg font-semibold mb-3">Template Variables</h3>
+      <p class="text-sm mb-4">
+        These variables were found in your email template. Enter values to replace them in the
+        email.
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {#each $emailEditorStore.templateVariables as variable}
+          <div class="flex flex-col">
+            <label class="text-sm font-medium mb-1" for={`var-${variable}`}>{variable}</label>
+            <input
+              id={`var-${variable}`}
+              class="input"
+              type="text"
+              bind:value={$emailEditorStore.templateVariableValues[variable]}
+              on:input={() => {
+                emailEditorStore.updateTemplateVariableValue(
+                  variable, 
+                  $emailEditorStore.templateVariableValues[variable] || ''
+                );
+                
+                if (editor && !$isHtmlMode) {
+                  const updatedHtml = updateHtmlWithVariableValues(
+                    editor.getHTML(),
+                    $emailEditorStore.templateVariableValues
+                  );
+                  editor.commands.setContent(updatedHtml);
+                  emailEditorStore.updateHtmlBody(updatedHtml);
+                } else if ($isHtmlMode && htmlTextarea) {
+                  const updatedHtml = updateHtmlWithVariableValues(
+                    htmlTextarea.value,
+                    $emailEditorStore.templateVariableValues
+                  );
+                  htmlTextarea.value = updatedHtml;
+                  emailEditorStore.updateHtmlBody(updatedHtml);
+                }
+                
+                // Save draft with updated variables
+                emailEditorStore.debouncedSaveDraft(
+                  $emailEditorStore.subject, 
+                  $emailEditorStore.htmlBody, 
+                  $emailEditorStore.templateVariableValues
+                );
+              }}
+            />
+          </div>
+        {/each}
+      </div>
     </div>
   {/if}
 </div>
