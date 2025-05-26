@@ -12,6 +12,7 @@
   export let editor: Editor;
   export let handleTemplateSelect: (template: TResource<TEmailTemplate>) => void;
   export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
+  export let currentSubject: string = '';
 
   function openTemplateManager() {
     popup({
@@ -20,6 +21,7 @@
       component: EmailTemplateManager,
       componentProps: {
         currentDraftEmailContent: editor?.getHTML?.() ?? '',
+        currentDraftEmailSubject: currentSubject,
         currentDraftAttachedFiles: selectedFiles,
         onTemplateSelect: handleTemplateSelect,
         emailTemplateUCrudClient,

@@ -57,6 +57,10 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
     toastNormal(`Template ${template.resourceId} applied`);
     emailEditorStore.updateAttachedFiles(template.data.attachedFiles || []);
     emailEditorStore.updateHtmlBody(template.data.content);
+    // Update the subject if it exists in the template
+    if (template.data.subject) {
+      emailEditorStore.updateSubject(template.data.subject);
+    }
     editor?.chain().focus().setContent(template.data.content).run();
   }
 
@@ -222,6 +226,7 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
           bind:editor
           {handleTemplateSelect}
           selectedFiles={$emailEditorStore.attachedFiles}
+          currentSubject={$emailEditorStore.subject}
           {emailTemplateUCrudClient}
         />
       </div>

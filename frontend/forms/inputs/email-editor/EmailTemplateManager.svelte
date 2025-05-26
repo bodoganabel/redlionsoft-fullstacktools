@@ -12,6 +12,7 @@
   import { UCrudResourceClient } from '../../../user-crud/user-crud.client';
 
   export let currentDraftEmailContent: string;
+  export let currentDraftEmailSubject: string = '';
   export let currentDraftAttachedFiles: File[];
   export let onTemplateSelect: (template: TResource<TEmailTemplate>) => Promise<void>;
   export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
@@ -136,6 +137,7 @@
             component: EditEmailTemplate,
             componentProps: {
               emailContent: currentDraftEmailContent,
+              emailSubject: currentDraftEmailSubject,
               attachedFiles: currentDraftAttachedFiles,
               existingTemplates,
               initialTemplateName: '',
@@ -205,6 +207,7 @@
                 componentProps: {
                   originalTemplate: template,
                   emailContent: currentDraftEmailContent,
+                  emailSubject: currentDraftEmailSubject,
                   attachedFiles: currentDraftAttachedFiles,
                   existingTemplates,
                   isNewTemplate: false,

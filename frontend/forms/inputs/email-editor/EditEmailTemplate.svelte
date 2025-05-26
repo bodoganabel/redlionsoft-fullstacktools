@@ -18,6 +18,7 @@
 
   export let originalTemplate: TResource<TEmailTemplate>;
   export let emailContent: string;
+  export let emailSubject: string = '';
   export let attachedFiles: File[];
   export let initialTemplateName: string;
   export let existingTemplates: TResource<TEmailTemplate>[];
@@ -26,7 +27,7 @@
   export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
 
   $: overwriteMessage = isOverwriteContent
-    ? "<small class='text-error-500'>This will overwrite the template's content with the current email draft and attachments.</small>"
+    ? "<small class='text-error-500'>This will overwrite the template's content with the current email draft, subject, and attachments.</small>"
     : '<small>This will not replace the content with the current content of the template.</small>';
 
   let templateName = initialTemplateName;
@@ -107,6 +108,7 @@
             isOutsideClickClose: true,
             onAccept: async () => {
               onTemplateSave({
+                subject: emailSubject,
                 content: emailContent,
                 attachedFiles,
                 isShared: false,
@@ -120,6 +122,7 @@
           });
         } else {
           onTemplateSave({
+            subject: emailSubject,
             content: emailContent,
             attachedFiles,
             isShared: false,
