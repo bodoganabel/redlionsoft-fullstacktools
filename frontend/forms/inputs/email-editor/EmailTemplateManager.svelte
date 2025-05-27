@@ -16,6 +16,8 @@
   export let currentDraftAttachedFiles: File[];
   export let onTemplateSelect: (template: TResource<TEmailTemplate>) => Promise<void>;
   export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
+  export let isHtmlMode = false;
+  export let htmlTextareaContent: string = '';
 
   onMount(async () => {
     console.log('currentDraftAttachedFiles - just after opening popup:');
@@ -131,18 +133,41 @@
       <button
         on:click={async (e) => {
           e.stopPropagation();
+          // Determine the content to use based on mode
+          const contentToUse = isHtmlMode ? htmlTextareaContent : currentDraftEmailContent;
+          
+          console.log('Save current draft clicked with:', {
+            isHtmlMode,
+            htmlTextareaContent,
+            currentDraftEmailContent,
+            contentToUse
+          });
+          
           popup({
             title: 'Save template',
             id: POPUP_EMAIL_TEMPLATE_EDIT_ID,
             component: EditEmailTemplate,
             componentProps: {
-              emailContent: currentDraftEmailContent,
+              originalTemplate: {
+                resourceId: '',
+                data: {
+                  subject: currentDraftEmailSubject,
+                  content: contentToUse,
+                  attachedFiles: currentDraftAttachedFiles,
+                  isShared: false,
+                  ownerUserId: 'NOT_IMPLEMENTED_YET',
+                },
+              },
+              emailContent: contentToUse,
               emailSubject: currentDraftEmailSubject,
               attachedFiles: currentDraftAttachedFiles,
               existingTemplates,
               initialTemplateName: '',
               isNewTemplate: true,
+              isOverwriteContent: true,
               emailTemplateUCrudClient,
+              isHtmlMode,
+              htmlTextareaContent,
             },
             isOutsideClickClose: true,
             isEnterAccept: false,
@@ -198,21 +223,29 @@
           </div>
           <button
             type="button"
-            on:click={(e) => {
+            on:click={async (e) => {
               e.stopPropagation();
+              console.log('Edit template clicked for:', {
+                template,
+                isHtmlMode,
+                htmlTextareaContent
+              });
               popup({
                 title: 'Edit template',
                 id: POPUP_EMAIL_TEMPLATE_EDIT_ID,
                 component: EditEmailTemplate,
                 componentProps: {
                   originalTemplate: template,
-                  emailContent: currentDraftEmailContent,
-                  emailSubject: currentDraftEmailSubject,
-                  attachedFiles: currentDraftAttachedFiles,
+                  emailContent: template.data.content,
+                  emailSubject: template.data.subject,
+                  attachedFiles: template.data.attachedFiles || [],
                   existingTemplates,
                   isNewTemplate: false,
                   initialTemplateName: template.resourceId,
+                  isOverwriteContent: false,
                   emailTemplateUCrudClient,
+                  isHtmlMode,
+                  htmlTextareaContent,
                 },
                 isOutsideClickClose: true,
                 isEnterAccept: false,

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
   let nameInput: HTMLInputElement;
 
   onMount(() => {
@@ -8,10 +9,18 @@
       const len = nameInput.value.length;
       nameInput.setSelectionRange(len, len);
     }
+    
+    console.log('EditEmailTemplate onMount:', {
+      isHtmlMode,
+      htmlTextareaContent,
+      emailContent,
+      emailSubject,
+      isOverwriteContent
+    });
   });
   import { POPUP_EMAIL_TEMPLATE_EDIT_ID, type TEmailTemplate } from './email-template.types';
   import { popup, popupClose } from '../../../functionality/popup/popup-logic';
-  import { toastError } from '../../../functionality/toast/toast-logic';
+  import { toastError, toastSuccess } from '../../../functionality/toast/toast-logic';
   import type { TResource } from '../../../../backend/user-crud/types';
   import InfoCardRls from '../../../elements/InfoCardRls.svelte';
   import { UCrudResourceClient } from '../../../user-crud/user-crud.client';
@@ -25,6 +34,8 @@
   export let isNewTemplate: boolean;
   export let isOverwriteContent: boolean;
   export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
+  export let isHtmlMode = false;
+  export let htmlTextareaContent: string = '';
 
   $: overwriteMessage = isOverwriteContent
     ? "<small class='text-error-500'>This will overwrite the template's content with the current email draft, subject, and attachments.</small>"
@@ -37,16 +48,54 @@
       toastError('Template name cannot be empty');
       return;
     }
-    if (isNewTemplate) {
-      await emailTemplateUCrudClient.saveResource(templateName, templateData);
-    } else {
-      await emailTemplateUCrudClient.updateResource(
-        initialTemplateName,
-        templateName,
-        isOverwriteContent ? templateData : originalTemplate.data
-      );
+    
+    // Determine content to save based on HTML mode
+    const contentToSave = isHtmlMode ? htmlTextareaContent : templateData.content;
+    
+    // Create a complete template data object with all required fields
+    const dataToSave: TEmailTemplate = {
+      subject: templateData.subject,
+      content: contentToSave,
+      attachedFiles: templateData.attachedFiles,
+      isShared: templateData.isShared || false,
+      ownerUserId: templateData.ownerUserId || 'NOT_IMPLEMENTED_YET'
+    };
+    
+    console.log('Saving template with data:', {
+      templateName, 
+      dataToSave,
+      isOverwriteContent,
+      isNewTemplate,
+      isHtmlMode,
+      htmlTextareaContent,
+      originalContent: templateData.content
+    });
+    
+    try {
+      if (isNewTemplate) {
+        const result = await emailTemplateUCrudClient.saveResource(templateName, dataToSave);
+        if (result) {
+          toastSuccess(`Template "${templateName}" saved successfully`);
+        }
+      } else {
+        const dataToUpdate = isOverwriteContent ? dataToSave : originalTemplate.data;
+        console.log('Updating with data:', dataToUpdate);
+        
+        const success = await emailTemplateUCrudClient.updateResource(
+          initialTemplateName,
+          templateName,
+          dataToUpdate
+        );
+        
+        if (success) {
+          toastSuccess(`Template "${templateName}" updated successfully`);
+        }
+      }
+      popupClose(POPUP_EMAIL_TEMPLATE_EDIT_ID);
+    } catch (error) {
+      console.error('Error saving template:', error);
+      toastError('Failed to save template: ' + (error.message || 'Unknown error'));
     }
-    popupClose(POPUP_EMAIL_TEMPLATE_EDIT_ID);
   }
 </script>
 
@@ -107,9 +156,10 @@
             message: `Are you sure you want to overwrite template ${templateName}? <br/> ${overwriteMessage}`,
             isOutsideClickClose: true,
             onAccept: async () => {
+              console.log('Template overwrite confirmation accepted');
               onTemplateSave({
                 subject: emailSubject,
-                content: emailContent,
+                content: isHtmlMode ? htmlTextareaContent : emailContent,
                 attachedFiles,
                 isShared: false,
                 ownerUserId: 'NOT_IMPLEMENTED_YET',
@@ -121,9 +171,10 @@
             closeMessage: 'Cancel',
           });
         } else {
+          console.log('Template save (new) initiated');
           onTemplateSave({
             subject: emailSubject,
-            content: emailContent,
+            content: isHtmlMode ? htmlTextareaContent : emailContent,
             attachedFiles,
             isShared: false,
             ownerUserId: 'NOT_IMPLEMENTED_YET',

@@ -13,7 +13,7 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   import ListItem from '@tiptap/extension-list-item';
   import TextStyle from '@tiptap/extension-text-style';
   import Image from '@tiptap/extension-image';
-  import { popupClose } from '../../../functionality/popup/popup-logic';
+  import { popup, popupClose } from '../../../functionality/popup/popup-logic';
   import { POPUP_TEMPLATE_MANAGER, type TEmailTemplate } from './email-template.types';
   import { toastError, toastNormal } from '../../../functionality/toast/toast-logic';
   import type { TResource } from '../../../../backend/user-crud/types';
@@ -26,10 +26,11 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   import EmailTemplateManagerButton from './components/EmailTemplateManagerButton.svelte';
   import { UCrudResourceClient } from '../../../user-crud/user-crud.client';
   import TemplateVariablesEditor from '../../../components/template-variables/TemplateVariablesEditor.svelte';
+  import EmailErrorBodyTooLarge from './components/EmailErrorBodyTooLarge.svelte';
+  import EmailEditModeSelector from './components/EmailEditModeSelector.svelte';
+  import EmailSubjectSection from './components/EmailSubjectSection.svelte';
 
   export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
-
-  const formContext = createFormContext();
 
   let element: HTMLElement;
   let editor: Editor;
@@ -50,18 +51,6 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
     });
 
     return updatedHtml;
-  }
-
-  function handleTemplateSelect(template: TResource<TEmailTemplate>) {
-    popupClose(POPUP_TEMPLATE_MANAGER);
-    toastNormal(`Template ${template.resourceId} applied`);
-    emailEditorStore.updateAttachedFiles(template.data.attachedFiles || []);
-    emailEditorStore.updateHtmlBody(template.data.content);
-    // Update the subject if it exists in the template
-    if (template.data.subject) {
-      emailEditorStore.updateSubject(template.data.subject);
-    }
-    editor?.chain().focus().setContent(template.data.content).run();
   }
 
   // --- Draft Save/Load/Helpers ---
@@ -113,7 +102,7 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
         Object.entries(values).forEach(([variable, value]) => {
           emailEditorStore.updateTemplateVariableValue(variable, value);
         });
-      }
+      },
     });
   }
   // Simple debounce helper
@@ -167,8 +156,8 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   // Save draft when subject changes (debounced)
   $: if (editor && editor.getHTML) {
     emailEditorStore.debouncedSaveDraft(
-      $emailEditorStore.subject, 
-      editor.getHTML(), 
+      $emailEditorStore.subject,
+      editor.getHTML(),
       $emailEditorStore.templateVariableValues
     );
   }
@@ -201,77 +190,19 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   <div class="flex justify-between items-center"></div>
 
   {#if editor}
-    <div class="flex justify-between items-center gap-2">
-      <div class="w-full">
-        <label class="" for="subject"><small>Subject</small></label>
-        <input
-          class="input"
-          name="subject"
-          type="text"
-          bind:value={$emailEditorStore.subject}
-          on:input={(e) =>
-            emailEditorStore.updateSubject(
-              //@ts-ignore
-              e.target.value
-            )}
-          use:formField={{
-            formContext,
-            validators: [VALIDATOR_REQUIRE_STRING('Subject is required')],
-          }}
-        />
-        <FieldError name="subject" {formContext} />
-      </div>
-      <div class="">
-        <EmailTemplateManagerButton
-          bind:editor
-          {handleTemplateSelect}
-          selectedFiles={$emailEditorStore.attachedFiles}
-          currentSubject={$emailEditorStore.subject}
-          {emailTemplateUCrudClient}
-        />
-      </div>
-    </div>
-
-    <EmailAttachments
-      fileSizeLimitExceeded={$emailEditorStore.fileSizeLimitExceeded}
-      selectedFiles={$emailEditorStore.attachedFiles}
-      totalFileSizeMB={$emailEditorStore.totalFileSizeMB}
-      onFileChange={(files) => emailEditorStore.updateAttachedFiles(files)}
-      onRemoveFile={(idx) => {
-        const files = $emailEditorStore.attachedFiles
-          .slice(0, idx)
-          .concat($emailEditorStore.attachedFiles.slice(idx + 1));
-        emailEditorStore.updateAttachedFiles(files);
-      }}
+    <EmailSubjectSection
+      bind:editor
+      bind:emailTemplateUCrudClient
+      bind:isHtmlMode
+      htmlTextareaContent={htmlTextarea.value}
     />
+
+    <EmailAttachments />
 
     <EmailToolbar bind:editor />
   {/if}
   <hr />
-  <div class="flex justify-between items-center mt-2">
-    <h2 class="text-left">Email Body</h2>
-    <div class="flex gap-2">
-      <button
-        class="btn btn-sm {!$isHtmlMode ? 'variant-filled-primary' : 'variant-outline-primary'}"
-        on:click={() => isHtmlMode.set(false)}
-      >
-        Simple Mode
-      </button>
-      <button
-        class="btn btn-sm {$isHtmlMode ? 'variant-filled-primary' : 'variant-outline-primary'}"
-        on:click={() => {
-          console.log('btch');
-          if (!$isHtmlMode && editor !== undefined) {
-            // When switching to HTML mode, update textarea with current HTML
-            htmlTextarea.value = editor.getHTML();
-          }
-          isHtmlMode.set(true);
-        }}
-      >
-        HTML Mode
-      </button>
-    </div>
-  </div>
+  <EmailEditModeSelector bind:isHtmlMode bind:editor bind:htmlTextarea />
 
   <textarea
     bind:this={htmlTextarea}
@@ -287,48 +218,6 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   />
   <div class="textarea mt-2 bg-surface-50" bind:this={element} class:hidden={$isHtmlMode} />
 
-  {#if $emailEditorStore.bodyTooLarge}
-    <div
-      class="bg-error-100 border border-error-400 text-error-700 px-4 py-3 rounded mt-2"
-      role="alert"
-    >
-      <p>
-        Email body size: {$emailEditorStore.emailBodySizeMB.toFixed(2)} MB (exceeds 20 MB limit)
-      </p>
-      <p>
-        Please reduce the email body size by using fewer images or smaller images, or by using
-        Google Drive links.
-      </p>
-    </div>
-  {/if}
-
-  <!-- Template Variables Section -->
-  {#if $emailEditorStore.templateVariables && $emailEditorStore.templateVariables.length > 0}
-    <div class="mt-6 p-4 border border-surface-300 rounded-lg">
-      <h3 class="text-lg font-semibold mb-3">Template Variables</h3>
-      <p class="text-sm mb-4">
-        These variables were found in your email template. Enter values to replace them in the
-        email.
-      </p>
-      
-      <TemplateVariablesEditor 
-        variables={$emailEditorStore.templateVariables}
-        values={$emailEditorStore.templateVariableValues}
-        on:change={(event) => {
-          // Update the variable value in the store
-          emailEditorStore.updateTemplateVariableValue(
-            event.detail.variable,
-            event.detail.value || ''
-          );
-          
-          // Save draft with updated variables
-          emailEditorStore.debouncedSaveDraft(
-            $emailEditorStore.subject,
-            $emailEditorStore.htmlBody,
-            $emailEditorStore.templateVariableValues
-          );
-        }}
-      />
-    </div>
-  {/if}
+  <EmailErrorBodyTooLarge />
+  <TemplateVariablesEditor />
 </div>

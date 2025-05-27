@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, createEventDispatcher } from 'svelte';
+  import { emailEditorStore } from '../../forms/inputs/email-editor/email-editor.store';
 
   /**
    * Component for editing template variables
@@ -7,9 +8,20 @@
    */
 
   // Props
-  export let variables: string[] = [];
-  export let values: Record<string, string> = {};
-  export let onVariableChange: ((variable: string, value: string) => void) | undefined = undefined;
+
+  let variables = $emailEditorStore.templateVariables;
+  let values = $emailEditorStore.templateVariableValues;
+  let onVariableChange = (variable: string, value: string) => {
+    // Update the variable value in the store
+    emailEditorStore.updateTemplateVariableValue(variable, value || '');
+
+    // Save draft with updated variables
+    emailEditorStore.debouncedSaveDraft(
+      $emailEditorStore.subject,
+      $emailEditorStore.htmlBody,
+      $emailEditorStore.templateVariableValues
+    );
+  };
 
   // Create event dispatcher
   const dispatch = createEventDispatcher<{
@@ -25,12 +37,12 @@
       if (values[variable] === undefined) {
         // Update the parent's values object directly
         values[variable] = '';
-        
+
         // Call the callback function if provided
         if (onVariableChange) {
           onVariableChange(variable, '');
         }
-        
+
         // Also dispatch an event
         dispatch('change', { variable, value: '' });
       }
@@ -42,12 +54,12 @@
     variables.forEach((variable) => {
       if (values[variable] === undefined) {
         values[variable] = '';
-        
+
         // Call the callback function if provided
         if (onVariableChange) {
           onVariableChange(variable, '');
         }
-        
+
         // Also dispatch an event
         dispatch('change', { variable, value: '' });
       }
@@ -64,31 +76,40 @@
     if (onVariableChange) {
       onVariableChange(variable, value);
     }
-    
+
     // Also dispatch an event
     dispatch('change', { variable, value });
   }
 </script>
 
-{#if variables.length > 0}
-  <div class="template-variables-editor">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {#each variables as variable}
-        <div class="flex flex-col">
-          <label class="text-sm font-medium mb-1" for={`var-${variable}`}>{variable}</label>
-          <input
-            id={`var-${variable}`}
-            class="input"
-            type="text"
-            bind:value={values[variable]}
-            on:input={(e) => handleInputChange(variable, e.currentTarget.value)}
-          />
+<!-- Template Variables Section -->
+{#if $emailEditorStore.templateVariables && $emailEditorStore.templateVariables.length > 0}
+  <div class="mt-6 p-4 border border-surface-300 rounded-lg">
+    <h3 class="text-lg font-semibold mb-3">Template Variables</h3>
+    <p class="text-sm mb-4">
+      These variables were found in your email template. Enter values to replace them in the email.
+    </p>
+    {#if variables.length > 0}
+      <div class="template-variables-editor">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {#each variables as variable}
+            <div class="flex flex-col">
+              <label class="text-sm font-medium mb-1" for={`var-${variable}`}>{variable}</label>
+              <input
+                id={`var-${variable}`}
+                class="input"
+                type="text"
+                bind:value={values[variable]}
+                on:input={(e) => handleInputChange(variable, e.currentTarget.value)}
+              />
+            </div>
+          {/each}
         </div>
-      {/each}
-    </div>
+      </div>
+    {:else}
+      <div class="text-sm text-gray-500 italic">No template variables found</div>
+    {/if}
   </div>
-{:else}
-  <div class="text-sm text-gray-500 italic">No template variables found</div>
 {/if}
 
 <style>
