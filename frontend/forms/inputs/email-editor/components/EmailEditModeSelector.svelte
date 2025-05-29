@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Editor } from '@tiptap/core';
-  import { Writable } from 'svelte/store';
+  import { type Writable } from 'svelte/store';
 
   export let isHtmlMode: Writable<boolean>;
   export let editor: Editor;

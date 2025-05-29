@@ -1,17 +1,17 @@
 <script lang="ts">
-  import { toast } from "../../toast/toast-logic";
-  import Spinner from "../../../elements/SpinnerRls.svelte";
-  import { EToastTypes } from "./../../toast/toast-logic";
-  import { onMount } from "svelte";
-  import type { IQuickloginUser } from "./../devconsole.types";
-  import { LOCALDB } from "../../localdb/localdb";
-  import { apiRequest } from "../../../client/api-request";
+  import { toast } from '../../toast/toast-logic';
+  import Spinner from '../../../elements/SpinnerRls.svelte';
+  import { EToastTypes } from './../../toast/toast-logic';
+  import { onMount } from 'svelte';
+  import type { IQuickloginUser } from './../devconsole.types';
+  import { LOCALDB } from '../../localdb/localdb';
+  import { apiRequest, apiRequest_v2 } from '../../../client/api-request';
 
   export let quickloginUsers: IQuickloginUser[];
 
-  const LAST_QUICKLOGIN_USER_KEY = "LAST_QUICKLOGIN_USER_KEY";
+  const LAST_QUICKLOGIN_USER_KEY = 'LAST_QUICKLOGIN_USER_KEY';
 
-  console.log("quickloginUsers:");
+  console.log('quickloginUsers:');
   console.log(quickloginUsers);
 
   let userToLogin: IQuickloginUser;
@@ -21,9 +21,40 @@
   onMount(() => {
     userToLogin = LOCALDB.get(LAST_QUICKLOGIN_USER_KEY, quickloginUsers[0]);
 
-    console.log("userToLogIn:");
+    console.log('userToLogIn:');
     console.log(userToLogin);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          console.log('enter');
+          if (userToLogin) {
+            onLogin();
+          }
+        }
+      });
+    }
   });
+
+  async function onLogin() {
+    isFetching_login = true;
+    const { data, error } = await apiRequest_v2({
+      url: '/auth/login',
+      method: 'POST',
+      body: {
+        email: userToLogin.email,
+        password: userToLogin.password,
+      },
+    });
+
+    isFetching_login = false;
+    if (data) {
+      toast(`logged in as ${userToLogin.email}`, EToastTypes.SUCCESS);
+      window.location.reload();
+    } else {
+      toast(error?.message || `failed to log in`, EToastTypes.ERROR);
+    }
+  }
 </script>
 
 <div class="w-full flex justify-start items-center space-x-1">
@@ -37,37 +68,13 @@
     }}
   >
     {#each quickloginUsers as login}
-      <option class="text-white" value={login}
-        >{login.email}{login.note ? login.note : ""}</option
-      >
+      <option class="text-white" value={login}>{login.email}{login.note ? login.note : ''}</option>
     {/each}
   </select>
 
   <!-- Login button -->
 
-  <button
-    disabled={isFetching_login}
-    class="variant-filled-primary"
-    on:click={async () => {
-      isFetching_login = true;
-      const { data, error } = await apiRequest({
-        url: "/auth/login",
-        method: "POST",
-        body: {
-          email: userToLogin.email,
-          password: userToLogin.password,
-        },
-      });
-
-      isFetching_login = false;
-      if (data) {
-        toast(`logged in as ${userToLogin.email}`, EToastTypes.SUCCESS);
-        window.location.reload();
-      } else {
-        toast(error?.message || `failed to log in`, EToastTypes.ERROR);
-      }
-    }}
-  >
+  <button disabled={isFetching_login} class="variant-filled-primary" on:click={onLogin}>
     {#if isFetching_login}
       <Spinner size="w-12" stroke={10} />
       <!-- content here -->
@@ -82,8 +89,8 @@
     on:click={async () => {
       isFetching_logout = true;
       const { data, error } = await apiRequest({
-        url: "/auth/logout",
-        method: "DELETE",
+        url: '/auth/logout',
+        method: 'DELETE',
       });
 
       isFetching_logout = false;

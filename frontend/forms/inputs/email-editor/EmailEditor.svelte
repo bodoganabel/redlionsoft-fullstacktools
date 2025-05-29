@@ -13,22 +13,17 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   import ListItem from '@tiptap/extension-list-item';
   import TextStyle from '@tiptap/extension-text-style';
   import Image from '@tiptap/extension-image';
-  import { popup, popupClose } from '../../../functionality/popup/popup-logic';
-  import { POPUP_TEMPLATE_MANAGER, type TEmailTemplate } from './email-template.types';
-  import { toastError, toastNormal } from '../../../functionality/toast/toast-logic';
-  import type { TResource } from '../../../../backend/user-crud/types';
-  import { createFormContext, formField } from '../../../';
-  import { VALIDATOR_REQUIRE_STRING } from '../../../../common';
-  import FieldError from '../../../forms/FieldError.svelte';
+  import { type TEmailTemplate } from './email-template.types';
+  import { toastError } from '../../../functionality/toast/toast-logic';
   import EmailToolbar from './components/EmailToolbar.svelte';
   import EmailAttachments from './components/EmailAttachments.svelte';
   import { emailEditorStore } from './email-editor.store';
-  import EmailTemplateManagerButton from './components/EmailTemplateManagerButton.svelte';
   import { UCrudResourceClient } from '../../../user-crud/user-crud.client';
   import TemplateVariablesEditor from '../../../components/template-variables/TemplateVariablesEditor.svelte';
   import EmailErrorBodyTooLarge from './components/EmailErrorBodyTooLarge.svelte';
   import EmailEditModeSelector from './components/EmailEditModeSelector.svelte';
   import EmailSubjectSection from './components/EmailSubjectSection.svelte';
+  import { debouncedSaveDraft, loadDraft } from './components/utilis';
 
   export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
 
@@ -52,72 +47,6 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
 
     return updatedHtml;
   }
-
-  // --- Draft Save/Load/Helpers ---
-  const DRAFT_KEY = 'email-editor-draft';
-  function saveDraft(subject: string, body: string) {
-    if (!subject && !body) {
-      localStorage.removeItem(DRAFT_KEY);
-      return;
-    }
-
-    try {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({ subject, body }));
-    } catch (error) {
-      // Handle quota exceeded error
-      if (
-        error instanceof DOMException &&
-        (error.name === 'QuotaExceededError' || error.code === 22)
-      ) {
-        toastError(
-          'Email content is too large to save as draft. Please make the email body shorter or use smaller/fewer images.'
-        );
-
-        // Try to save just the subject without the body to preserve some state
-        try {
-          localStorage.setItem(
-            DRAFT_KEY,
-            JSON.stringify({ subject, body: 'Content too large to save' })
-          );
-        } catch {
-          // If even that fails, just log it
-          console.error('Failed to save even minimal draft content');
-        }
-      } else {
-        console.error('Error saving draft:', error);
-      }
-    }
-  }
-  function loadDraft() {
-    emailEditorStore.loadDraft({
-      setSubject: (subject) => emailEditorStore.updateSubject(subject),
-      setHtmlBody: (htmlBody) => {
-        if (editor?.commands?.setContent) {
-          editor.commands.setContent(htmlBody);
-          emailEditorStore.updateHtmlBody(htmlBody);
-        }
-      },
-      setTemplateVariableValues: (values) => {
-        // The store will handle updating the template variable values
-        Object.entries(values).forEach(([variable, value]) => {
-          emailEditorStore.updateTemplateVariableValue(variable, value);
-        });
-      },
-    });
-  }
-  // Simple debounce helper
-  function debounce(fn: (...args: any[]) => void, ms: number) {
-    let timeout: ReturnType<typeof setTimeout>;
-    return (...args: any[]) => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => fn(...args), ms);
-    };
-  }
-  // Debounced save
-  const debouncedSaveDraft = debounce(
-    (subject: string, body: string) => saveDraft(subject, body),
-    1200
-  );
 
   onMount(() => {
     // Initialize the editor
@@ -148,7 +77,7 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
         }
       },
       onCreate: () => {
-        loadDraft();
+        loadDraft(editor);
       },
     });
   });

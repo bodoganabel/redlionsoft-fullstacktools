@@ -5,12 +5,12 @@
   import FieldError from '../../../FieldError.svelte';
   import { createFormContext, formField } from '../../../form';
   import EmailTemplateManagerButton from './EmailTemplateManagerButton.svelte';
-  import { TResource } from '../../../../../backend/user-crud/types';
-  import { POPUP_TEMPLATE_MANAGER, TEmailTemplate } from '../email-template.types';
+  import { type TResource } from '../../../../../backend/user-crud/types';
+  import { POPUP_TEMPLATE_MANAGER, type TEmailTemplate } from '../email-template.types';
   import { popupClose } from '../../../../functionality/popup/popup-logic';
   import { toastNormal } from '../../../../functionality/toast/toast-logic';
   import { UCrudResourceClient } from '../../../../user-crud/user-crud.client';
-  import { Writable } from 'svelte/store';
+  import { type Writable } from 'svelte/store';
 
   export let editor: Editor;
   export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;

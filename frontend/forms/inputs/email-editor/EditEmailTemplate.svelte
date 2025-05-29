@@ -1,23 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { get } from 'svelte/store';
-  let nameInput: HTMLInputElement;
-
-  onMount(() => {
-    if (nameInput) {
-      nameInput.focus();
-      const len = nameInput.value.length;
-      nameInput.setSelectionRange(len, len);
-    }
-    
-    console.log('EditEmailTemplate onMount:', {
-      isHtmlMode,
-      htmlTextareaContent,
-      emailContent,
-      emailSubject,
-      isOverwriteContent
-    });
-  });
   import { POPUP_EMAIL_TEMPLATE_EDIT_ID, type TEmailTemplate } from './email-template.types';
   import { popup, popupClose } from '../../../functionality/popup/popup-logic';
   import { toastError, toastSuccess } from '../../../functionality/toast/toast-logic';
@@ -37,6 +20,22 @@
   export let isHtmlMode = false;
   export let htmlTextareaContent: string = '';
 
+  let nameInput: HTMLInputElement;
+  onMount(() => {
+    if (nameInput) {
+      nameInput.focus();
+      const len = nameInput.value.length;
+      nameInput.setSelectionRange(len, len);
+    }
+
+    console.log('EditEmailTemplate onMount:', {
+      isHtmlMode,
+      htmlTextareaContent,
+      emailContent,
+      emailSubject,
+      isOverwriteContent,
+    });
+  });
   $: overwriteMessage = isOverwriteContent
     ? "<small class='text-error-500'>This will overwrite the template's content with the current email draft, subject, and attachments.</small>"
     : '<small>This will not replace the content with the current content of the template.</small>';
@@ -48,29 +47,29 @@
       toastError('Template name cannot be empty');
       return;
     }
-    
+
     // Determine content to save based on HTML mode
     const contentToSave = isHtmlMode ? htmlTextareaContent : templateData.content;
-    
+
     // Create a complete template data object with all required fields
     const dataToSave: TEmailTemplate = {
       subject: templateData.subject,
       content: contentToSave,
       attachedFiles: templateData.attachedFiles,
       isShared: templateData.isShared || false,
-      ownerUserId: templateData.ownerUserId || 'NOT_IMPLEMENTED_YET'
+      ownerUserId: templateData.ownerUserId || 'NOT_IMPLEMENTED_YET',
     };
-    
+
     console.log('Saving template with data:', {
-      templateName, 
+      templateName,
       dataToSave,
       isOverwriteContent,
       isNewTemplate,
       isHtmlMode,
       htmlTextareaContent,
-      originalContent: templateData.content
+      originalContent: templateData.content,
     });
-    
+
     try {
       if (isNewTemplate) {
         const result = await emailTemplateUCrudClient.saveResource(templateName, dataToSave);
@@ -80,19 +79,19 @@
       } else {
         const dataToUpdate = isOverwriteContent ? dataToSave : originalTemplate.data;
         console.log('Updating with data:', dataToUpdate);
-        
+
         const success = await emailTemplateUCrudClient.updateResource(
           initialTemplateName,
           templateName,
           dataToUpdate
         );
-        
+
         if (success) {
           toastSuccess(`Template "${templateName}" updated successfully`);
         }
       }
       popupClose(POPUP_EMAIL_TEMPLATE_EDIT_ID);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving template:', error);
       toastError('Failed to save template: ' + (error.message || 'Unknown error'));
     }
