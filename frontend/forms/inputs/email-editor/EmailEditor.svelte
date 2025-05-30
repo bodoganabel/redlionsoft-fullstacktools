@@ -14,7 +14,6 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   import TextStyle from '@tiptap/extension-text-style';
   import Image from '@tiptap/extension-image';
   import { type TEmailTemplate } from './email-template.types';
-  import { toastError } from '../../../functionality/toast/toast-logic';
   import EmailToolbar from './components/EmailToolbar.svelte';
   import EmailAttachments from './components/EmailAttachments.svelte';
   import { emailEditorStore } from './email-editor.store';
