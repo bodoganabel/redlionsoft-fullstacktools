@@ -262,7 +262,7 @@ function createEmailEditorStore() {
 // --- Draft Save/Load Logic ---
 const DRAFT_KEY = 'email-editor-draft';
 
-function saveDraft(subject: string, htmlBody: string, templateVariableValues?: Record<string, string>) {
+function saveDraft(subject: string, htmlBody: string, templateVariableValues?: Record<string, string>, isHtmlMode?: boolean) {
   if (!subject && !htmlBody && (!templateVariableValues || Object.keys(templateVariableValues).length === 0)) {
     localStorage.removeItem(DRAFT_KEY);
     return;
@@ -271,7 +271,8 @@ function saveDraft(subject: string, htmlBody: string, templateVariableValues?: R
     localStorage.setItem(DRAFT_KEY, JSON.stringify({ 
       subject, 
       htmlBody,
-      templateVariableValues: templateVariableValues || {}
+      templateVariableValues: templateVariableValues || {},
+      isHtmlMode: isHtmlMode ?? false
     }));
   } catch (error) {
     if (
@@ -285,7 +286,8 @@ function saveDraft(subject: string, htmlBody: string, templateVariableValues?: R
           JSON.stringify({ 
             subject, 
             htmlBody: 'Content too large to save',
-            templateVariableValues: templateVariableValues || {}
+            templateVariableValues: templateVariableValues || {},
+            isHtmlMode: isHtmlMode ?? false
           })
         );
       } catch {
@@ -299,6 +301,7 @@ function loadDraft(setters: {
   setSubject: (v: string) => void; 
   setHtmlBody: (v: string) => void;
   setTemplateVariableValues?: (v: Record<string, string>) => void;
+  setIsHtmlMode?: (v: boolean) => void;
 }) {
   const raw = localStorage.getItem(DRAFT_KEY);
   if (!raw) return;
@@ -308,6 +311,10 @@ function loadDraft(setters: {
     if (draft.htmlBody) setters.setHtmlBody(draft.htmlBody);
     if (draft.templateVariableValues && setters.setTemplateVariableValues) {
       setters.setTemplateVariableValues(draft.templateVariableValues);
+    }
+    // Set HTML mode if it was saved and a setter is provided
+    if (draft.isHtmlMode !== undefined && setters.setIsHtmlMode) {
+      setters.setIsHtmlMode(draft.isHtmlMode);
     }
   } catch {}
 }
@@ -321,8 +328,8 @@ function debounce<T extends (...args: any[]) => void>(fn: T, ms: number): T {
 }
 
 const debouncedSaveDraft = debounce(
-  (subject: string, htmlBody: string, templateVariableValues?: Record<string, string>) => 
-    saveDraft(subject, htmlBody, templateVariableValues), 
+  (subject: string, htmlBody: string, templateVariableValues?: Record<string, string>, isHtmlMode?: boolean) => 
+    saveDraft(subject, htmlBody, templateVariableValues, isHtmlMode), 
   1200
 );
 

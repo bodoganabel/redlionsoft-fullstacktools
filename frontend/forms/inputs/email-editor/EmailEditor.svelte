@@ -76,7 +76,25 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
         }
       },
       onCreate: () => {
-        loadDraft(editor);
+        // Use the store's loadDraft function directly
+        emailEditorStore.loadDraft({
+          setSubject: (subject: string) => emailEditorStore.updateSubject(subject),
+          setHtmlBody: (htmlBody: string) => {
+            if (editor?.commands?.setContent) {
+              editor.commands.setContent(htmlBody);
+              emailEditorStore.updateHtmlBody(htmlBody);
+            }
+          },
+          setTemplateVariableValues: (values: Record<string, string>) => {
+            // The store will handle updating the template variable values
+            Object.entries(values).forEach(([variable, value]) => {
+              emailEditorStore.updateTemplateVariableValue(variable, value as string);
+            });
+          },
+          setIsHtmlMode: (mode: boolean) => {
+            isHtmlMode.set(mode);
+          }
+        });
       },
     });
   });
@@ -86,8 +104,21 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
     emailEditorStore.debouncedSaveDraft(
       $emailEditorStore.subject,
       editor.getHTML(),
-      $emailEditorStore.templateVariableValues
+      $emailEditorStore.templateVariableValues,
+      $isHtmlMode
     );
+  }
+
+  // Save draft when HTML mode changes
+  $: {
+    if (editor && editor.getHTML) {
+      emailEditorStore.debouncedSaveDraft(
+        $emailEditorStore.subject,
+        editor.getHTML(),
+        $emailEditorStore.templateVariableValues,
+        $isHtmlMode
+      );
+    }
   }
 
   // Handle HTML mode changes
