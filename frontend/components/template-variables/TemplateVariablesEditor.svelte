@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, createEventDispatcher } from 'svelte';
+  import { onMount } from 'svelte';
   import { emailEditorStore } from '../../forms/inputs/email-editor/email-editor.store';
 
   /**
@@ -8,10 +8,7 @@
    */
 
   // Props
-
-  let variables = $emailEditorStore.templateVariables;
-  let values = $emailEditorStore.templateVariableValues;
-  let onVariableChange = (variable: string, value: string) => {
+  export let onVariableChange = (variable: string, value: string) => {
     // Update the variable value in the store
     emailEditorStore.updateTemplateVariableValue(variable, value || '');
 
@@ -23,45 +20,22 @@
     );
   };
 
-  // Create event dispatcher
-  const dispatch = createEventDispatcher<{
-    change: { variable: string; value: string };
-  }>();
-
   // Initialize values when component mounts
   onMount(() => {
-    console.log('TemplateVariablesEditor - Initial values:', values);
-
-    // Make sure all variables have a value in the values object
-    variables.forEach((variable) => {
-      if (values[variable] === undefined) {
-        // Update the parent's values object directly
-        values[variable] = '';
-
-        // Call the callback function if provided
-        if (onVariableChange) {
-          onVariableChange(variable, '');
-        }
-
-        // Also dispatch an event
-        dispatch('change', { variable, value: '' });
+    // Make sure all variables have a value in the store
+    $emailEditorStore.templateVariables.forEach((variable) => {
+      if ($emailEditorStore.templateVariableValues[variable] === undefined) {
+        // Update the store
+        onVariableChange(variable, '');
       }
     });
   });
 
   // Update values when variables change
-  $: if (variables.length > 0) {
-    variables.forEach((variable) => {
-      if (values[variable] === undefined) {
-        values[variable] = '';
-
-        // Call the callback function if provided
-        if (onVariableChange) {
-          onVariableChange(variable, '');
-        }
-
-        // Also dispatch an event
-        dispatch('change', { variable, value: '' });
+  $: if ($emailEditorStore.templateVariables.length > 0) {
+    $emailEditorStore.templateVariables.forEach((variable) => {
+      if ($emailEditorStore.templateVariableValues[variable] === undefined) {
+        onVariableChange(variable, '');
       }
     });
   }
@@ -70,15 +44,7 @@
    * Handle input change for a variable
    */
   function handleInputChange(variable: string, value: string) {
-    console.log('Input changed:', variable, value);
-
-    // Call the callback function if provided
-    if (onVariableChange) {
-      onVariableChange(variable, value);
-    }
-
-    // Also dispatch an event
-    dispatch('change', { variable, value });
+    onVariableChange(variable, value);
   }
 </script>
 
@@ -89,17 +55,17 @@
     <p class="text-sm mb-4">
       These variables were found in your email template. Enter values to replace them in the email.
     </p>
-    {#if variables.length > 0}
+    {#if $emailEditorStore.templateVariables.length > 0}
       <div class="template-variables-editor">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {#each variables as variable}
+          {#each $emailEditorStore.templateVariables as variable}
             <div class="flex flex-col">
               <label class="text-sm font-medium mb-1" for={`var-${variable}`}>{variable}</label>
               <input
                 id={`var-${variable}`}
                 class="input"
                 type="text"
-                bind:value={values[variable]}
+                bind:value={$emailEditorStore.templateVariableValues[variable]}
                 on:input={(e) => handleInputChange(variable, e.currentTarget.value)}
               />
             </div>

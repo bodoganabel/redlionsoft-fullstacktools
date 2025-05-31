@@ -93,6 +93,11 @@ function createEmailEditorStore() {
   
   // Using the utility function instead of local implementation
   
+  // Track the last detected variables for optimization
+  let lastSubject = '';
+  let lastHtmlBody = '';
+  let lastVariables: string[] = [];
+  
   /**
    * Debounced function to detect template variables in both subject and body
    */
@@ -100,7 +105,7 @@ function createEmailEditorStore() {
     clearTimeout(debouncedVariableDetectionTimer);
     debouncedVariableDetectionTimer = setTimeout(() => {
       detectTemplateVariables();
-    }, 800); // 800ms debounce time
+    }, 1000); // Increased debounce time to 1000ms for better performance
   }
   
   /**
@@ -113,18 +118,31 @@ function createEmailEditorStore() {
     });
     unsubscribe();
     
-    if (!currentState) return;
+    if (!currentState) return [];
+    
+    // Skip processing if content hasn't changed
+    if (currentState.subject === lastSubject && currentState.htmlBody === lastHtmlBody) {
+      return lastVariables;
+    }
+    
+    // Remember current state for next comparison
+    lastSubject = currentState.subject;
+    lastHtmlBody = currentState.htmlBody;
     
     // Extract variables from both subject and body
     const subjectVariables = extractTemplateVariables(currentState.subject);
     const bodyVariables = extractTemplateVariables(currentState.htmlBody);
     
-    // Combine all variables
-    const allVariables = [...subjectVariables, ...bodyVariables];
+    // Combine all variables and remove duplicates
+    const allVariables = [...new Set([...subjectVariables, ...bodyVariables])];
     
-    // Always update template variables, even if the array is empty
-    // This ensures we clear variables when none are present
-    updateTemplateVariables(allVariables);
+    // Only update if variables have actually changed
+    if (JSON.stringify(allVariables) !== JSON.stringify(lastVariables)) {
+      lastVariables = allVariables;
+      updateTemplateVariables(allVariables);
+    }
+    
+    return allVariables;
   }
   
   function updateTemplateVariables(variables: string[]) {
@@ -256,6 +274,8 @@ function createEmailEditorStore() {
     updateTemplateVariableValue,
     getProcessedHtmlBody,
     getProcessedSubject,
+    debouncedDetectVariables,
+    detectTemplateVariables,
   };
 }
 

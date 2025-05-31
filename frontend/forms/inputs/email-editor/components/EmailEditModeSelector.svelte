@@ -14,11 +14,15 @@
     <button
       class="btn btn-sm {!$isHtmlMode ? 'variant-filled-primary' : 'variant-outline-primary'}"
       on:click={() => {
-        if (!$isHtmlMode) {
+        if ($isHtmlMode) {
           popup({
             title: 'Are you sure?',
             message: 'Switching to Simple mode may break html structure',
             onAccept: () => {
+              // When switching to Simple mode, update editor with current HTML from textarea
+              if (editor && htmlTextarea) {
+                editor.commands.setContent(htmlTextarea.value);
+              }
               isHtmlMode.set(false);
             },
             onClose: () => {},

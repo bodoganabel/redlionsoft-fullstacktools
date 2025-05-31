@@ -47,6 +47,10 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
     return updatedHtml;
   }
 
+  // Avoid redundant variable detection
+  let contentChanged = false;
+  let initialDetectionDone = false;
+  
   onMount(() => {
     // Initialize the editor
     editor = new Editor({
@@ -67,22 +71,29 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
       },
       onUpdate({ editor }) {
         const htmlBody = editor.getHTML();
-        emailEditorStore.updateHtmlBody(htmlBody);
-        debouncedSaveDraft($emailEditorStore.subject, htmlBody);
+        // Only update HTML body if it actually changed
+        if (htmlBody !== $emailEditorStore.htmlBody) {
+          contentChanged = true;
+          emailEditorStore.updateHtmlBody(htmlBody);
+          debouncedSaveDraft($emailEditorStore.subject, htmlBody);
 
-        // If we're in HTML mode, update the textarea
-        if ($isHtmlMode && htmlTextarea) {
-          htmlTextarea.value = htmlBody;
+          // If we're in HTML mode, update the textarea
+          if ($isHtmlMode && htmlTextarea) {
+            htmlTextarea.value = htmlBody;
+          }
         }
       },
       onCreate: () => {
         // Use the store's loadDraft function directly
         emailEditorStore.loadDraft({
-          setSubject: (subject: string) => emailEditorStore.updateSubject(subject),
+          setSubject: (subject: string) => {
+            emailEditorStore.updateSubject(subject);
+          },
           setHtmlBody: (htmlBody: string) => {
             if (editor?.commands?.setContent) {
               editor.commands.setContent(htmlBody);
               emailEditorStore.updateHtmlBody(htmlBody);
+              initialDetectionDone = false; // Will trigger detection after setup
             }
           },
           setTemplateVariableValues: (values: Record<string, string>) => {
@@ -97,6 +108,17 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
         });
       },
     });
+  });
+
+  // Run template variable detection only once after the editor is fully initialized
+  onMount(() => {
+    // Use a short delay to ensure the editor is fully initialized
+    setTimeout(() => {
+      if (editor && !initialDetectionDone) {
+        initialDetectionDone = true;
+        emailEditorStore.detectTemplateVariables();
+      }
+    }, 500);
   });
 
   // Save draft when subject changes (debounced)
@@ -133,10 +155,15 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
     if (htmlTextarea.value && htmlTextarea.value !== editor.getHTML()) {
       editor.commands.setContent(htmlTextarea.value);
       emailEditorStore.updateHtmlBody(htmlTextarea.value);
+      contentChanged = true; // This will trigger variable detection
     }
   }
 
-  // The store now automatically extracts variables when htmlBody is updated
+  // Detect variables only when content has been changed
+  $: if (contentChanged && editor) {
+    contentChanged = false;
+    emailEditorStore.debouncedDetectVariables();
+  }
 
   onDestroy(() => {
     if (editor) {
@@ -172,6 +199,7 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
       // Update the store when HTML is edited directly
       if ($isHtmlMode) {
         emailEditorStore.updateHtmlBody(e.currentTarget.value);
+        contentChanged = true; // Will trigger detection via reactive statement
       }
     }}
   />
