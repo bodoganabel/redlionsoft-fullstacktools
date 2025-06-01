@@ -1,14 +1,14 @@
 // src/routes/popups/popup-logic.ts
 import { get, writable } from "svelte/store";
-import type { ComponentType, SvelteComponent } from "svelte";
+import type { ComponentType, SvelteComponent, ComponentProps } from "svelte";
 import PopupInputModal from "./PopupInputModal.svelte";
 
-export interface IPopup {
+export interface IPopup<TComponent extends ComponentType<SvelteComponent> = ComponentType<SvelteComponent>> {
   id?: string;
   title?: string;
   message?: string;
-  component?: ComponentType<SvelteComponent>; // Typescript fails when passing svelte component. Use any svelte component here.
-  componentProps?: Record<string, any>;
+  component?: TComponent; // Typescript fails when passing svelte component. Use any svelte component here.
+  componentProps?: TComponent extends ComponentType<infer T> ? ComponentProps<T> : Record<string, any>;
   isOutsideClickClose?: boolean;
   onClose?: () => void;
   onAccept?: () => void;
@@ -19,7 +19,7 @@ export interface IPopup {
 
 export const popupStore = writable<IPopup[]>([]);
 
-export const popup = (popup: IPopup): string => {
+export const popup = <TComponent extends ComponentType<SvelteComponent>>(popup: IPopup<TComponent>): string => {
   const id = typeof popup?.id === "undefined" ? crypto.randomUUID() : popup.id;
   const newPopup = { ...popup, id };
   popupStore.update((popups) => [...popups, newPopup]);
@@ -48,17 +48,17 @@ export const popupInput = (props: IPopupInputProps) => {
     message: "",
     isSaveClose: true,
     saveButtonTitle: "Save",
-    onSave: (value: string) => {},
+    onSave: (value: string) => { },
     title: "",
     value: "",
     isTextarea: false,
     isEnterAccept: false, // PopupInputModal should handle onEnter events instead of default popup
   };
 
-  const combinedProps: IPopupInputProps = {
+  const combinedProps = {
     ...defaultProps,
     ...props,
-  };
+  } as Required<IPopupInputProps>;
 
   popup({
     id: combinedProps.id === undefined ? "popup-input" : combinedProps.id,
