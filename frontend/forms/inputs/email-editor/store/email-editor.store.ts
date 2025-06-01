@@ -1,6 +1,7 @@
 import { get, writable } from 'svelte/store';
-import { extractTemplateVariables, applyTemplateVariables, initializeTemplateVariableValues } from '../../../utils/template-variables';
-import { DRAFT_KEY } from './email-editor.types';
+import { extractTemplateVariables, applyTemplateVariables, initializeTemplateVariableValues } from '../../../../utils/template-variables';
+import { DRAFT_HTMLBODY_KEY, DRAFT_IS_HTML_MODE_KEY, DRAFT_SUBJECT_KEY, DRAFT_VARIABLE_VALUES_KEY } from '../email-editor.types';
+import { debouncedSaveDraftHtmlBody, debouncedSaveDraftSubject, saveDraftIsHtmlMode } from './draft.utils';
 
 export interface EmailEditorState {
   recipient: string;
@@ -20,6 +21,7 @@ export interface EmailEditorState {
   templateVariableValues: Record<string, string>;
   isHtmlMode: boolean;
   onHtmlModeChange?: (isHtmlMode: boolean) => void | Promise<void>;
+  isInitialized: boolean;
 }
 
 const MAX_ATTACHMENT_SIZE_MB = 25;
@@ -45,6 +47,7 @@ function createEmailEditorStore() {
     templateVariables: [],
     templateVariableValues: {},
     isHtmlMode: false,
+    isInitialized: false, // Flag for disabling premature saving
     onHtmlModeChange: async (isHtmlMode: boolean) => { },
   };
 
@@ -77,9 +80,10 @@ function createEmailEditorStore() {
 
     // Debounce the variable detection
     debouncedDetectVariables();
+    debouncedSaveDraftSubject(store);
   }
 
-  function updateHtmlBody(htmlBody: string) {
+  function updateHtmlBody(htmlBody: string, saveDraft = true) {
     const { emailBodySizeMB, bodyTooLarge } = calculateBodySize(htmlBody);
 
     // Update the HTML body immediately
@@ -93,9 +97,11 @@ function createEmailEditorStore() {
 
     console.log('htmlBody', get(store).htmlBody);
 
-    updateSizeLimit();
-
     // Debounce the variable detection
+    updateSizeLimit();
+    if (saveDraft) {
+      debouncedSaveDraftHtmlBody(store);
+    }
     debouncedDetectVariables();
   }
 
@@ -117,7 +123,7 @@ function createEmailEditorStore() {
       }
       return updatedState;
     });
-    saveDraft()
+    saveDraftIsHtmlMode(store);
   }
 
   // Using the utility function instead of local implementation
@@ -291,65 +297,32 @@ function createEmailEditorStore() {
   }
 
   function loadDraft() {
-    const raw = localStorage.getItem(DRAFT_KEY);
-    if (!raw) return;
-    try {
-      const draft = JSON.parse(raw);
-      update((state) => ({
-        ...state,
-        subject: draft.subject,
-        htmlBody: draft.htmlBody,
-        templateVariableValues: draft.templateVariableValues,
-        isHtmlMode: draft.isHtmlMode,
-      }));
-    } catch (e) { console.log(e) }
-  }
+    const rawHtmlBody = localStorage.getItem(DRAFT_HTMLBODY_KEY);
+    const rawSubject = localStorage.getItem(DRAFT_SUBJECT_KEY);
+    const rawVariableValues = localStorage.getItem(DRAFT_VARIABLE_VALUES_KEY);
+    const rawIsHtmlMode = localStorage.getItem(DRAFT_IS_HTML_MODE_KEY);
 
-  function saveDraft() {
-    const state = get(store);
     try {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({
-        subject: state.subject,
-        htmlBody: state.htmlBody,
-        templateVariableValues: state.templateVariableValues || {},
-        isHtmlMode: state.isHtmlMode ?? false
-      }));
-    } catch (error) {
-      if (
-        error instanceof DOMException &&
-        (error.name === 'QuotaExceededError' || error.code === 22)
-      ) {
-        // Try to save just the subject and variables without the body to preserve some state
-        try {
-          localStorage.setItem(
-            DRAFT_KEY,
-            JSON.stringify({
-              subject: state.subject,
-              htmlBody: 'Content too large to save',
-              templateVariableValues: state.templateVariableValues || {},
-              isHtmlMode: state.isHtmlMode ?? false
-            })
-          );
-        } catch {
-          // Ignore
+      if (rawIsHtmlMode !== null) {
+        updateIsHtmlMode(JSON.parse(rawIsHtmlMode));
+      }
+      if (rawHtmlBody !== null) {
+        updateHtmlBody(rawHtmlBody, false);
+      }
+      if (rawSubject !== null) {
+        updateSubject(rawSubject);
+      }
+      if (rawVariableValues !== null) {
+        for (const [key, value] of Object.entries(JSON.parse(rawVariableValues))) {
+          updateTemplateVariableValue(key as string, value as string);
         }
       }
+    } catch (error) {
+      console.error('Failed to load draft:', error);
     }
+    update((state) => ({ ...state, isInitialized: true }));
   }
 
-  function debounce<T extends (...args: any[]) => void>(fn: T, ms: number): T {
-    let timeout: ReturnType<typeof setTimeout>;
-    return ((...args: any[]) => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => fn(...args), ms);
-    }) as T;
-  }
-
-  // Define the debounced save draft function using the store's saveDraft
-  const debouncedSaveDraft = debounce(() => {
-    saveDraft();
-    console.log('Draft saved');
-  }, 1200);
 
 
   return {
@@ -369,7 +342,6 @@ function createEmailEditorStore() {
     debouncedDetectVariables,
     detectTemplateVariables,
     loadDraft,
-    saveDraft: debouncedSaveDraft,
     setOnHtmlModeChange,
   };
 }

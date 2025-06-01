@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { emailEditorStore } from '../email-editor.store';
+  import { emailEditorStore } from '../store/email-editor.store';
 </script>
 
 {#if $emailEditorStore.bodyTooLarge}

@@ -2,7 +2,7 @@
   import { Editor } from '@tiptap/core';
   import { type Writable } from 'svelte/store';
   import { popup } from '../../../../functionality/popup/popup-logic';
-  import { emailEditorStore } from '../email-editor.store';
+  import { emailEditorStore } from '../store/email-editor.store';
 
   export let editor: Editor;
   export let htmlTextarea: HTMLTextAreaElement;

@@ -8,7 +8,7 @@
   import type { TEmailTemplate } from '../email-template.types';
   import { UCrudResourceClient } from '../../../../user-crud/user-crud.client';
 
-  import { emailEditorStore } from '../email-editor.store';
+  import { emailEditorStore } from '../store/email-editor.store';
   export let editor: Editor;
   export let handleTemplateSelect: (template: TResource<TEmailTemplate>) => Promise<void>;
   export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;

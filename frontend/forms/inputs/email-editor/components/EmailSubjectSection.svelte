@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Editor } from '@tiptap/core';
-  import { emailEditorStore } from '../email-editor.store';
+  import { emailEditorStore } from '../store/email-editor.store';
   import { VALIDATOR_REQUIRE_STRING } from '../../../../../common';
   import FieldError from '../../../FieldError.svelte';
   import { createFormContext, formField } from '../../../form';

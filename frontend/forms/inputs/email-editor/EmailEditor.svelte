@@ -6,7 +6,6 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
 <script lang="ts">
   import './EmailEditor.css';
   import { onMount, onDestroy } from 'svelte';
-  import { writable } from 'svelte/store';
   import { Editor, type EditorEvents } from '@tiptap/core';
   import StarterKit from '@tiptap/starter-kit';
   import { Color } from '@tiptap/extension-color';
@@ -16,7 +15,7 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   import { type TEmailTemplate } from './email-template.types';
   import EmailToolbar from './components/EmailToolbar.svelte';
   import EmailAttachments from './components/EmailAttachments.svelte';
-  import { emailEditorStore } from './email-editor.store';
+  import { emailEditorStore } from './store/email-editor.store';
   import { UCrudResourceClient } from '../../../user-crud/user-crud.client';
   import TemplateVariablesEditor from '../../../components/template-variables/TemplateVariablesEditor.svelte';
   import EmailErrorBodyTooLarge from './components/EmailErrorBodyTooLarge.svelte';
@@ -63,13 +62,11 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
         console.log(contentError);
       },
       onUpdate({ editor }) {
+        console.log('onUpdate', editor.getHTML());
         const htmlBody = editor.getHTML();
         // Only update HTML body if it actually changed
         if (htmlBody !== $emailEditorStore.htmlBody) {
           emailEditorStore.updateHtmlBody(htmlBody);
-          emailEditorStore.saveDraft();
-          emailEditorStore.debouncedDetectVariables();
-
           // If we're in HTML mode, update the textarea
           if ($emailEditorStore.isHtmlMode && htmlTextarea) {
             htmlTextarea.value = htmlBody;
@@ -78,11 +75,12 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
       },
       onCreate: () => {
         // Use the store's loadDraft function directly
+        console.log('onCreate');
+        console.log($emailEditorStore.htmlBody);
         emailEditorStore.loadDraft();
-
         htmlTextarea.value = $emailEditorStore.htmlBody;
         editor.commands.setContent($emailEditorStore.htmlBody);
-        emailEditorStore.detectTemplateVariables();
+        console.log($emailEditorStore.htmlBody);
       },
     });
   });
@@ -120,7 +118,6 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
       // Update the store when HTML is edited directly
       if ($emailEditorStore.isHtmlMode) {
         emailEditorStore.updateHtmlBody(e.currentTarget.value);
-        emailEditorStore.debouncedDetectVariables();
       }
     }}
   />

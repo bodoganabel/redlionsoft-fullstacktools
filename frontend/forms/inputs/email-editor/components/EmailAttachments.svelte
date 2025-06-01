@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { emailEditorStore } from '../email-editor.store';
+  import { emailEditorStore } from '../store/email-editor.store';
   import { get } from 'svelte/store';
 
   function handleFileInput(e: Event) {
@@ -32,16 +32,23 @@
     <ul class="ml-2">
       {#each $emailEditorStore.attachedFiles as file, i}
         <li class="flex items-center space-x-1">
-          <small>{file.name.length > 20 ? `${file.name.slice(0, 20)}...` : file.name} ({Math.round(file.size/1024)} KB)</small>
+          <small
+            >{file.name.length > 20 ? `${file.name.slice(0, 20)}...` : file.name} ({Math.round(
+              file.size / 1024
+            )} KB)</small
+          >
           <button
             type="button"
             class="p-1 btn btn-xs btn-error ml-1"
             on:click={() => handleRemoveFile(i)}
-            title="Remove">✕</button>
+            title="Remove">✕</button
+          >
         </li>
       {/each}
     </ul>
-    <div class="text-xs text-gray-600 mt-1">Total size: {$emailEditorStore.totalFileSizeMB.toFixed(2)} MB</div>
+    <div class="text-xs text-gray-600 mt-1">
+      Total size: {$emailEditorStore.totalFileSizeMB.toFixed(2)} MB
+    </div>
   {/if}
   <input id="attach-file" type="file" multiple on:change={handleFileInput} class="hidden" />
   <label for="attach-file" class="btn btn-sm variant-filled-primary cursor-pointer mt-2">
