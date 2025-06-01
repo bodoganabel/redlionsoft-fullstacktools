@@ -68,14 +68,14 @@ function createEmailEditorStore() {
   function updateSubject(subject: string) {
     // Update the subject immediately
     update((state) => ({ ...state, subject, subjectError: null }));
-    
+
     // Debounce the variable detection
     debouncedDetectVariables();
   }
 
   function updateHtmlBody(htmlBody: string) {
     const { emailBodySizeMB, bodyTooLarge } = calculateBodySize(htmlBody);
-    
+
     // Update the HTML body immediately
     update((state) => ({
       ...state,
@@ -84,20 +84,20 @@ function createEmailEditorStore() {
       bodyTooLarge,
       bodyError: null
     }));
-    
+
     updateSizeLimit();
-    
+
     // Debounce the variable detection
     debouncedDetectVariables();
   }
-  
+
   // Using the utility function instead of local implementation
-  
+
   // Track the last detected variables for optimization
   let lastSubject = '';
   let lastHtmlBody = '';
   let lastVariables: string[] = [];
-  
+
   /**
    * Debounced function to detect template variables in both subject and body
    */
@@ -107,7 +107,7 @@ function createEmailEditorStore() {
       detectTemplateVariables();
     }, 1000); // Increased debounce time to 1000ms for better performance
   }
-  
+
   /**
    * Detect template variables in both subject and body
    */
@@ -117,45 +117,45 @@ function createEmailEditorStore() {
       currentState = state;
     });
     unsubscribe();
-    
+
     if (!currentState) return [];
-    
+
     // Skip processing if content hasn't changed
     if (currentState.subject === lastSubject && currentState.htmlBody === lastHtmlBody) {
       return lastVariables;
     }
-    
+
     // Remember current state for next comparison
     lastSubject = currentState.subject;
     lastHtmlBody = currentState.htmlBody;
-    
+
     // Extract variables from both subject and body
     const subjectVariables = extractTemplateVariables(currentState.subject);
     const bodyVariables = extractTemplateVariables(currentState.htmlBody);
-    
+
     // Combine all variables and remove duplicates
     const allVariables = [...new Set([...subjectVariables, ...bodyVariables])];
-    
+
     // Only update if variables have actually changed
     if (JSON.stringify(allVariables) !== JSON.stringify(lastVariables)) {
       lastVariables = allVariables;
       updateTemplateVariables(allVariables);
     }
-    
+
     return allVariables;
   }
-  
+
   function updateTemplateVariables(variables: string[]) {
     update((state) => {
       // Remove duplicates from the variables array
       const uniqueVariables = [...new Set(variables)];
-      
+
       // Use utility function to initialize variable values
       const newVariableValues = initializeTemplateVariableValues(
         state.templateVariableValues,
         uniqueVariables
       );
-      
+
       return {
         ...state,
         templateVariables: uniqueVariables,
@@ -163,7 +163,7 @@ function createEmailEditorStore() {
       };
     });
   }
-  
+
   function updateTemplateVariableValue(variable: string, value: string) {
     update((state) => {
       const newVariableValues = { ...state.templateVariableValues, [variable]: value };
@@ -241,26 +241,26 @@ function createEmailEditorStore() {
       state = currentState;
     });
     unsubscribe();
-    
+
     if (!state) return '';
-    
+
     // Use utility function to apply template variables
     return applyTemplateVariables(state.htmlBody, state.templateVariableValues);
   }
-  
+
   function getProcessedSubject(): string {
     let state: EmailEditorState | undefined;
     const unsubscribe = subscribe(currentState => {
       state = currentState;
     });
     unsubscribe();
-    
+
     if (!state) return '';
-    
+
     // Use utility function to apply template variables
     return applyTemplateVariables(state.subject, state.templateVariableValues);
   }
-  
+
   return {
     subscribe,
     updateRecipient,
@@ -288,8 +288,8 @@ function saveDraft(subject: string, htmlBody: string, templateVariableValues?: R
     return;
   }
   try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify({ 
-      subject, 
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      subject,
       htmlBody,
       templateVariableValues: templateVariableValues || {},
       isHtmlMode: isHtmlMode ?? false
@@ -303,8 +303,8 @@ function saveDraft(subject: string, htmlBody: string, templateVariableValues?: R
       try {
         localStorage.setItem(
           DRAFT_KEY,
-          JSON.stringify({ 
-            subject, 
+          JSON.stringify({
+            subject,
             htmlBody: 'Content too large to save',
             templateVariableValues: templateVariableValues || {},
             isHtmlMode: isHtmlMode ?? false
@@ -317,8 +317,8 @@ function saveDraft(subject: string, htmlBody: string, templateVariableValues?: R
   }
 }
 
-function loadDraft(setters: { 
-  setSubject: (v: string) => void; 
+function loadDraft(setters: {
+  setSubject: (v: string) => void;
   setHtmlBody: (v: string) => void;
   setTemplateVariableValues?: (v: Record<string, string>) => void;
   setIsHtmlMode?: (v: boolean) => void;
@@ -336,7 +336,7 @@ function loadDraft(setters: {
     if (draft.isHtmlMode !== undefined && setters.setIsHtmlMode) {
       setters.setIsHtmlMode(draft.isHtmlMode);
     }
-  } catch {}
+  } catch { }
 }
 
 function debounce<T extends (...args: any[]) => void>(fn: T, ms: number): T {
@@ -348,8 +348,10 @@ function debounce<T extends (...args: any[]) => void>(fn: T, ms: number): T {
 }
 
 const debouncedSaveDraft = debounce(
-  (subject: string, htmlBody: string, templateVariableValues?: Record<string, string>, isHtmlMode?: boolean) => 
-    saveDraft(subject, htmlBody, templateVariableValues, isHtmlMode), 
+  (subject: string, htmlBody: string, templateVariableValues?: Record<string, string>, isHtmlMode?: boolean) => {
+    saveDraft(subject, htmlBody, templateVariableValues, isHtmlMode);
+    console.log('Draft saved');
+  },
   1200
 );
 

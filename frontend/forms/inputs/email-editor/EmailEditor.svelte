@@ -50,7 +50,7 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   // Avoid redundant variable detection
   let contentChanged = false;
   let initialDetectionDone = false;
-  
+
   onMount(() => {
     // Initialize the editor
     editor = new Editor({
@@ -68,6 +68,9 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
       onTransaction: () => {
         // PATCH: force re-render so `editor.isActive` works as expected
         editor = editor;
+      },
+      onContentError(contentError) {
+        console.log(contentError);
       },
       onUpdate({ editor }) {
         const htmlBody = editor.getHTML();
@@ -104,7 +107,7 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
           },
           setIsHtmlMode: (mode: boolean) => {
             isHtmlMode.set(mode);
-          }
+          },
         });
       },
     });
@@ -151,12 +154,10 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
 
   // Apply HTML content to editor when switching back from HTML mode
   $: if (!$isHtmlMode && editor && htmlTextarea?.value) {
-    // Only update if there's actual content and it differs from current
-    if (htmlTextarea.value && htmlTextarea.value !== editor.getHTML()) {
-      editor.commands.setContent(htmlTextarea.value);
-      emailEditorStore.updateHtmlBody(htmlTextarea.value);
-      contentChanged = true; // This will trigger variable detection
-    }
+    // Always update the editor content when switching back from HTML mode
+    editor.commands.setContent(htmlTextarea.value);
+    emailEditorStore.updateHtmlBody(htmlTextarea.value);
+    contentChanged = true; // This will trigger variable detection
   }
 
   // Detect variables only when content has been changed

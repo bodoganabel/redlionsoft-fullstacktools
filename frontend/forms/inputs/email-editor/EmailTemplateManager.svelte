@@ -135,14 +135,14 @@
           e.stopPropagation();
           // Determine the content to use based on mode
           const contentToUse = isHtmlMode ? htmlTextareaContent : currentDraftEmailContent;
-          
+
           console.log('Save current draft clicked with:', {
             isHtmlMode,
             htmlTextareaContent,
             currentDraftEmailContent,
-            contentToUse
+            contentToUse,
           });
-          
+
           popup({
             title: 'Save template',
             id: POPUP_EMAIL_TEMPLATE_EDIT_ID,
@@ -153,14 +153,13 @@
                 data: {
                   subject: currentDraftEmailSubject,
                   content: contentToUse,
-                  attachedFiles: currentDraftAttachedFiles,
+                  isHtmlMode,
                   isShared: false,
                   ownerUserId: 'NOT_IMPLEMENTED_YET',
                 },
               },
               emailContent: contentToUse,
               emailSubject: currentDraftEmailSubject,
-              attachedFiles: currentDraftAttachedFiles,
               existingTemplates,
               initialTemplateName: '',
               isNewTemplate: true,
@@ -228,7 +227,7 @@
               console.log('Edit template clicked for:', {
                 template,
                 isHtmlMode,
-                htmlTextareaContent
+                htmlTextareaContent,
               });
               popup({
                 title: 'Edit template',
@@ -238,7 +237,6 @@
                   originalTemplate: template,
                   emailContent: template.data.content,
                   emailSubject: template.data.subject,
-                  attachedFiles: template.data.attachedFiles || [],
                   existingTemplates,
                   isNewTemplate: false,
                   initialTemplateName: template.resourceId,

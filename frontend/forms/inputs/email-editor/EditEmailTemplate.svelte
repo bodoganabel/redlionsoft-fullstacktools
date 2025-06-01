@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { get } from 'svelte/store';
   import { POPUP_EMAIL_TEMPLATE_EDIT_ID, type TEmailTemplate } from './email-template.types';
   import { popup, popupClose } from '../../../functionality/popup/popup-logic';
   import { toastError, toastSuccess } from '../../../functionality/toast/toast-logic';
@@ -11,7 +10,6 @@
   export let originalTemplate: TResource<TEmailTemplate>;
   export let emailContent: string;
   export let emailSubject: string = '';
-  export let attachedFiles: File[];
   export let initialTemplateName: string;
   export let existingTemplates: TResource<TEmailTemplate>[];
   export let isNewTemplate: boolean;
@@ -55,7 +53,7 @@
     const dataToSave: TEmailTemplate = {
       subject: templateData.subject,
       content: contentToSave,
-      attachedFiles: templateData.attachedFiles,
+      isHtmlMode,
       isShared: templateData.isShared || false,
       ownerUserId: templateData.ownerUserId || 'NOT_IMPLEMENTED_YET',
     };
@@ -159,7 +157,7 @@
               onTemplateSave({
                 subject: emailSubject,
                 content: isHtmlMode ? htmlTextareaContent : emailContent,
-                attachedFiles,
+                isHtmlMode,
                 isShared: false,
                 ownerUserId: 'NOT_IMPLEMENTED_YET',
               });
@@ -174,7 +172,7 @@
           onTemplateSave({
             subject: emailSubject,
             content: isHtmlMode ? htmlTextareaContent : emailContent,
-            attachedFiles,
+            isHtmlMode,
             isShared: false,
             ownerUserId: 'NOT_IMPLEMENTED_YET',
           });

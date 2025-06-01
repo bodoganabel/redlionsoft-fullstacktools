@@ -10,7 +10,7 @@
 
   import { emailEditorStore } from '../email-editor.store';
   export let editor: Editor;
-  export let handleTemplateSelect: (template: TResource<TEmailTemplate>) => void;
+  export let handleTemplateSelect: (template: TResource<TEmailTemplate>) => Promise<void>;
   export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
   export let isHtmlMode = false;
   export let htmlTextareaContent: string = '';

@@ -3,7 +3,7 @@ import { z } from "zod";
 export const EmailTemplateSchema = z.object({
     subject: z.string().default(""),
     content: z.string(),
-    attachedFiles: z.array(z.instanceof(File)),
+    isHtmlMode: z.boolean().default(false),
     isShared: z.boolean(),
     ownerUserId: z.string(),
 });

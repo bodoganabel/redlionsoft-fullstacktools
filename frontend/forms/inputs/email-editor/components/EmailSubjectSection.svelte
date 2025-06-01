@@ -19,10 +19,9 @@
 
   const formContext = createFormContext();
 
-  function handleTemplateSelect(template: TResource<TEmailTemplate>) {
+  async function handleTemplateSelect(template: TResource<TEmailTemplate>) {
     popupClose(POPUP_TEMPLATE_MANAGER);
     toastNormal(`Template ${template.resourceId} applied`);
-    emailEditorStore.updateAttachedFiles(template.data.attachedFiles || []);
     emailEditorStore.updateHtmlBody(template.data.content);
     // Always update the subject - if it doesn't exist in the template, set it to empty string
     emailEditorStore.updateSubject(template.data.subject || '');
