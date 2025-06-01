@@ -10,11 +10,9 @@
   import { popupClose } from '../../../../functionality/popup/popup-logic';
   import { toastNormal } from '../../../../functionality/toast/toast-logic';
   import { UCrudResourceClient } from '../../../../user-crud/user-crud.client';
-  import { type Writable } from 'svelte/store';
 
   export let editor: Editor;
   export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
-  export let isHtmlMode: Writable<boolean>;
   export let htmlTextareaContent: string;
 
   const formContext = createFormContext();
@@ -50,7 +48,6 @@
       bind:editor
       {handleTemplateSelect}
       {emailTemplateUCrudClient}
-      isHtmlMode={$isHtmlMode}
       {htmlTextareaContent}
     />
   </div>

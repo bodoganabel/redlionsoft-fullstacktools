@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import { extractTemplateVariables, applyTemplateVariables, initializeTemplateVariableValues } from '../../../utils/template-variables';
 
 export interface EmailEditorState {
@@ -17,6 +17,8 @@ export interface EmailEditorState {
   sizeLimitExceeded: boolean;
   templateVariables: string[];
   templateVariableValues: Record<string, string>;
+  isHtmlMode: boolean;
+  onHtmlModeChange?: (isHtmlMode: boolean) => void | Promise<void>;
 }
 
 const MAX_ATTACHMENT_SIZE_MB = 25;
@@ -41,9 +43,12 @@ function createEmailEditorStore() {
     sizeLimitExceeded: false,
     templateVariables: [],
     templateVariableValues: {},
+    isHtmlMode: false,
+    onHtmlModeChange: async (isHtmlMode: boolean) => { },
   };
 
-  const { subscribe, update, set } = writable<EmailEditorState>({ ...initialState });
+  const store = writable<EmailEditorState>({ ...initialState });
+  const { subscribe, update, set } = store;
 
   function calculateFileSize(files: File[]): { totalFileSizeMB: number; fileSizeLimitExceeded: boolean } {
     const totalFileSizeMB = files.reduce((acc, file) => acc + file.size, 0) / (1024 * 1024);
@@ -89,6 +94,17 @@ function createEmailEditorStore() {
 
     // Debounce the variable detection
     debouncedDetectVariables();
+  }
+
+  function updateIsHtmlMode(isHtmlMode: boolean) {
+    update((state) => {
+      const updatedState = { ...state, isHtmlMode };
+      // Call the callback if it exists
+      if (updatedState.onHtmlModeChange) {
+        updatedState.onHtmlModeChange(isHtmlMode);
+      }
+      return updatedState;
+    });
   }
 
   // Using the utility function instead of local implementation
@@ -267,6 +283,7 @@ function createEmailEditorStore() {
     updateSubject,
     updateHtmlBody,
     updateAttachedFiles,
+    updateIsHtmlMode,
     setIsSending,
     validate,
     reset,

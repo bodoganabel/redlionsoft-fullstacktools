@@ -12,15 +12,16 @@
   export let editor: Editor;
   export let handleTemplateSelect: (template: TResource<TEmailTemplate>) => Promise<void>;
   export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
-  export let isHtmlMode = false;
   export let htmlTextareaContent: string = '';
 
   function openTemplateManager() {
     // Determine the current content based on mode
-    const currentContent = isHtmlMode ? htmlTextareaContent : (editor?.getHTML?.() ?? '');
+    const currentContent = $emailEditorStore.isHtmlMode
+      ? htmlTextareaContent
+      : (editor?.getHTML?.() ?? '');
 
     console.log('Opening template manager with:', {
-      isHtmlMode,
+      isHtmlMode: $emailEditorStore.isHtmlMode,
       htmlTextareaContent,
       currentContent,
     });
@@ -36,7 +37,7 @@
         currentDraftAttachedFiles: $emailEditorStore.attachedFiles,
         onTemplateSelect: handleTemplateSelect,
         emailTemplateUCrudClient,
-        isHtmlMode,
+        isHtmlMode: $emailEditorStore.isHtmlMode,
         htmlTextareaContent,
       },
       isOutsideClickClose: true,
