@@ -13,11 +13,7 @@
     emailEditorStore.updateTemplateVariableValue(variable, value || '');
 
     // Save draft with updated variables
-    emailEditorStore.debouncedSaveDraft(
-      $emailEditorStore.subject,
-      $emailEditorStore.htmlBody,
-      $emailEditorStore.templateVariableValues
-    );
+    emailEditorStore.debouncedSaveDraft();
   };
 
   // Initialize values when component mounts

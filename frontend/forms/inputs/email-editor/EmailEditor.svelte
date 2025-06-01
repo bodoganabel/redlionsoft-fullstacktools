@@ -22,20 +22,26 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   import EmailErrorBodyTooLarge from './components/EmailErrorBodyTooLarge.svelte';
   import EmailEditModeSelector from './components/EmailEditModeSelector.svelte';
   import EmailSubjectSection from './components/EmailSubjectSection.svelte';
-  import { debouncedSaveDraft, loadDraft } from './components/utilis';
+  // No need to import debouncedSaveDraft - use it directly from emailEditorStore
 
   export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
 
   let element: HTMLElement;
   let editor: Editor;
-
   // HTML mode toggle
   let htmlTextarea: HTMLTextAreaElement;
 
-  // Avoid redundant variable detection
-  let initialDetectionDone = false;
+  function onHtmlModeChange(isHtmlMode: boolean) {
+    if (isHtmlMode) {
+      htmlTextarea.value = $emailEditorStore.htmlBody;
+    } else {
+      editor?.commands.setContent($emailEditorStore.htmlBody);
+    }
+  }
 
   onMount(() => {
+    emailEditorStore.setOnHtmlModeChange(onHtmlModeChange);
+
     // Initialize the editor
     editor = new Editor({
       element,
@@ -61,7 +67,7 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
         // Only update HTML body if it actually changed
         if (htmlBody !== $emailEditorStore.htmlBody) {
           emailEditorStore.updateHtmlBody(htmlBody);
-          debouncedSaveDraft($emailEditorStore.subject, htmlBody);
+          emailEditorStore.saveDraft();
           emailEditorStore.debouncedDetectVariables();
 
           // If we're in HTML mode, update the textarea
@@ -72,50 +78,13 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
       },
       onCreate: () => {
         // Use the store's loadDraft function directly
-        emailEditorStore.loadDraft({
-          setSubject: (subject: string) => {
-            emailEditorStore.updateSubject(subject);
-          },
-          setHtmlBody: (htmlBody: string) => {
-            if (editor?.commands?.setContent) {
-              editor.commands.setContent(htmlBody);
-              emailEditorStore.updateHtmlBody(htmlBody);
-              initialDetectionDone = false; // Will trigger detection after setup
-            }
-          },
-          setTemplateVariableValues: (values: Record<string, string>) => {
-            // The store will handle updating the template variable values
-            Object.entries(values).forEach(([variable, value]) => {
-              emailEditorStore.updateTemplateVariableValue(variable, value as string);
-            });
-          },
-          setIsHtmlMode: (isHtmlMode: boolean) => {
-            emailEditorStore.updateIsHtmlMode(isHtmlMode);
-          },
-        });
+        emailEditorStore.loadDraft();
+
+        htmlTextarea.value = $emailEditorStore.htmlBody;
+        editor.commands.setContent($emailEditorStore.htmlBody);
+        emailEditorStore.detectTemplateVariables();
       },
     });
-  });
-
-  function onHtmlModeChange(isHtmlMode: boolean) {
-    if (isHtmlMode) {
-      htmlTextarea.value = $emailEditorStore.htmlBody;
-    } else {
-      editor?.commands.setContent($emailEditorStore.htmlBody);
-    }
-  }
-
-  // Run template variable detection only once after the editor is fully initialized
-  onMount(() => {
-    // Use a short delay to ensure the editor is fully initialized
-    setTimeout(() => {
-      if (editor && !initialDetectionDone) {
-        initialDetectionDone = true;
-        emailEditorStore.detectTemplateVariables();
-      }
-    }, 500);
-
-    $emailEditorStore.onHtmlModeChange = onHtmlModeChange;
   });
 
   onDestroy(() => {
