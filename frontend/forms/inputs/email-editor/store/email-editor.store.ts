@@ -1,7 +1,7 @@
 import { get, writable } from 'svelte/store';
 import { extractTemplateVariables, applyTemplateVariables, initializeTemplateVariableValues } from '../../../../utils/template-variables';
 import { DRAFT_HTMLBODY_KEY, DRAFT_IS_HTML_MODE_KEY, DRAFT_SUBJECT_KEY, DRAFT_VARIABLE_VALUES_KEY } from '../email-editor.types';
-import { debouncedSaveDraftHtmlBody, debouncedSaveDraftSubject, saveDraftIsHtmlMode } from './draft.utils';
+import { debouncedSaveDraftHtmlBody, debouncedSaveDraftSubject, debouncedSaveDraftTemplateVariableValues, saveDraftIsHtmlMode } from './draft.utils';
 
 export interface EmailEditorState {
   recipient: string;
@@ -20,7 +20,6 @@ export interface EmailEditorState {
   templateVariables: string[];
   templateVariableValues: Record<string, string>;
   isHtmlMode: boolean;
-  onHtmlModeChange?: (isHtmlMode: boolean) => void | Promise<void>;
   isInitialized: boolean;
 }
 
@@ -48,7 +47,6 @@ function createEmailEditorStore() {
     templateVariableValues: {},
     isHtmlMode: false,
     isInitialized: false, // Flag for disabling premature saving
-    onHtmlModeChange: async (isHtmlMode: boolean) => { },
   };
 
   const store = writable<EmailEditorState>({ ...initialState });
@@ -105,22 +103,10 @@ function createEmailEditorStore() {
     debouncedDetectVariables();
   }
 
-
-  function setOnHtmlModeChange(callback: (isHtmlMode: boolean) => void | Promise<void>) {
-    update((state) => {
-      const updatedState = { ...state, onHtmlModeChange: callback };
-      // Call the callback if it exists
-      return updatedState;
-    });
-  }
-
   function updateIsHtmlMode(isHtmlMode: boolean) {
     update((state) => {
+      // This triggers reactivity for editor & html textarena to detect change in their value too 
       const updatedState = { ...state, isHtmlMode };
-      // Call the callback if it exists
-      if (updatedState.onHtmlModeChange) {
-        updatedState.onHtmlModeChange(isHtmlMode);
-      }
       return updatedState;
     });
     saveDraftIsHtmlMode(store);
@@ -207,6 +193,7 @@ function createEmailEditorStore() {
         templateVariableValues: newVariableValues
       };
     });
+    debouncedSaveDraftTemplateVariableValues(store);
   }
 
   function updateAttachedFiles(attachedFiles: File[]) {
@@ -289,9 +276,7 @@ function createEmailEditorStore() {
       state = currentState;
     });
     unsubscribe();
-
     if (!state) return '';
-
     // Use utility function to apply template variables
     return applyTemplateVariables(state.subject, state.templateVariableValues);
   }
@@ -339,10 +324,7 @@ function createEmailEditorStore() {
     updateTemplateVariableValue,
     getProcessedHtmlBody,
     getProcessedSubject,
-    debouncedDetectVariables,
-    detectTemplateVariables,
     loadDraft,
-    setOnHtmlModeChange,
   };
 }
 

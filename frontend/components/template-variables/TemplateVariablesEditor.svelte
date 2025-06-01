@@ -1,20 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { emailEditorStore } from '../../forms/inputs/email-editor/email-editor.store';
+  import { emailEditorStore } from '../../forms/inputs/email-editor/store/email-editor.store';
 
-  /**
-   * Component for editing template variables
-   * Displays a form with input fields for each variable
-   */
-
-  // Props
-  export let onVariableChange = (variable: string, value: string) => {
+  function onVariableChange(variable: string, value: string) {
     // Update the variable value in the store
     emailEditorStore.updateTemplateVariableValue(variable, value || '');
-
-    // Save draft with updated variables
-    emailEditorStore.debouncedSaveDraft();
-  };
+  }
 
   // Initialize values when component mounts
   onMount(() => {
@@ -26,22 +17,6 @@
       }
     });
   });
-
-  // Update values when variables change
-  $: if ($emailEditorStore.templateVariables.length > 0) {
-    $emailEditorStore.templateVariables.forEach((variable) => {
-      if ($emailEditorStore.templateVariableValues[variable] === undefined) {
-        onVariableChange(variable, '');
-      }
-    });
-  }
-
-  /**
-   * Handle input change for a variable
-   */
-  function handleInputChange(variable: string, value: string) {
-    onVariableChange(variable, value);
-  }
 </script>
 
 <!-- Template Variables Section -->
@@ -61,8 +36,8 @@
                 id={`var-${variable}`}
                 class="input"
                 type="text"
-                bind:value={$emailEditorStore.templateVariableValues[variable]}
-                on:input={(e) => handleInputChange(variable, e.currentTarget.value)}
+                value={$emailEditorStore.templateVariableValues[variable]}
+                on:input={(e) => onVariableChange(variable, e.currentTarget.value)}
               />
             </div>
           {/each}

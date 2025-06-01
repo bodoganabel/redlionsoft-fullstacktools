@@ -39,8 +39,6 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   }
 
   onMount(() => {
-    emailEditorStore.setOnHtmlModeChange(onHtmlModeChange);
-
     // Initialize the editor
     editor = new Editor({
       element,
