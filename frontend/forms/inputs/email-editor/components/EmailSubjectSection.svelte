@@ -13,17 +13,18 @@
 
   export let editor: Editor;
   export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
-  export let htmlTextareaContent: string;
 
   const formContext = createFormContext();
 
   async function handleTemplateSelect(template: TResource<TEmailTemplate>) {
     popupClose(POPUP_TEMPLATE_MANAGER);
     toastNormal(`Template ${template.resourceId} applied`);
+    emailEditorStore.updateIsHtmlMode(template.data.isHtmlMode);
+    emailEditorStore.updateSubject(template.data.subject || '');
     emailEditorStore.updateHtmlBody(template.data.content);
     // Always update the subject - if it doesn't exist in the template, set it to empty string
-    emailEditorStore.updateSubject(template.data.subject || '');
-    editor?.chain().focus().setContent(template.data.content).run();
+    /*     editor?.chain().focus().setContent(template.data.content).run();
+     */
   }
 </script>
 
@@ -44,11 +45,6 @@
     <FieldError name="subject" {formContext} />
   </div>
   <div class="">
-    <EmailTemplateManagerButton
-      bind:editor
-      {handleTemplateSelect}
-      {emailTemplateUCrudClient}
-      {htmlTextareaContent}
-    />
+    <EmailTemplateManagerButton bind:editor {handleTemplateSelect} {emailTemplateUCrudClient} />
   </div>
 </div>

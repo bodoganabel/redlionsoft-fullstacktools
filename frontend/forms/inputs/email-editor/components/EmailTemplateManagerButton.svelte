@@ -12,33 +12,21 @@
   export let editor: Editor;
   export let handleTemplateSelect: (template: TResource<TEmailTemplate>) => Promise<void>;
   export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
-  export let htmlTextareaContent: string = '';
 
   function openTemplateManager() {
     // Determine the current content based on mode
     const currentContent = $emailEditorStore.isHtmlMode
-      ? htmlTextareaContent
+      ? $emailEditorStore.htmlBody
       : (editor?.getHTML?.() ?? '');
-
-    console.log('Opening template manager with:', {
-      isHtmlMode: $emailEditorStore.isHtmlMode,
-      htmlTextareaContent,
-      currentContent,
-    });
-
     popup({
       title: 'Email Templates',
       id: POPUP_TEMPLATE_MANAGER,
       component: EmailTemplateManager,
       componentProps: {
         // Always pass the correct content based on active mode
-        currentDraftEmailContent: currentContent,
-        currentDraftEmailSubject: $emailEditorStore.subject,
         currentDraftAttachedFiles: $emailEditorStore.attachedFiles,
         onTemplateSelect: handleTemplateSelect,
         emailTemplateUCrudClient,
-        isHtmlMode: $emailEditorStore.isHtmlMode,
-        htmlTextareaContent,
       },
       isOutsideClickClose: true,
     });

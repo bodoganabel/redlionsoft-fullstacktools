@@ -6,17 +6,17 @@
   import type { TResource } from '../../../../backend/user-crud/types';
   import InfoCardRls from '../../../elements/InfoCardRls.svelte';
   import { UCrudResourceClient } from '../../../user-crud/user-crud.client';
+  import { emailEditorStore } from './store/email-editor.store';
 
   export let originalTemplate: TResource<TEmailTemplate>;
   export let emailContent: string;
   export let emailSubject: string = '';
+
   export let initialTemplateName: string;
   export let existingTemplates: TResource<TEmailTemplate>[];
   export let isNewTemplate: boolean;
   export let isOverwriteContent: boolean;
   export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
-  export let isHtmlMode = false;
-  export let htmlTextareaContent: string = '';
 
   let nameInput: HTMLInputElement;
   onMount(() => {
@@ -25,14 +25,6 @@
       const len = nameInput.value.length;
       nameInput.setSelectionRange(len, len);
     }
-
-    console.log('EditEmailTemplate onMount:', {
-      isHtmlMode,
-      htmlTextareaContent,
-      emailContent,
-      emailSubject,
-      isOverwriteContent,
-    });
   });
   $: overwriteMessage = isOverwriteContent
     ? "<small class='text-error-500'>This will overwrite the template's content with the current email draft, subject, and attachments.</small>"
@@ -47,26 +39,16 @@
     }
 
     // Determine content to save based on HTML mode
-    const contentToSave = isHtmlMode ? htmlTextareaContent : templateData.content;
+    const contentToSave = $emailEditorStore.htmlBody;
 
     // Create a complete template data object with all required fields
     const dataToSave: TEmailTemplate = {
       subject: templateData.subject,
       content: contentToSave,
-      isHtmlMode,
+      isHtmlMode: $emailEditorStore.isHtmlMode,
       isShared: templateData.isShared || false,
       ownerUserId: templateData.ownerUserId || 'NOT_IMPLEMENTED_YET',
     };
-
-    console.log('Saving template with data:', {
-      templateName,
-      dataToSave,
-      isOverwriteContent,
-      isNewTemplate,
-      isHtmlMode,
-      htmlTextareaContent,
-      originalContent: templateData.content,
-    });
 
     try {
       if (isNewTemplate) {
@@ -156,8 +138,8 @@
               console.log('Template overwrite confirmation accepted');
               onTemplateSave({
                 subject: emailSubject,
-                content: isHtmlMode ? htmlTextareaContent : emailContent,
-                isHtmlMode,
+                content: $emailEditorStore.htmlBody,
+                isHtmlMode: $emailEditorStore.isHtmlMode,
                 isShared: false,
                 ownerUserId: 'NOT_IMPLEMENTED_YET',
               });
@@ -171,8 +153,8 @@
           console.log('Template save (new) initiated');
           onTemplateSave({
             subject: emailSubject,
-            content: isHtmlMode ? htmlTextareaContent : emailContent,
-            isHtmlMode,
+            content: $emailEditorStore.htmlBody,
+            isHtmlMode: $emailEditorStore.isHtmlMode,
             isShared: false,
             ownerUserId: 'NOT_IMPLEMENTED_YET',
           });

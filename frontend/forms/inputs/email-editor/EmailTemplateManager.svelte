@@ -10,14 +10,11 @@
   import type { TResource } from '../../../../backend/user-crud/types';
   import SpinnerRls from '../../../elements/SpinnerRls.svelte';
   import { UCrudResourceClient } from '../../../user-crud/user-crud.client';
+  import { emailEditorStore } from './store/email-editor.store';
 
-  export let currentDraftEmailContent: string;
-  export let currentDraftEmailSubject: string = '';
   export let currentDraftAttachedFiles: File[];
   export let onTemplateSelect: (template: TResource<TEmailTemplate>) => Promise<void>;
   export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
-  export let isHtmlMode = false;
-  export let htmlTextareaContent: string = '';
 
   onMount(async () => {
     console.log('currentDraftAttachedFiles - just after opening popup:');
@@ -129,19 +126,12 @@
 
 <div class="flex flex-col">
   <div class="mt-3">
-    {#if currentDraftEmailContent !== '<p></p>' || currentDraftAttachedFiles.length !== 0}
+    {#if $emailEditorStore.htmlBody !== '<p></p>' || currentDraftAttachedFiles.length !== 0}
       <button
         on:click={async (e) => {
           e.stopPropagation();
           // Determine the content to use based on mode
-          const contentToUse = isHtmlMode ? htmlTextareaContent : currentDraftEmailContent;
-
-          console.log('Save current draft clicked with:', {
-            isHtmlMode,
-            htmlTextareaContent,
-            currentDraftEmailContent,
-            contentToUse,
-          });
+          const contentToUse = $emailEditorStore.isHtmlMode ? $emailEditorStore.htmlBody : '';
 
           popup({
             title: 'Save template',
@@ -151,22 +141,20 @@
               originalTemplate: {
                 resourceId: '',
                 data: {
-                  subject: currentDraftEmailSubject,
+                  subject: $emailEditorStore.subject,
                   content: contentToUse,
-                  isHtmlMode,
+                  isHtmlMode: $emailEditorStore.isHtmlMode,
                   isShared: false,
                   ownerUserId: 'NOT_IMPLEMENTED_YET',
                 },
               },
               emailContent: contentToUse,
-              emailSubject: currentDraftEmailSubject,
+              emailSubject: $emailEditorStore.subject,
               existingTemplates,
               initialTemplateName: '',
               isNewTemplate: true,
               isOverwriteContent: true,
               emailTemplateUCrudClient,
-              isHtmlMode,
-              htmlTextareaContent,
             },
             isOutsideClickClose: true,
             isEnterAccept: false,
@@ -226,8 +214,8 @@
               e.stopPropagation();
               console.log('Edit template clicked for:', {
                 template,
-                isHtmlMode,
-                htmlTextareaContent,
+                isHtmlMode: $emailEditorStore.isHtmlMode,
+                htmlTextareaContent: $emailEditorStore.htmlBody,
               });
               popup({
                 title: 'Edit template',
@@ -242,8 +230,6 @@
                   initialTemplateName: template.resourceId,
                   isOverwriteContent: false,
                   emailTemplateUCrudClient,
-                  isHtmlMode,
-                  htmlTextareaContent,
                 },
                 isOutsideClickClose: true,
                 isEnterAccept: false,
