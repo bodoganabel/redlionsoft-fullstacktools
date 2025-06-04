@@ -28,9 +28,10 @@
   }
 </script>
 
-<div class="flex justify-between items-center gap-2">
+<div class="flex justify-between items-end gap-2">
   <div class="w-full">
-    <label class="" for="subject"><small>Subject</small></label>
+    <label class="" for="subject"><small>Subject</small> </label>
+
     <input
       class="input"
       name="subject"

@@ -60,7 +60,6 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
         console.log(contentError);
       },
       onUpdate({ editor }) {
-        console.log('onUpdate', editor.getHTML());
         const htmlBody = editor.getHTML();
         // Only update HTML body if it actually changed
         if (htmlBody !== $emailEditorStore.htmlBody) {
@@ -73,12 +72,9 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
       },
       onCreate: () => {
         // Use the store's loadDraft function directly
-        console.log('onCreate');
-        console.log($emailEditorStore.htmlBody);
         emailEditorStore.loadDraft();
         htmlTextarea.value = $emailEditorStore.htmlBody;
         editor.commands.setContent($emailEditorStore.htmlBody);
-        console.log($emailEditorStore.htmlBody);
       },
     });
   });
@@ -94,11 +90,7 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   <div class="flex justify-between items-center"></div>
 
   {#if editor}
-    <EmailSubjectSection
-      bind:editor
-      bind:emailTemplateUCrudClient
-      htmlTextareaContent={htmlTextarea.value}
-    />
+    <EmailSubjectSection bind:editor bind:emailTemplateUCrudClient />
 
     <EmailAttachments />
 

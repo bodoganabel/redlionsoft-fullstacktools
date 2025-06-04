@@ -93,8 +93,6 @@ function createEmailEditorStore() {
       bodyError: null
     }));
 
-    console.log('htmlBody', get(store).htmlBody);
-
     // Debounce the variable detection
     updateSizeLimit();
     if (saveDraft) {

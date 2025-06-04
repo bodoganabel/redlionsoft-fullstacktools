@@ -54,9 +54,6 @@ export async function apiRequest<TData = any>(
     credentials = "include",
   } = config;
 
-  console.log("body:");
-  console.log(body);
-
   const { errorMessages = {}, defaultErrorMessage = "An error occurred" } =
     options;
 
