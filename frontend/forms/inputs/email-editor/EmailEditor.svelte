@@ -24,6 +24,9 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   // No need to import debouncedSaveDraft - use it directly from emailEditorStore
 
   export let emailTemplateUCrudClient: UCrudResourceClient<TEmailTemplate>;
+  export let onPreviewContentUpdateTransformer: (currentValue: string) => string = (
+    currentValue: string
+  ) => currentValue;
 
   let element: HTMLElement;
   let editor: Editor;
@@ -91,7 +94,7 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
     {/if}
   {/if}
   <hr />
-  <EmailEditModeSelector bind:editor bind:htmlTextarea />
+  <EmailEditModeSelector bind:editor bind:htmlTextarea {onPreviewContentUpdateTransformer} />
 
   <textarea
     bind:this={htmlTextarea}
