@@ -22,6 +22,8 @@
     emailEditorStore.updateIsHtmlMode(template.data.isHtmlMode);
     emailEditorStore.updateSubject(template.data.subject || '');
     emailEditorStore.updateHtmlBody(template.data.content);
+    // Force update simple mode's body after a template load.
+    editor.commands.setContent($emailEditorStore.htmlBody);
     toastNormal(`Template ${template.resourceId} applied`);
     // Always update the subject - if it doesn't exist in the template, set it to empty string
     /*     editor?.chain().focus().setContent(template.data.content).run();

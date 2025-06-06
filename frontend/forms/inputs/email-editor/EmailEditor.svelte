@@ -30,12 +30,6 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   // HTML mode toggle
   let htmlTextarea: HTMLTextAreaElement;
 
-  $: {
-    if ($emailEditorStore.htmlBody === $emailEditorStore.htmlBody) {
-      console.log('htmlBody changed', $emailEditorStore.htmlBody);
-    }
-  }
-
   onMount(() => {
     // Initialize the editor
     editor = new Editor({

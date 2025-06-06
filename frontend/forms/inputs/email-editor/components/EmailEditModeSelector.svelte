@@ -3,9 +3,50 @@
   import { type Writable } from 'svelte/store';
   import { popup } from '../../../../functionality/popup/popup-logic';
   import { emailEditorStore } from '../store/email-editor.store';
+  import { onDestroy, onMount } from 'svelte';
+  import { applyTemplateVariables } from '../../../../utils/template-variables';
 
   export let editor: Editor;
   export let htmlTextarea: HTMLTextAreaElement;
+
+  let popupWindow: Window | null = null;
+  let unsubscribe: () => void;
+  let updateTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  // Debounced function to update the popup window content
+  function debouncedUpdatePreviewContent(content: string) {
+    if (updateTimeout) {
+      clearTimeout(updateTimeout);
+    }
+
+    updateTimeout = setTimeout(() => {
+      if (popupWindow) {
+        popupWindow.document.open();
+        popupWindow.document.write(
+          applyTemplateVariables(content, $emailEditorStore.templateVariableValues)
+        );
+        popupWindow.document.close();
+      }
+    }, 500); // 500ms debounce delay
+  }
+
+  onMount(() => {
+    unsubscribe = emailEditorStore.subscribe((state) => {
+      if (popupWindow) {
+        debouncedUpdatePreviewContent(state.htmlBody);
+      }
+    });
+  });
+
+  onDestroy(() => {
+    if (updateTimeout) {
+      clearTimeout(updateTimeout);
+    }
+    unsubscribe();
+    if (popupWindow) {
+      popupWindow.close();
+    }
+  });
 </script>
 
 <div class="flex justify-between items-center mt-2">
@@ -54,8 +95,8 @@
         if (typeof window === 'undefined') return;
         const popup = window.open('about:blank', 'Event Embed', 'width=400,height=200');
         if (popup) {
-          popup.document.write($emailEditorStore.htmlBody);
-          popup.document.close();
+          popupWindow = popup;
+          debouncedUpdatePreviewContent($emailEditorStore.htmlBody);
         }
       }}
     >
