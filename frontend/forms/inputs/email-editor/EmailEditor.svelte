@@ -30,11 +30,9 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
   // HTML mode toggle
   let htmlTextarea: HTMLTextAreaElement;
 
-  function onHtmlModeChange(isHtmlMode: boolean) {
-    if (isHtmlMode) {
-      htmlTextarea.value = $emailEditorStore.htmlBody;
-    } else {
-      editor?.commands.setContent($emailEditorStore.htmlBody);
+  $: {
+    if ($emailEditorStore.htmlBody === $emailEditorStore.htmlBody) {
+      console.log('htmlBody changed', $emailEditorStore.htmlBody);
     }
   }
 
@@ -106,6 +104,7 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
     class="textarea mt-2 bg-surface-50 font-mono text-sm"
     style="min-height: 300px; width: 100%;"
     class:hidden={!$emailEditorStore.isHtmlMode}
+    value={$emailEditorStore.htmlBody}
     on:input={(e) => {
       // Update the store when HTML is edited directly
       if ($emailEditorStore.isHtmlMode) {

@@ -18,10 +18,11 @@
 
   async function handleTemplateSelect(template: TResource<TEmailTemplate>) {
     popupClose(POPUP_TEMPLATE_MANAGER);
-    toastNormal(`Template ${template.resourceId} applied`);
+    console.log('Template selected:', template);
     emailEditorStore.updateIsHtmlMode(template.data.isHtmlMode);
     emailEditorStore.updateSubject(template.data.subject || '');
     emailEditorStore.updateHtmlBody(template.data.content);
+    toastNormal(`Template ${template.resourceId} applied`);
     // Always update the subject - if it doesn't exist in the template, set it to empty string
     /*     editor?.chain().focus().setContent(template.data.content).run();
      */
