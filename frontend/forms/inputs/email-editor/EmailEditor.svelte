@@ -94,7 +94,9 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
 
     <EmailAttachments />
 
-    <EmailToolbar bind:editor />
+    {#if !$emailEditorStore.isHtmlMode}
+      <EmailToolbar bind:editor />
+    {/if}
   {/if}
   <hr />
   <EmailEditModeSelector bind:editor bind:htmlTextarea />
