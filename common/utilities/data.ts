@@ -64,3 +64,25 @@ const B = {
 
 const result = differenceDeep(A, B);
 console.log(result);
+
+
+/* Expects an object like event.details.selectedDateTime.date in a form of a function:
+
+(event) => event.details.selectedDateTime.date 
+
+and dynamically returns the string of the nested properties:
+
+"details.selectedDateTime.date"
+*/
+
+export function getNestedPropertiesAsPath(fn: any) {
+  const path: string[] = [];
+  const proxy = new Proxy({}, {
+    get(target: object, prop: string) {
+      path.push(prop);
+      return proxy;
+    }
+  });
+  fn(proxy);
+  return path.join('.');
+}
