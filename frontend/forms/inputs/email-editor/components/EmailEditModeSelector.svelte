@@ -48,5 +48,18 @@
     >
       HTML Mode
     </button>
+    <button
+      class="btn btn-sm variant-outline-primary"
+      on:click={() => {
+        if (typeof window === 'undefined') return;
+        const popup = window.open('about:blank', 'Event Embed', 'width=400,height=200');
+        if (popup) {
+          popup.document.write($emailEditorStore.htmlBody);
+          popup.document.close();
+        }
+      }}
+    >
+      Preview
+    </button>
   </div>
 </div>

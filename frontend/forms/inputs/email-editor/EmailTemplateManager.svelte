@@ -131,7 +131,6 @@
         on:click={async (e) => {
           e.stopPropagation();
           // Determine the content to use based on mode
-          const contentToUse = $emailEditorStore.isHtmlMode ? $emailEditorStore.htmlBody : '';
 
           popup({
             title: 'Save template',
@@ -142,13 +141,13 @@
                 resourceId: '',
                 data: {
                   subject: $emailEditorStore.subject,
-                  content: contentToUse,
+                  content: $emailEditorStore.htmlBody,
                   isHtmlMode: $emailEditorStore.isHtmlMode,
                   isShared: false,
                   ownerUserId: 'NOT_IMPLEMENTED_YET',
                 },
               },
-              emailContent: contentToUse,
+              emailContent: $emailEditorStore.htmlBody,
               emailSubject: $emailEditorStore.subject,
               existingTemplates,
               initialTemplateName: '',
