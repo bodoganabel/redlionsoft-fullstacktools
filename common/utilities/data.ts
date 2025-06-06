@@ -77,7 +77,7 @@ and dynamically returns the full path of the nested properties as string:
 The only reason it requires a function instead of just the plain object is to be able to detect the name of the object using proxy - which is not working on object properties (they are passed by value).
 */
 
-export function getNestedPropertiesAsPath(fn: any): string {
+export function getPathOfNestedObjectProperty(fn: any): string {
   // Extract the parameter name from the function string representation
   const fnStr = fn.toString();
   const paramMatch = fnStr.match(/^\s*\(?\s*([^)=\s]+)/);
