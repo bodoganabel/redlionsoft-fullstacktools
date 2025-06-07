@@ -1,11 +1,7 @@
 <script lang="ts">
-  import {
-    type TFilter,
-    type TFilterField,
-    type TFilterOperator,
-  } from "./filter.types";
-  import { debounce } from "../../utils/debounce";
-  import { onDestroy } from "svelte";
+  import { type TFilter, type TFilterField, type TFilterOperator } from './filter.types';
+  import { debounce } from '../../utils/debounce';
+  import { onDestroy } from 'svelte';
 
   export let filter: TFilter;
   export let onUpdate: () => void;
@@ -15,9 +11,6 @@
   export let fields: TFilterField[];
 
   const debouncedUpdate = debounce(onUpdate, 500);
-
-  console.log("filter.field:");
-  console.log(filter.field);
 
   onDestroy(() => {
     debouncedUpdate.clear?.();

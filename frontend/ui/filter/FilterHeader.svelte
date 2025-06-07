@@ -1,18 +1,11 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import type { TFilterTemplateResource } from "./filter.types";
+  import { onMount } from 'svelte';
+  import type { TFilterTemplateResource } from './filter.types';
 
   export let templates: TFilterTemplateResource[];
   export let onSelect: (template: TFilterTemplateResource) => Promise<void>;
 
-  $: favoriteTemplates = templates.filter(
-    (template) => template.data.isFavorite
-  );
-  $: {
-    favoriteTemplates = favoriteTemplates;
-    console.log("favoriteTemplates:");
-    console.log(favoriteTemplates);
-  }
+  $: favoriteTemplates = templates.filter((template) => template.data.isFavorite);
 
   onMount(() => {});
 </script>
