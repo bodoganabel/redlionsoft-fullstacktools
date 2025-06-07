@@ -11,7 +11,7 @@
   const isDevelopment = !isProduction();
 
   const cmdDListener = (event: any) => {
-    if (isDevelopment) return;
+    if (!isDevelopment) return;
     const isWindows = navigator.platform.indexOf('Win') !== -1;
     const isCorrectKey = event.key === 'd';
     const isCorrectModifier = isWindows ? event.altKey : event.metaKey;
