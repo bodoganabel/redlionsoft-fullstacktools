@@ -1,8 +1,5 @@
 <script lang="ts">
-  import {
-    timezoneStore,
-    timeZones,
-  } from "./../../functionality/timezone/timezone.store";
+  import { timezoneStore, timeZones } from './../../functionality/timezone/timezone.store';
 </script>
 
 <div class="timezone-selector mt-4 w-max">

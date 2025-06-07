@@ -1,7 +1,7 @@
 import { get } from "svelte/store";
 import { DRAFT_HTMLBODY_KEY, DRAFT_IS_HTML_MODE_KEY, DRAFT_SUBJECT_KEY, DRAFT_VARIABLE_VALUES_KEY } from "../email-editor.types";
 import { type Writable } from "svelte/store";
-import { EmailEditorState } from "./email-editor.store";
+import { type EmailEditorState } from "./email-editor.store";
 
 
 function debounce<T extends (...args: any[]) => void>(fn: T, ms: number): T {
