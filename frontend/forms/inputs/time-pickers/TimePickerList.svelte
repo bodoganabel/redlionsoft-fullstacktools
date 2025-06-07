@@ -5,6 +5,7 @@
   export let onSelect: (date: DateTime) => void = () => {};
   export let selectedDateTime: DateTime | null = null;
   export let onConfirmSelection: (date: DateTime) => void = () => {};
+  export let timezone: string;
 
   let selectedIndex = -1;
 </script>
@@ -19,7 +20,7 @@
         on:click={async () => {
           onSelect(availableDateTime);
           selectedIndex = index;
-        }}>{availableDateTime.toLocaleString(format)}</button
+        }}>{availableDateTime.setZone(timezone).toLocaleString(format)}</button
       >
       {#if selectedIndex === index}
         <button
