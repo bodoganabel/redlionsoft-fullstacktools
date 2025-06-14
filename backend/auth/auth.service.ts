@@ -93,6 +93,7 @@ export class AuthService<
       "_id"
     > = {
       ...props,
+      email: (props.email.toLowerCase()),
       password: this.hashPassword(props.password),
       created_at: DateTime.now().toISO() as string,
     };
@@ -237,7 +238,7 @@ export class AuthService<
       console.log(hashedPw);
 
       // Find user by email
-      const user = await this.usersCollection.findOne({ email });
+      const user = await this.usersCollection.findOne({ email: email.toLowerCase() });
       if (user === null) {
         return { status: 401, message: "Invalid email or password" };
       }
