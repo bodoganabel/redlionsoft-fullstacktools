@@ -11,6 +11,7 @@
     toastSuccess,
     toastWarning,
   } from '../../../../functionality/toast/toast-logic';
+  import { openPopupWithSavedSettings } from '../utils/popup-window-manager';
 
   export let editor: Editor;
   export let htmlTextarea: HTMLTextAreaElement;
@@ -152,8 +153,7 @@
     <button
       class="p-1 size-6 icon-btn btn-sm variant-outline-primary"
       on:click={() => {
-        if (typeof window === 'undefined') return;
-        const popup = window.open('about:blank', 'Event Embed', 'width=400,height=200');
+        const popup = openPopupWithSavedSettings('about:blank', 'Event Embed');
         if (popup) {
           popupWindow = popup;
           debouncedUpdatePreviewContent($emailEditorStore.htmlBody);
