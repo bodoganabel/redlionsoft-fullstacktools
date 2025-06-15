@@ -22,6 +22,10 @@ function saveDraftSubject(emailEditorStore: Writable<EmailEditorState>) {
     }
 }
 
+export function forceSaveDraftSubjectImmediately(emailEditorStore: Writable<EmailEditorState>) {
+    saveDraftSubject(emailEditorStore);
+}
+
 function saveDraftHtmlBody(emailEditorStore: Writable<EmailEditorState>) {
     if (!get(emailEditorStore).isInitialized) return;
     const state = get(emailEditorStore);

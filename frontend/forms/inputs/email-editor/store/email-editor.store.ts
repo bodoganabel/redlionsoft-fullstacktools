@@ -1,7 +1,8 @@
 import { get, writable } from 'svelte/store';
 import { extractTemplateVariables, applyTemplateVariables, initializeTemplateVariableValues } from '../../../../utils/template-variables';
 import { DRAFT_HTMLBODY_KEY, DRAFT_IS_HTML_MODE_KEY, DRAFT_SUBJECT_KEY, DRAFT_VARIABLE_VALUES_KEY } from '../email-editor.types';
-import { debouncedSaveDraftHtmlBody, debouncedSaveDraftSubject, debouncedSaveDraftTemplateVariableValues, saveDraftIsHtmlMode } from './draft.utils';
+import { debouncedSaveDraftHtmlBody, debouncedSaveDraftSubject, debouncedSaveDraftTemplateVariableValues, forceSaveDraftSubjectImmediately, saveDraftIsHtmlMode } from './draft.utils';
+import { AsyncFunctionQueue } from '../../../../../common/utilities/data-structures/queue-functions';
 
 export interface EmailEditorState {
   recipient: string;
@@ -26,6 +27,8 @@ export interface EmailEditorState {
 const MAX_ATTACHMENT_SIZE_MB = 25;
 const MAX_EMAIL_BODY_SIZE_MB = 20;
 
+const functionQueue = new AsyncFunctionQueue({ autoExecute: false });
+
 function createEmailEditorStore() {
   // Debounce timers for variable detection
   let debouncedVariableDetectionTimer: ReturnType<typeof setTimeout>;
@@ -46,7 +49,7 @@ function createEmailEditorStore() {
     templateVariables: [],
     templateVariableValues: {},
     isHtmlMode: false,
-    isInitialized: false, // Flag for disabling premature saving
+    isInitialized: false, // Flag for disabling premature saving,
   };
 
   const store = writable<EmailEditorState>({ ...initialState });
@@ -280,30 +283,36 @@ function createEmailEditorStore() {
   }
 
   function loadDraft() {
-    const rawHtmlBody = localStorage.getItem(DRAFT_HTMLBODY_KEY);
-    const rawSubject = localStorage.getItem(DRAFT_SUBJECT_KEY);
-    const rawVariableValues = localStorage.getItem(DRAFT_VARIABLE_VALUES_KEY);
-    const rawIsHtmlMode = localStorage.getItem(DRAFT_IS_HTML_MODE_KEY);
 
-    try {
-      if (rawIsHtmlMode !== null) {
-        updateIsHtmlMode(JSON.parse(rawIsHtmlMode));
-      }
-      if (rawHtmlBody !== null) {
-        updateHtmlBody(rawHtmlBody, false);
-      }
-      if (rawSubject !== null) {
-        updateSubject(rawSubject);
-      }
-      if (rawVariableValues !== null) {
-        for (const [key, value] of Object.entries(JSON.parse(rawVariableValues))) {
-          updateTemplateVariableValue(key as string, value as string);
+    const functionToQueue = async () => {
+      const rawHtmlBody = localStorage.getItem(DRAFT_HTMLBODY_KEY);
+      const rawSubject = localStorage.getItem(DRAFT_SUBJECT_KEY);
+      const rawVariableValues = localStorage.getItem(DRAFT_VARIABLE_VALUES_KEY);
+      const rawIsHtmlMode = localStorage.getItem(DRAFT_IS_HTML_MODE_KEY);
+
+      try {
+        if (rawIsHtmlMode !== null) {
+          updateIsHtmlMode(JSON.parse(rawIsHtmlMode));
         }
+        if (rawHtmlBody !== null) {
+          updateHtmlBody(rawHtmlBody, false);
+        }
+        if (rawSubject !== null) {
+          updateSubject(rawSubject);
+        }
+        if (rawVariableValues !== null) {
+          for (const [key, value] of Object.entries(JSON.parse(rawVariableValues))) {
+            updateTemplateVariableValue(key as string, value as string);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load draft:', error);
       }
-    } catch (error) {
-      console.error('Failed to load draft:', error);
+      update((state) => ({ ...state, isInitialized: true }));
     }
-    update((state) => ({ ...state, isInitialized: true }));
+
+    functionQueue.enqueue(functionToQueue);
+    functionQueue.executeQueue();
   }
 
 
@@ -323,6 +332,7 @@ function createEmailEditorStore() {
     getProcessedHtmlBody,
     getProcessedSubject,
     loadDraft,
+    forceSaveDraftSubjectImmediately,
   };
 }
 
