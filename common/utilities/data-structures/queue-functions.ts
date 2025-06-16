@@ -38,7 +38,7 @@ export interface AsyncFunctionQueueOptions {
 export class AsyncFunctionQueue<T = any> {
     private queue: QueuedFunction<T>[] = [];
     private executionHistory: QueueItemExecutionResult<T>[] = [];
-    private _isCurrentlyExecuting: boolean = false;
+    private _currentlyExecuting: QueuedFunction<T> | null = null;
     private options: Required<AsyncFunctionQueueOptions>;
 
     /**
@@ -90,9 +90,15 @@ export class AsyncFunctionQueue<T = any> {
                     console.log(`[AsyncFunctionQueue] Replacing function with ID: ${id}`);
                 }
 
-                // Remove the existing item
-                this.queue.splice(existingIndex, 1);
+                // Replace the existing item at the same position
+                this.queue[existingIndex] = item;
+            } else {
+                // Add new item with ID
+                this.queue.push(item);
             }
+        } else {
+            // Add new item without ID
+            this.queue.push(item);
         }
 
         if (this.options.debug) {
@@ -100,10 +106,8 @@ export class AsyncFunctionQueue<T = any> {
                 + `${finalDelayMs > 0 ? ` (delayed by ${finalDelayMs}ms)` : ''}`);
         }
 
-        this.queue.push(item);
-
         // Auto-execute if enabled and not already executing
-        if (this.options.autoExecute && !this._isCurrentlyExecuting) {
+        if (this.options.autoExecute && this._currentlyExecuting === null) {
             this.executeQueue();
         }
 
@@ -116,18 +120,24 @@ export class AsyncFunctionQueue<T = any> {
      * @returns Promise that resolves when all functions are executed
      */
     async executeQueue(): Promise<void> {
-        if (this._isCurrentlyExecuting) {
+        if (this._currentlyExecuting !== null) {
             return; // Already executing
         }
 
-        this._isCurrentlyExecuting = true;
+        const targetFunction = this.queue[0];
+        if (targetFunction === undefined) {
+            this._currentlyExecuting = null;
+            return;
+        }
+
+        this._currentlyExecuting = targetFunction;
 
         try {
-            while (this.queue.length > 0) {
-                await this.executeNext();
-            }
-        } finally {
-            this._isCurrentlyExecuting = false;
+            await this.executeNext();
+            this.executeQueue();
+        } catch (error) {
+            this._currentlyExecuting = null;
+            throw error;
         }
     }
 
@@ -137,26 +147,21 @@ export class AsyncFunctionQueue<T = any> {
      * @returns Promise that resolves when the next function completes, or undefined if no suitable function was found
      */
     async executeNext(): Promise<QueueItemExecutionResult<T>> {
-        // Return undefined result if queue is empty
         if (this.queue.length === 0) {
+            this._currentlyExecuting = null;
             return { data: undefined, timestamp: DateTime.now().toISO() };
         }
 
-        if (this._isCurrentlyExecuting) {
-            if (this.options.debug) {
-                console.log(`[AsyncFunctionQueue] Queue is currently executing a function. Skipping this execution call.`);
-            }
-            return { data: undefined, timestamp: DateTime.now().toISO(), skipped: true };
+        // Peek at the next item without removing it yet
+        const nextItem = this.queue[0];
+        if (!nextItem) {
+            this._currentlyExecuting = null;
+            return { data: undefined, timestamp: DateTime.now().toISO() };
         }
 
-        this._isCurrentlyExecuting = true;
-
         try {
-            // Get the next item but don't remove it from the queue yet
-            const nextItem = this.queue[0];
-
             // Process delay if needed
-            if (nextItem && nextItem.executeAfter) {
+            if (nextItem.executeAfter) {
                 const now = DateTime.now();
                 const executeAfterTime = DateTime.fromISO(nextItem.executeAfter);
 
@@ -173,12 +178,32 @@ export class AsyncFunctionQueue<T = any> {
                 }
             }
 
-            // Now remove the item from the queue (which could have changed during the delay)
-            // This ensures we're always processing the current first item
-            const item = this.queue.shift();
+            // After delay, check if the item is still the first in queue (might have been replaced)
+            const currentFirstItem = this.queue[0];
+            if (!currentFirstItem) {
+                // Queue is empty, nothing to execute
+                this._currentlyExecuting = null;
+                return { data: undefined, timestamp: DateTime.now().toISO() };
+            }
 
-            // This should rarely happen (only if another process modified the queue during the delay)
+            // If the item has an ID and it doesn't match the current first item, it was replaced
+            if (nextItem.id && currentFirstItem.id !== nextItem.id) {
+                // Item was replaced during delay, execute the new item instead
+                this._currentlyExecuting = null;
+                return this.executeNext();
+            }
+
+            // If items are different objects but neither has ID, the queue was modified
+            if (!nextItem.id && currentFirstItem !== nextItem) {
+                // Non-ID item was removed/replaced during delay, execute current first item
+                this._currentlyExecuting = null;
+                return this.executeNext();
+            }
+
+            // Now remove the item from the queue
+            const item = this.queue.shift();
             if (!item) {
+                this._currentlyExecuting = null;
                 return { data: undefined, timestamp: DateTime.now().toISO() };
             }
 
@@ -187,54 +212,47 @@ export class AsyncFunctionQueue<T = any> {
             }
 
             // Execute the function
-            try {
-                const result = await item.func();
+            const result = await item.func();
+            const executionResult = {
+                data: result,
+                id: item.id,
+                error: undefined,
+                timestamp: DateTime.now().toISO()
+            };
 
-                // Store execution result in history
-                const executionResult: QueueItemExecutionResult<T> = {
-                    data: result,
-                    timestamp: DateTime.now().toISO(),
-                    id: item.id
-                };
+            // Add to history
+            this.addToHistory(executionResult);
 
-                this.executionHistory.push(executionResult);
-
-                if (this.executionHistory.length > this.options.maxHistorySize) {
-                    this.executionHistory.shift();
-                }
-
-                if (this.options.debug) {
-                    console.log(`[AsyncFunctionQueue] Function${item.id ? ` with ID: ${item.id}` : ''} executed successfully`);
-                }
-
-                return executionResult;
-            } catch (error) {
-                // Capture execution errors
-                const errorResult: QueueItemExecutionResult<T> = {
-                    error,
-                    timestamp: DateTime.now().toISO(),
-                    id: item.id
-                };
-
-                this.executionHistory.push(errorResult);
-
-                if (this.executionHistory.length > this.options.maxHistorySize) {
-                    this.executionHistory.shift();
-                }
-
-                console.error(`[AsyncFunctionQueue] Error executing function${item.id ? ` with ID: ${item.id}` : ''}:`, error);
-                throw error;
+            if (this.options.debug) {
+                console.log(`[AsyncFunctionQueue] Function${item.id ? ` with ID: ${item.id}` : ''} executed successfully`);
             }
-        } finally {
-            this._isCurrentlyExecuting = false;
-        }
-    }
 
-    /**
-     * Check if the queue is currently executing functions
-     */
-    isCurrentlyExecuting(): boolean {
-        return this._isCurrentlyExecuting;
+            this._currentlyExecuting = null;
+
+            return executionResult;
+
+        } catch (error) {
+            // Remove the failed item from queue
+            if (this.queue[0] === nextItem) {
+                this.queue.shift();
+            }
+
+            const executionResult = {
+                data: undefined,
+                id: nextItem.id,
+                error,
+                timestamp: DateTime.now().toISO()
+            };
+
+            // Add to history
+            this.addToHistory(executionResult);
+
+            if (this.options.debug) {
+                console.error(`[AsyncFunctionQueue] Function${nextItem.id ? ` with ID: ${nextItem.id}` : ''} failed:`, error);
+            }
+
+            throw error;
+        }
     }
 
     /**
@@ -293,20 +311,11 @@ export class AsyncFunctionQueue<T = any> {
         return initialLength > this.queue.length;
     }
 
-    async checkForPendingJobs(callback: () => void): Promise<boolean> {
-        const wasExecuting = this.isCurrentlyExecuting();
+    private addToHistory(result: QueueItemExecutionResult<T>) {
+        this.executionHistory.push(result);
 
-        // If already executing, just return pending status
-        if (wasExecuting) {
-            return this.queue.length > 0;
+        if (this.executionHistory.length > this.options.maxHistorySize) {
+            this.executionHistory.shift();
         }
-
-        // Execute all pending jobs
-        await this.executeQueue();
-
-        // Now invoke callback since jobs are done
-        callback();
-
-        return false; // No more pending jobs
     }
 }

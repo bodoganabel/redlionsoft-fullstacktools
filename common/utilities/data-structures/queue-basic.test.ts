@@ -17,16 +17,15 @@ describe('AsyncFunctionQueue - Basic Operations', () => {
   it('should create an empty queue', () => {
     expect(queue.size()).toBe(0);
     expect(queue.isEmpty()).toBe(true);
-    expect(queue.isCurrentlyExecuting()).toBe(false);
   });
 
   it('should enqueue functions and update size', () => {
     const mockFunction = async () => 'result';
-    
+
     expect(queue.enqueue(mockFunction)).toBe(1);
     expect(queue.size()).toBe(1);
     expect(queue.isEmpty()).toBe(false);
-    
+
     queue.enqueue(mockFunction);
     expect(queue.size()).toBe(2);
   });
@@ -34,7 +33,7 @@ describe('AsyncFunctionQueue - Basic Operations', () => {
   it('should clear all functions from queue', () => {
     queue.enqueue(async () => '1');
     queue.enqueue(async () => '2');
-    
+
     expect(queue.size()).toBe(2);
     expect(queue.clear()).toBe(2);
     expect(queue.size()).toBe(0);
