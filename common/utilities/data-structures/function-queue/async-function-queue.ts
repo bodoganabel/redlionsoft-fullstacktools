@@ -105,7 +105,7 @@ export class AsyncFunctionQueue<T = any> {
      * Get the current size of the queue
      */
     size(): number {
-        return this.queue.length;
+        return this.queue.length + (this.delayHandler.getChambered() ? 1 : 0);
     }
 
     /**
@@ -120,7 +120,8 @@ export class AsyncFunctionQueue<T = any> {
      * @returns The number of functions cleared
      */
     clear(): number {
-        const count = this.queue.length;
+        const count = this.queue.length + (this.delayHandler.getChambered() ? 1 : 0);
+        this.delayHandler.dechamber();
         this.queue = [];
         return count;
     }
@@ -133,7 +134,15 @@ export class AsyncFunctionQueue<T = any> {
      * Find a function in the queue by its ID
      */
     findFunction(id: string): QueuedFunction<T> | undefined {
-        return this.queue.find(item => item.id === id);
+        let item: QueuedFunction<T> | undefined | null = this.queue.find(item => item.id === id);
+        if (item) {
+            return item;
+        }
+        item = this.delayHandler.getChambered();
+        if (item !== null && item?.id === id) {
+            return item;
+        }
+        return undefined;
     }
 
     /**
@@ -149,6 +158,7 @@ export class AsyncFunctionQueue<T = any> {
 
         if (this.delayHandler.getChambered()?.id === id) {
             this.delayHandler.dechamber();
+            this.cycle();
         }
         return initialLength > this.queue.length;
     }
