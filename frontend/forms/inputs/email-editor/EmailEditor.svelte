@@ -67,7 +67,7 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
       },
       onCreate: () => {
         // Use the store's loadDraft function directly
-        emailEditorStore.loadDraft();
+        emailEditorStore.loadDraft('onCreate');
         htmlTextarea.value = $emailEditorStore.htmlBody;
         editor.commands.setContent($emailEditorStore.htmlBody);
       },
@@ -98,7 +98,7 @@ https://tiptap.dev/docs/editor/getting-started/install/svelte
 
   <textarea
     bind:this={htmlTextarea}
-    class="textarea mt-2 bg-surface-50 font-mono text-sm"
+    class="textarea mt-3 bg-surface-50 font-mono text-sm"
     style="min-height: 300px; width: 100%;"
     class:hidden={!$emailEditorStore.isHtmlMode}
     value={$emailEditorStore.htmlBody}

@@ -17,11 +17,11 @@
   const formContext = createFormContext();
 
   async function handleTemplateSelect(template: TResource<TEmailTemplate>) {
-    popupClose(POPUP_TEMPLATE_MANAGER);
     console.log('Template selected:', template);
     emailEditorStore.updateIsHtmlMode(template.data.isHtmlMode);
     emailEditorStore.updateSubject(template.data.subject || '');
     emailEditorStore.updateHtmlBody(template.data.content);
+    popupClose(POPUP_TEMPLATE_MANAGER);
     // Force update simple mode's body after a template load.
     editor.commands.setContent($emailEditorStore.htmlBody);
     toastNormal(`Template ${template.resourceId} applied`);

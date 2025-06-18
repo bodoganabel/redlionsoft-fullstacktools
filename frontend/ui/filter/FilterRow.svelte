@@ -1,6 +1,6 @@
 <script lang="ts">
   import { type TFilter, type TFilterField, type TFilterOperator } from './filter.types';
-  import { debounce } from '../../utils/debounce';
+  import { debounce } from '../../../common/utilities/debounce/debounce';
   import { onDestroy } from 'svelte';
 
   export let filter: TFilter;
@@ -10,11 +10,7 @@
   export let operators: TFilterOperator[];
   export let fields: TFilterField[];
 
-  const debouncedUpdate = debounce(onUpdate, 500);
-
-  onDestroy(() => {
-    debouncedUpdate.clear?.();
-  });
+  const debouncedUpdate = () => debounce(onUpdate, 'filter-update', 500);
 </script>
 
 <div class="flex items-center gap-2 flex-wrap">
