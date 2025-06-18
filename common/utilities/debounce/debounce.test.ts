@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { debounce } from './debounce';
-import { delay } from '../../../utilities/general';
+import { delay } from '../general';
 
 // Helper function to create delays
 
