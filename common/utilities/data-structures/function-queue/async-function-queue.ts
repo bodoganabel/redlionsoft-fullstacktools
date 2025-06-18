@@ -142,6 +142,14 @@ export class AsyncFunctionQueue<T = any> {
     removeFunction(id: string): boolean {
         const initialLength = this.queue.length;
         this.queue = this.queue.filter(item => item.id !== id);
+
+        if (this.options.debug && initialLength > this.queue.length) {
+            console.log(`[AsyncFunctionQueue] Removed function from queue with ID: ${id}`);
+        }
+
+        if (this.delayHandler.getChambered()?.id === id) {
+            this.delayHandler.dechamber();
+        }
         return initialLength > this.queue.length;
     }
 

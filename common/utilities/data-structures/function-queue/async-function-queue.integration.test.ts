@@ -113,17 +113,18 @@ describe('AsyncFunctionQueue Integration', async () => {
     logToFile('9. After assertions');
   });
 
-  /* it('should execute with delays', async () => {
+  it('should execute with delays', async () => {
     const results: (string | number)[] = [];
     const now = DateTime.now();
     queue.push(async () => {
       const timeElapsed = DateTime.now().diff(now).as('milliseconds');
       results.push(`first`, timeElapsed);
-    }, undefined, 100);
+    }, undefined, 101);
     queue.push(async () => {
       const timeElapsed = DateTime.now().diff(now).as('milliseconds');
       results.push(`second`, timeElapsed);
     });
+    await queue.waitForFinish();
     expect(results[0]).toEqual('first');
     expect(results[1]).toBeGreaterThan(100);
     expect(results[2]).toEqual('second');
@@ -135,18 +136,23 @@ describe('AsyncFunctionQueue Integration', async () => {
     const results: string[] = [];
     queue.push(async () => { results.push('old'); }, 'replace-me', 100);
     queue.push(async () => { results.push('new'); }, 'replace-me', 100);
+    await queue.waitForFinish();
+
     expect(results).toEqual(['new']);
   });
 
+
   it('should allow removal before execution', async () => {
     const results: string[] = [];
-    queue.push(async () => { results.push('will-run'); }, 'to-remove');
+    queue.push(async () => { results.push('will-run'); }, 'to-remove', 100);
     queue.removeFunction('to-remove');
+    await queue.waitForFinish();
     expect(results).toEqual([]);
   });
+
 
   it('should log when executing console log functions', async () => {
     queue.push(async () => { console.log('msg1'); });
     expect(consoleLogSpy).toHaveBeenCalledWith('msg1');
-  }); */
+  });
 });

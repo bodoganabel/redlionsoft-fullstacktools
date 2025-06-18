@@ -54,6 +54,9 @@ export class DelayHandler<T> {
     dechamber(): QueuedFunction<T> | null {
         const item = this.chambered;
         this.chambered = null;
+        if (this.debug) {
+            console.log(`[DelayHandler] Dechambering function${item?.id ? ` with ID: ${item.id}` : ''}`);
+        }
         if (this.timeout) {
             clearTimeout(this.timeout);
         }
