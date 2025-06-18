@@ -6,7 +6,7 @@ export interface QueuedFunction<T> {
     func: () => Promise<T>;
     timestamp: string;
     id?: string;
-    executeAfter?: string;
+    executeAfter_ms: number | undefined;
 }
 
 export interface QueueItemExecutionResult<T = any> {
@@ -15,13 +15,12 @@ export interface QueueItemExecutionResult<T = any> {
     timestamp: string;
     id?: string;
     skipped?: boolean;
+    cancelled?: boolean;
 }
 
 export interface AsyncFunctionQueueOptions {
-    autoExecute?: boolean;
     debug?: boolean;
     maxHistorySize?: number;
-    defaultDelayMs?: number;
 }
 
 export interface ExecutionState<T> {

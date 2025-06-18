@@ -27,69 +27,79 @@ export class AsyncFunctionQueue<T = any> {
     private delayHandler: DelayHandler<T>;
     private historyManager: HistoryManager<T>;
     private executionManager: ExecutionManager<T>;
+    private finishPromiseResolvers: (() => void)[] = [];
 
     constructor(options?: AsyncFunctionQueueOptions) {
         this.options = {
-            autoExecute: true,
             debug: false,
             maxHistorySize: 100,
-            defaultDelayMs: 0,
             ...options
         };
 
-        this.delayHandler = new DelayHandler<T>(this.options.debug);
         this.historyManager = new HistoryManager<T>(this.options.maxHistorySize);
-        this.executionManager = new ExecutionManager<T>(this.historyManager, this.options.debug);
+        this.executionManager = new ExecutionManager<T>(this.historyManager, this.options.debug, () => this.cycle());
+        this.delayHandler = new DelayHandler<T>(
+            this.executionManager,
+            this.options.debug
+        );
     }
 
     /**
      * Add an async function to the execution queue
      */
-    enqueue(func: () => Promise<T>, id?: string, delayMs?: number): number {
+    push(func: () => Promise<T>, id?: string, delayMs?: number): number {
         const now = DateTime.now();
-        const finalDelayMs = delayMs ?? this.options.defaultDelayMs;
-        const executeAfter = this.delayHandler.createExecuteAfterTimestamp(finalDelayMs);
 
         const item: QueuedFunction<T> = {
             func,
             id,
             timestamp: now.toISO(),
-            executeAfter
+            executeAfter_ms: delayMs
         };
 
-        this.addToQueue(item);
-
-        if (this.options.debug) {
-            console.log(`[AsyncFunctionQueue] Enqueued function${id ? ` with ID: ${id}` : ''}`
-                + `${finalDelayMs > 0 ? ` (delayed by ${finalDelayMs}ms)` : ''}`);
+        // debouncing from queue
+        if (item.id !== undefined) {
+            this.queue = this.queue.filter(existingItem => existingItem.id !== item.id);
         }
 
-        this.triggerAutoExecution();
-        return this.queue.length;
+        // debouncing from delay chamber
+        if (item.id !== undefined && this.delayHandler.getChambered()?.id === item.id) {
+            this.delayHandler.dechamber();
+        }
+
+        this.queue.push(item);
+        if (this.options.debug) {
+            console.log(`[AsyncFunctionQueue] Enqueued function${id ? ` with ID: ${id}` : ''}`
+                + `${delayMs !== undefined && delayMs > 0 ? ` (delayed by ${delayMs}ms)` : ''}`);
+        }
+        this.cycle();
+
+        return this.queue.length + (this.delayHandler.getChambered() ? 1 : 0);
     }
 
-    /**
-     * Execute all functions in the queue in order, respecting any delays
-     */
-    async executeQueue(): Promise<void> {
-        if (this.executionManager.isExecuting()) {
+    private cycle(): void {
+
+        const isDealyOccupied = this.delayHandler.getChambered() !== null;
+        const isExecutorOccupied = this.executionManager.isExecuting();
+
+        if (this.queue.length === 0 && !isDealyOccupied && !isExecutorOccupied) {
+            this.finish();
             return;
         }
 
-        while (this.queue.length > 0) {
-            await this.executeNext();
+        if (this.queue.length > 0 && (isDealyOccupied || isExecutorOccupied)) {
+            return;
+        }
+
+        const item = this.queue.shift();
+        if (item) {
+            this.delayHandler.chamber(item);
+        } else {
+            this.finish();
+            return;
         }
     }
 
-    /**
-     * Execute only the next function in the queue, respecting any delay
-     */
-    async executeNext(): Promise<QueueItemExecutionResult<T>> {
-        return this.executionManager.executeSingleFunction(
-            this.queue,
-            () => this.queue.shift()
-        );
-    }
 
     /**
      * Get the current size of the queue
@@ -135,34 +145,25 @@ export class AsyncFunctionQueue<T = any> {
         return initialLength > this.queue.length;
     }
 
-    /**
-     * Add item to queue, handling ID-based replacement
-     */
-    private addToQueue(item: QueuedFunction<T>): void {
-        if (!item.id) {
-            this.queue.push(item);
-            return;
-        }
-
-        const existingIndex = this.queue.findIndex(queueItem => queueItem.id === item.id);
-
-        if (existingIndex !== -1) {
-            if (this.options.debug) {
-                console.log(`[AsyncFunctionQueue] Replacing function with ID: ${item.id}`);
-            }
-            this.queue[existingIndex] = item;
-        } else {
-            this.queue.push(item);
-        }
+    finish(): void {
+        // Resolve all pending waitForFinish promises
+        const resolvers = [...this.finishPromiseResolvers];
+        this.finishPromiseResolvers = [];
+        resolvers.forEach(resolve => resolve());
     }
 
     /**
-     * Trigger auto-execution if enabled and not already executing
+     * Wait for the queue to finish processing all items
+     * @returns Promise that resolves when queue is finished
      */
-    private triggerAutoExecution(): void {
-        if (this.options.autoExecute && !this.executionManager.isExecuting()) {
-            // Use setTimeout to prevent race conditions in auto-execution
-            setTimeout(() => this.executeQueue(), 0);
+    async waitForFinish(): Promise<void> {
+        // If queue is already empty and nothing is executing, resolve immediately
+        if (this.isEmpty() && !this.delayHandler.getChambered() && !this.executionManager.isExecuting()) {
+            return Promise.resolve();
         }
+
+        return new Promise<void>((resolve) => {
+            this.finishPromiseResolvers.push(resolve);
+        });
     }
 }

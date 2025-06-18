@@ -3,23 +3,23 @@
  */
 
 import { DateTime } from 'luxon';
-import type { QueuedFunction, QueueItemExecutionResult } from '../types.js';
-import { DelayHandler } from './delay-handler.js';
-import { HistoryManager } from './history-manager.js';
+import type { QueuedFunction } from '../types';
+import { HistoryManager } from './history-manager';
 
 export class ExecutionManager<T> {
-    private delayHandler: DelayHandler<T>;
     private historyManager: HistoryManager<T>;
     private currentlyExecuting: QueuedFunction<T> | null = null;
     private debug: boolean;
+    private cycle: () => void;
 
     constructor(
         historyManager: HistoryManager<T>,
-        debug: boolean = false
+        debug: boolean = false,
+        cycle: () => void
     ) {
         this.historyManager = historyManager;
-        this.delayHandler = new DelayHandler<T>(debug);
         this.debug = debug;
+        this.cycle = cycle;
     }
 
     /**
@@ -29,110 +29,31 @@ export class ExecutionManager<T> {
         return this.currentlyExecuting !== null;
     }
 
-    /**
-     * Execute a single function from the queue
-     */
-    async executeSingleFunction(
-        queue: QueuedFunction<T>[],
-        removeFromQueue: () => QueuedFunction<T> | undefined
-    ): Promise<QueueItemExecutionResult<T>> {
-        if (this.currentlyExecuting !== null) {
-            throw new Error('Already executing a function');
+
+    async fire(item: QueuedFunction<T>): Promise<void> {
+        const isExecuting = this.isExecuting();
+        if (isExecuting) {
+            return;
         }
 
-        const nextItem = queue[0];
-        if (!nextItem) {
-            return {
-                data: undefined,
-                timestamp: DateTime.now().toISO()
-            };
-        }
-
-        this.currentlyExecuting = nextItem;
-
+        this.currentlyExecuting = item;
         try {
-            // Handle delay if needed
-            if (this.delayHandler.shouldDelay(nextItem)) {
-                const delayMs = this.delayHandler.getDelayTime(nextItem);
-                await this.delayHandler.waitForDelay(delayMs);
-
-                // Check if function was replaced during delay
-                const currentFirstItem = queue[0];
-                if (this.wasReplacedDuringDelay(nextItem, currentFirstItem)) {
-                    this.currentlyExecuting = null;
-                    return this.executeSingleFunction(queue, removeFromQueue);
-                }
-            }
-
-            // Remove from queue and execute
-            const item = removeFromQueue();
-            if (!item) {
-                this.currentlyExecuting = null;
-                return {
-                    data: undefined,
-                    timestamp: DateTime.now().toISO()
-                };
-            }
-
-            if (this.debug) {
-                console.log(`[ExecutionManager] Executing function${item.id ? ` with ID: ${item.id}` : ''}`);
-            }
-
             const result = await item.func();
-            const executionResult: QueueItemExecutionResult<T> = {
+            this.currentlyExecuting = null;
+            this.historyManager.addResult({
                 data: result,
-                id: item.id,
-                error: undefined,
-                timestamp: DateTime.now().toISO()
-            };
-
-            this.historyManager.addResult(executionResult);
-
-            if (this.debug) {
-                console.log(`[ExecutionManager] Function${item.id ? ` with ID: ${item.id}` : ''} executed successfully`);
-            }
-
-            this.currentlyExecuting = null;
-            return executionResult;
-
+                timestamp: DateTime.now().toISO(),
+                id: item.id
+            });
         } catch (error) {
-            const executionResult: QueueItemExecutionResult<T> = {
-                data: undefined,
-                id: nextItem.id,
-                error,
-                timestamp: DateTime.now().toISO()
-            };
-
-            this.historyManager.addResult(executionResult);
-
-            if (this.debug) {
-                console.error(`[ExecutionManager] Function${nextItem.id ? ` with ID: ${nextItem.id}` : ''} failed:`, error);
-            }
-
             this.currentlyExecuting = null;
-            throw error;
+            this.historyManager.addResult({
+                error,
+                timestamp: DateTime.now().toISO(),
+                id: item.id
+            });
         }
-    }
-
-    /**
-     * Check if function was replaced during delay
-     */
-    private wasReplacedDuringDelay(
-        originalItem: QueuedFunction<T>,
-        currentFirstItem: QueuedFunction<T> | undefined
-    ): boolean {
-        if (!currentFirstItem) return true;
-
-        // If the item has an ID and it doesn't match the current first item, it was replaced
-        if (originalItem.id && currentFirstItem.id !== originalItem.id) {
-            return true;
-        }
-
-        // If items are different objects but neither has ID, the queue was modified
-        if (!originalItem.id && originalItem !== currentFirstItem) {
-            return true;
-        }
-
-        return false;
+        this.currentlyExecuting = null;
+        this.cycle();
     }
 }

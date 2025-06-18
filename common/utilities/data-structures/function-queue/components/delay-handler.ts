@@ -4,33 +4,60 @@
 
 import { DateTime } from 'luxon';
 import type { QueuedFunction } from '../types.js';
+import { ExecutionManager } from './execution-manager.js';
 
 export class DelayHandler<T> {
     private debug: boolean;
+    private chambered: QueuedFunction<T> | null = null;
+    private timeout: NodeJS.Timeout | null = null;
+    private executionManager: ExecutionManager<T>;
 
-    constructor(debug: boolean = false) {
+    constructor(executionManager: ExecutionManager<T>, debug: boolean = false) {
         this.debug = debug;
+        this.executionManager = executionManager;
     }
 
-    /**
-     * Check if a function should be delayed based on its executeAfter timestamp
-     */
-    shouldDelay(item: QueuedFunction<T>): boolean {
-        if (!item.executeAfter) return false;
-        return DateTime.now() < DateTime.fromISO(item.executeAfter);
+    getChambered(): QueuedFunction<T> | null {
+        return this.chambered;
     }
 
-    /**
-     * Calculate delay time in milliseconds for a function
-     */
-    getDelayTime(item: QueuedFunction<T>): number {
-        if (!item.executeAfter) return 0;
 
-        const now = DateTime.now();
-        const executeTime = DateTime.fromISO(item.executeAfter);
-        const delayMs = executeTime.toMillis() - now.toMillis();
+    chamber(item: QueuedFunction<T>): boolean {
 
-        return Math.max(0, delayMs);
+        const isDealyOccupied = this.chambered !== null;
+        const isExecutorOccupied = this.executionManager.isExecuting();
+
+        if (isDealyOccupied || isExecutorOccupied) {
+            return false;
+        }
+
+        this.chambered = item;
+
+        if (this.debug) {
+            console.log(`[DelayHandler] Chambering function${item.id ? ` with ID: ${item.id}` : ''}`);
+        }
+
+        if (item.executeAfter_ms === undefined) {
+            this.dechamber();
+            this.executionManager.fire(item);
+            return true;
+        }
+
+        this.timeout = setTimeout(() => {
+            this.dechamber();
+            this.executionManager.fire(item);
+        }, item.executeAfter_ms);
+
+        return true;
+    }
+
+    dechamber(): QueuedFunction<T> | null {
+        const item = this.chambered;
+        this.chambered = null;
+        if (this.timeout) {
+            clearTimeout(this.timeout);
+        }
+        return item;
     }
 
     /**
@@ -46,8 +73,8 @@ export class DelayHandler<T> {
         return new Promise(resolve => setTimeout(resolve, delayMs));
     }
 
-    createExecuteAfterTimestamp(delayMs: number): string | undefined {
+    createExecuteAfterTimestamp(delayMs: number): number | undefined {
         if (delayMs <= 0) return undefined;
-        return DateTime.now().plus({ milliseconds: delayMs }).toISO();
+        return DateTime.now().plus({ milliseconds: delayMs }).toMillis();
     }
 }
