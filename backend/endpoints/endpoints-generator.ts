@@ -1,11 +1,7 @@
 import { json, type Cookies, type ParamMatcher, type RequestHandler } from "@sveltejs/kit";
 import { AuthService } from "auth/auth.service";
 import type { TUserServerRls } from "auth/user.types";
-import JWT from "jwt";
-import { Collection } from "mongodb";
-import { authService } from "../../../backend.base";
-import { z } from "zod";
-import { error } from "console";
+import { z } from "zod/v4";
 
 
 const SErrorResponse = z.object({
@@ -17,14 +13,12 @@ const SErrorResponse = z.object({
 type TErrorResponse = z.infer<typeof SErrorResponse>;
 
 
-export type TRequestProcessor<TSuccessData, TQuerySchema> = (requestParams: {
-    cookies: Cookies,
-    params: any,
-    validatedQuery: TQuerySchema | undefined
-    user: TUserServerRls<any, any, any> | null
-}) => Promise<({
-    error: TErrorResponse, status?: number
-} | { data: TSuccessData, status?: number })>
+export type TRequestProcessor<TSuccessData, TValidatedQuery> = (requestParams: {
+    cookies: Cookies;
+    params: any;
+    validatedQuery: TValidatedQuery;
+    user: TUserServerRls<any, any, any> | null;
+}) => Promise<{ error: TErrorResponse; status?: number } | { data: TSuccessData; status?: number }>
 
 export class RedlionsoftEndpointGenerator {
     constructor(private authService: AuthService) {
@@ -32,15 +26,17 @@ export class RedlionsoftEndpointGenerator {
 
     }
 
-    GET<TSuccessData, TQuerySchema = undefined>(
-        requestProcessor: TRequestProcessor<TSuccessData, TQuerySchema>,
+    // Implementation
+    GET<TSuccessData, TQuery = undefined>(
+        requestProcessor: TRequestProcessor<TSuccessData, TQuery>,
         options: {
-            authRequired?: boolean,
-            permissions?: string[],
-            querySchema?: z.ZodType<TQuerySchema>,
-        } = { authRequired: false, permissions: [], querySchema: undefined }) {
+            authRequired?: boolean;
+            permissions?: string[];
+            querySchema?: z.ZodType<any>;
+        } = { authRequired: false, permissions: [], querySchema: undefined }
+    ): RequestHandler {
         const GET: RequestHandler = async ({ cookies, params, request, url }) => {
-            const query = url.searchParams;
+            const queryParams = url.searchParams;
             const user = (await this.authService.getServerUserFromCookies(cookies)) as TUserServerRls<any, any, any> | null;
             if (options?.authRequired) {
                 if (user === null) {
@@ -51,7 +47,7 @@ export class RedlionsoftEndpointGenerator {
                 }
             }
 
-            const validatedQuery = options.querySchema ? options.querySchema.parse(query) : undefined;
+            const validatedQuery: TQuery = (options.querySchema ? options.querySchema.parse(Object.fromEntries(queryParams)) : undefined) as TQuery;
 
             const result = await requestProcessor({ cookies, params, validatedQuery, user });
 
