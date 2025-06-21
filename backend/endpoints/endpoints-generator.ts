@@ -1,81 +1,53 @@
-import { json, type Cookies, type ParamMatcher, type RequestHandler } from "@sveltejs/kit";
-import { AuthService } from "auth/auth.service";
-import type { TUserServerRls } from "auth/user.types";
-import { z } from "zod/v4";
+import { error, json, type RequestHandler } from '@sveltejs/kit';
+import type { z } from 'zod';
+import { SEndpointError, type TEndpointError } from '../../common/backend-frontend/endpoints.types';
+
+type TEndpointHandler<
+    TQuerySchema extends z.ZodTypeAny,
+    TResponseSchema extends z.ZodTypeAny
+> = (query: z.infer<TQuerySchema>) => (Promise<z.infer<TResponseSchema> | TEndpointError>);
 
 
-const SErrorResponse = z.object({
-    message: z.string(),
-    code: z.string(),
-    details: z.any().optional(),
-});
+export function createGetHandler<
+    TQuerySchema extends z.ZodTypeAny,
+    TResponseSchema extends z.ZodTypeAny
+>(
+    querySchema: TQuerySchema,
+    responseSchema: TResponseSchema,
+    handler: TEndpointHandler<TQuerySchema, TResponseSchema>,
+    status: number = 200,
+): RequestHandler {
+    return async ({ url }) => {
 
-type TErrorResponse = z.infer<typeof SErrorResponse>;
+        try {
 
+            const queryParams = Object.fromEntries(url.searchParams.entries());
 
-export type TRequestProcessor<TSuccessData, TValidatedQuery> = (requestParams: {
-    cookies: Cookies;
-    params: any;
-    validatedQuery: TValidatedQuery;
-    user: TUserServerRls<any, any, any> | null;
-}) => Promise<{ error: TErrorResponse; status?: number } | { data: TSuccessData; status?: number }>
+            const parseResult = querySchema.safeParse(queryParams);
 
-export class RedlionsoftEndpointGenerator {
-    constructor(private authService: AuthService) {
-
-
-    }
-
-    // Implementation
-    GET<TSuccessData, TQuery = undefined>(
-        requestProcessor: TRequestProcessor<TSuccessData, TQuery>,
-        options: {
-            authRequired?: boolean;
-            permissions?: string[];
-            querySchema?: z.ZodType<any>;
-        } = { authRequired: false, permissions: [], querySchema: undefined }
-    ): RequestHandler {
-        const GET: RequestHandler = async ({ cookies, params, request, url }) => {
-            const queryParams = url.searchParams;
-            const user = (await this.authService.getServerUserFromCookies(cookies)) as TUserServerRls<any, any, any> | null;
-            if (options?.authRequired) {
-                if (user === null) {
-                    return json({ error: { message: "User is not authenticated", code: "AUTH_REQUIRED" } }, { status: 401 });
-                }
-                if (options.permissions !== undefined && !(await this.authService.hasPermissions(user, options.permissions))) {
-                    return json({ error: { message: "Insufficient permissions", code: "PERMISSION_DENIED" } }, { status: 403 });
-                }
+            if (!parseResult.success) {
+                return json({ error: { message: 'Invalid query parameters', details: parseResult.error.format() } }, { status: 400 });
             }
 
-            const validatedQuery: TQuery = (options.querySchema ? options.querySchema.parse(Object.fromEntries(queryParams)) : undefined) as TQuery;
 
-            const result = await requestProcessor({ cookies, params, validatedQuery, user });
-
-            const status = result.status;
-            let finalData: any;
-
-            if ('data' in result) {
-                finalData = result.data;
-            } else if ('error' in result) {
-                finalData = result.error;
+            const data = await handler(parseResult.data);
+            // Type guard: Check if the returned data is an error object
+            if (data && typeof data === 'object' && 'errorCode' in data) {
+                // If it's an error, return it with appropriate status code
+                return json(data, { status: data.status || 400 });
             }
 
-            return json({ ...finalData }, { status: status });
+            const parsedResponse = responseSchema.parse(data);
+
+            return json(parsedResponse, { status: status });
+
+        } catch (error) {
+            return json({
+                error: {
+                    message: 'Internal server error',
+                    details: JSON.stringify(error)
+                }
+            }, { status: 500 });
         }
-        return GET;
-    }
-
+    };
 }
-
-
-const SExpectedInput = z.object({
-    selectedEntries: z.array(z.string()),
-});
-
-type TExpectedInput = z.infer<typeof SExpectedInput>;
-
-const SExpectedOutput = z.object({
-    success: z.boolean(),
-});
-
-type TExpectedOutput = z.infer<typeof SExpectedOutput>
