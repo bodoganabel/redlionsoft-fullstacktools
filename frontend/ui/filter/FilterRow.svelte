@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { type TFilter, type TFilterField, type TFilterOperator } from './filter.types';
+  import { type TSubmissionFilter, type TFilterField, type TFilterOperator } from './filter.types';
   import { debounce } from '../../../common/utilities/debounce/debounce';
   import { onDestroy } from 'svelte';
 
-  export let filter: TFilter;
+  export let filter: TSubmissionFilter;
   export let onUpdate: () => void;
   export let onRemove: () => void;
 

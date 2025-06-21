@@ -1,20 +1,17 @@
 <script lang="ts">
-  import IconRectangles from "./../../icons/IconRectangles.svelte";
-  import TooltipContainer from "../../functionality/tooltip/TooltipContainer.svelte";
-  import TemplateList from "./../template/TemplateList.svelte";
+  import IconRectangles from './../../icons/IconRectangles.svelte';
+  import TooltipContainer from '../../functionality/tooltip/TooltipContainer.svelte';
+  import TemplateList from './../template/TemplateList.svelte';
   import {
     EFilterOperator,
-    type TFilter,
+    type TSubmissionFilter,
     type TFilterTemplateResource,
-  } from "./filter.types";
+  } from './filter.types';
 
   export let templates: TFilterTemplateResource[];
-  export let activeFilters: TFilter[];
+  export let activeFilters: TSubmissionFilter[];
   export let onSelect: (template: TFilterTemplateResource) => Promise<void>;
-  export let onRename: (
-    template: TFilterTemplateResource,
-    newName: string
-  ) => Promise<void>;
+  export let onRename: (template: TFilterTemplateResource, newName: string) => Promise<void>;
   export let onDelete: (template: TFilterTemplateResource) => Promise<void>;
   export let onSave: (name: string) => Promise<void>;
   export let onFavorite: (template: TFilterTemplateResource) => Promise<void>;
@@ -56,13 +53,11 @@
     </div>
   </TooltipContainer>
 
-  {#if activeFilters.some((filter) => filter.value !== "") || activeFilters.length > 1}
+  {#if activeFilters.some((filter) => filter.value !== '') || activeFilters.length > 1}
     <button
       class="text-sm variant-soft-secondary rounded-lg"
       on:click={() => {
-        activeFilters = [
-          { field: "", operator: EFilterOperator.contains, value: "" },
-        ];
+        activeFilters = [{ field: '', operator: EFilterOperator.contains, value: '' }];
       }}
     >
       Clear Filters

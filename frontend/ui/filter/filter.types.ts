@@ -21,18 +21,18 @@ export enum EFilterOperator {
   has_any_value = "has_any_value",
 }
 
-export const FilterSchema = z.object({
+export const SubmissionFilterSchema = z.object({
   field: z.string(),
   operator: z.nativeEnum(EFilterOperator),
   value: z.string(),
 });
 
-export type TFilter = z.infer<typeof FilterSchema>;
+export type TSubmissionFilter = z.infer<typeof SubmissionFilterSchema>;
 
 // Template data schema (what goes inside the data property)
 export const FilterTemplateDataSchema = z.object({
   isFavorite: z.boolean().optional(),
-  filters: z.array(FilterSchema),
+  filters: z.array(SubmissionFilterSchema),
 });
 export type TFilterTemplateData = z.infer<typeof FilterTemplateDataSchema>;
 
