@@ -1,5 +1,5 @@
 import { error, json, type RequestHandler } from '@sveltejs/kit';
-import type { typeToFlattenedError, z } from 'zod';
+import type { ZodFlattenedError, z } from 'zod/v4';
 import { SEndpointError, type TEndpointError } from '../../common/backend-frontend/endpoints.types';
 import { type TUserServerRls } from '../../backend/auth/user.types';
 import type { AuthService } from 'auth/auth.service';
@@ -27,7 +27,7 @@ type TEndpointHandler<
 > = (handlerParams: THandlerParams<TQuerySchema, TUserServer>) => (Promise<THandlerReturns<TResponseSchema>>);
 
 
-export class RedlionsoftEndpointGenerator<TUserServer,
+export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
 > {
     constructor(
         private authService: AuthService,
@@ -39,6 +39,10 @@ export class RedlionsoftEndpointGenerator<TUserServer,
     >(
         querySchema: TQuerySchema,
         responseSchema: TResponseSchema,
+        options: {
+            requireAuthentication?: boolean,
+            requirePermissions?: (EPermissions | ECorePermissions)[],
+        },
         handler: TEndpointHandler<TQuerySchema, TResponseSchema, TUserServer>,
         status: number = 200,
     ): RequestHandler {
@@ -50,11 +54,24 @@ export class RedlionsoftEndpointGenerator<TUserServer,
 
                 const user = await this.authService.getServerUserFromCookies(cookies) as TUserServer | null;
 
+                if (options.requireAuthentication && !user) {
+                    return json({ error: { message: 'Unauthorized' } }, { status: 401 });
+                }
+
+                if (options.requirePermissions && options.requirePermissions.length > 0 && user !== null) {
+                    const hasPermissions = await this.authService.hasPermissions(
+                        user as TUserServerRls<any, any, any>, options.requirePermissions);
+
+                    if (!hasPermissions) {
+                        return json({ error: { message: 'Permission denied', } }, { status: 401 });
+                    }
+                }
+
                 const parseResult = querySchema.safeParse(queryParams);
 
                 if (!parseResult.success) {
 
-                    let details: typeToFlattenedError<any, string> | undefined = undefined;
+                    let details: ZodFlattenedError<any, string> | undefined = undefined;
 
                     if (!isProduction() || ((user as any)?.permissions as (string[]))?.includes(ECorePermissions.DEBUG)) {
                         details = parseResult.error.flatten();

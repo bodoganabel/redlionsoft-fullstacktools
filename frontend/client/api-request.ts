@@ -11,10 +11,11 @@ export type ApiError = {
   details?: unknown;
 };
 
-export type ApiRequestConfig<TBody = unknown> = {
+export type ApiRequestConfig<TInputData = unknown> = {
   url: string;
   method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  body?: TBody;
+  body?: TInputData;
+  query?: TInputData;
   headers?: HeadersInit;
   credentials?: RequestCredentials;
 };
@@ -42,13 +43,14 @@ export type ApiRequestOptions = {
  * console.log(data); // Typed as User
  * ```
  */
-export async function apiRequest<TData = any>(
-  config: ApiRequestConfig,
+export async function apiRequest<TData = any, TInputData = any>(
+  config: ApiRequestConfig<TInputData>,
   options: ApiRequestOptions = {}
 ): Promise<ApiResponse<TData>> {
   const {
     url,
     method = "GET",
+    query,
     body,
     headers = { "Content-Type": "application/json" },
     credentials = "include",
@@ -58,7 +60,7 @@ export async function apiRequest<TData = any>(
     options;
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(url + (query ? `?${new URLSearchParams(query).toString()}` : ""), {
       method,
       credentials,
       headers,
