@@ -42,6 +42,7 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
         options: {
             requireAuthentication?: boolean,
             requirePermissions?: (EPermissions | ECorePermissions)[],
+            responseHeaders?: Record<string, string>,
         },
         handler: TEndpointHandler<TQuerySchema, TResponseSchema, TUserServer>,
         status: number = 200,
@@ -97,7 +98,7 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
 
                 const parsedResponse = responseSchema.parse(data);
 
-                return json(parsedResponse, { status: status });
+                return json(parsedResponse, { status: status, headers: options.responseHeaders || undefined});
 
             } catch (error) {
                 return json({
