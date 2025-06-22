@@ -1,14 +1,28 @@
 import { error, json, type RequestHandler } from '@sveltejs/kit';
 import type { z } from 'zod';
 import { SEndpointError, type TEndpointError } from '../../common/backend-frontend/endpoints.types';
+import { type TUserServerRls } from '../../backend/auth/user.types';
+
+type THandlerParams<
+    TQuerySchema extends z.ZodTypeAny,
+> = {
+    query: z.infer<TQuerySchema>, request: Request,
+    params: Partial<Record<string, string>>,
+    url: URL,
+    user: TUserServerRls<any, any, any> | null
+}
+
+type THandlerReturns<
+    TResponseSchema extends z.ZodTypeAny,
+> = z.infer<TResponseSchema> | TEndpointError;
 
 type TEndpointHandler<
     TQuerySchema extends z.ZodTypeAny,
     TResponseSchema extends z.ZodTypeAny
-> = (query: z.infer<TQuerySchema>) => (Promise<z.infer<TResponseSchema> | TEndpointError>);
+> = (handlerParams: THandlerParams<TQuerySchema>) => (Promise<THandlerReturns<TResponseSchema>>);
 
 
-export function createGetHandler<
+export function RLS_GET<
     TQuerySchema extends z.ZodTypeAny,
     TResponseSchema extends z.ZodTypeAny
 >(
@@ -17,7 +31,7 @@ export function createGetHandler<
     handler: TEndpointHandler<TQuerySchema, TResponseSchema>,
     status: number = 200,
 ): RequestHandler {
-    return async ({ url }) => {
+    return async ({ request, params, url, cookies }) => {
 
         try {
 
@@ -26,7 +40,58 @@ export function createGetHandler<
             const parseResult = querySchema.safeParse(queryParams);
 
             if (!parseResult.success) {
-                return json({ error: { message: 'Invalid query parameters', details: parseResult.error.format() } }, { status: 400 });
+                return json({ error: { message: 'Invalid query parameters', details: parseResult.error.flatten() } }, { status: 400 });
+            }
+
+
+            const data = await handler({
+                query: parseResult.data,
+                request,
+                params,
+                url,
+                user: null
+            });
+            // Type guard: Check if the returned data is an error object
+            if (data && typeof data === 'object' && 'errorCode' in data) {
+                // If it's an error, return it with appropriate status code
+                return json(data, { status: data.status || 400 });
+            }
+
+            const parsedResponse = responseSchema.parse(data);
+
+            return json(parsedResponse, { status: status });
+
+        } catch (error) {
+            return json({
+                error: {
+                    message: 'Internal server error',
+                    details: JSON.stringify(error)
+                }
+            }, { status: 500 });
+        }
+    };
+}
+/* 
+
+export function RLS_POST<
+    SBodySchema extends z.ZodTypeAny,
+    SResponseSchema extends z.ZodTypeAny
+>(
+    bodySchema: SBodySchema,
+    responseSchema: SResponseSchema,
+    handler: TEndpointHandler<SBodySchema, SResponseSchema>,
+    status: number = 200,
+): RequestHandler {
+    return async ({ request }) => {
+
+        try {
+
+            const body = await request.json();
+
+            const parseResult = bodySchema.safeParse(body);
+
+            if (!parseResult.success) {
+                return json({ error: { message: 'Invalid body parameters', details: parseResult.error.format() } }, { status: 400 });
             }
 
 
@@ -51,3 +116,4 @@ export function createGetHandler<
         }
     };
 }
+ */
