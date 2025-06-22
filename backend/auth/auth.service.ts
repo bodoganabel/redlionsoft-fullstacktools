@@ -11,7 +11,7 @@ import { delay } from "../../common/utilities/general";
 import type { TemporaryTokensService } from "../temporary-tokens/temporary-tokens.service";
 import { DateTime } from "luxon";
 import type { EmailService } from "../email/email.service";
-import type { TUserServerRls, TUserClientRls } from "./user.types";
+import type { TUserServerRls, TUserClientRls, ECorePermissions } from "./user.types";
 
 /* Use this class as your login service in the backend at your app.
 Good example: signaltuzfal /auth/login/+server.ts 2024.10.25 */
@@ -32,14 +32,14 @@ export class AuthService<
   private passwordResetExpires_min: number = 15;
 
   constructor(initializer: {
-    defaultUsers: TUserServerRls<ERoles, EPermissions, Metadata_UserServer>[];
+    defaultUsers: TUserServerRls<ERoles, (EPermissions | ECorePermissions)[], Metadata_UserServer>[];
     jwt: JWT;
     usersCollection: Collection<
-      TUserServerRls<ERoles, EPermissions, Metadata_UserServer>
+      TUserServerRls<ERoles, (EPermissions | ECorePermissions)[], Metadata_UserServer>
     >;
     parse_serverUserTo_clientUser: (
-      userServer: TUserServerRls<ERoles, EPermissions, Metadata_UserServer>
-    ) => TUserClientRls<ERoles, EPermissions, Metadata_UserClient>;
+      userServer: TUserServerRls<ERoles, (EPermissions | ECorePermissions)[], Metadata_UserServer>
+    ) => TUserClientRls<ERoles, (EPermissions | ECorePermissions)[], Metadata_UserClient>;
     temporaryTokensService: TemporaryTokensService;
     emailService: EmailService;
     hashIterations?: number;
@@ -100,7 +100,7 @@ export class AuthService<
 
     try {
       const result = await this.usersCollection.insertOne(
-        user as TUserServerRls<ERoles, EPermissions, Metadata_UserServer>
+        user as TUserServerRls<ERoles, (EPermissions | ECorePermissions)[], Metadata_UserServer>
       );
 
       const userServer = await this.usersCollection.findOne({
@@ -139,7 +139,7 @@ export class AuthService<
       {
         $set: {
           password: hashedNewPassword,
-        } as Partial<TUserServerRls<ERoles, EPermissions, Metadata_UserServer>>,
+        } as Partial<TUserServerRls<ERoles, (EPermissions | ECorePermissions)[], Metadata_UserServer>>,
       }
     );
     return { status: 200, message: "Password changed successfully" };
@@ -214,7 +214,7 @@ export class AuthService<
       {
         $set: {
           password: hashedNewPassword,
-        } as Partial<TUserServerRls<ERoles, EPermissions, Metadata_UserServer>>,
+        } as Partial<TUserServerRls<ERoles, (EPermissions | ECorePermissions)[], Metadata_UserServer>>,
       }
     );
     await this.temporaryTokensService.delete(token);
@@ -253,10 +253,10 @@ export class AuthService<
       try {
         const clientUser: TUserClientRls<
           ERoles,
-          EPermissions,
+          (EPermissions | ECorePermissions)[],
           Metadata_UserClient
         > = this.parse_serverUserTo_clientUser(
-          user as TUserServerRls<ERoles, EPermissions, Metadata_UserServer>
+          user as TUserServerRls<ERoles, (EPermissions | ECorePermissions)[], Metadata_UserServer>
         );
         // Generate a JWT token with the user as the payload
         const clientUserAsPayloadToken = this.jwt.signToken(
@@ -283,7 +283,7 @@ export class AuthService<
   }
 
 
-  public getClientUserFromServerUser(serverUser: TUserServerRls<ERoles, EPermissions, Metadata_UserServer>) {
+  public getClientUserFromServerUser(serverUser: TUserServerRls<ERoles, (EPermissions | ECorePermissions)[], Metadata_UserServer>) {
     return this.parse_serverUserTo_clientUser(serverUser);
   }
 
@@ -294,11 +294,11 @@ export class AuthService<
       try {
         const decodedUser: TUserClientRls<
           ERoles,
-          EPermissions,
+          (EPermissions | ECorePermissions)[],
           Metadata_UserClient
         > = this.jwt.decode(authCookie) as TUserClientRls<
           ERoles,
-          EPermissions,
+          (EPermissions | ECorePermissions)[],
           Metadata_UserClient
         >;
         // Initialize the Svelte store with user data
@@ -312,16 +312,16 @@ export class AuthService<
   }
 
   private async getServerUser(
-    clientUser: TUserClientRls<ERoles, EPermissions, Metadata_UserClient>
-  ): Promise<TUserServerRls<ERoles, EPermissions, Metadata_UserServer> | null> {
+    clientUser: TUserClientRls<ERoles, (EPermissions | ECorePermissions)[], Metadata_UserClient>
+  ): Promise<TUserServerRls<ERoles, (EPermissions | ECorePermissions)[], Metadata_UserServer> | null> {
     return (await this.usersCollection.findOne({
       email: (clientUser as any).email,
-    })) as TUserServerRls<ERoles, EPermissions, Metadata_UserServer> | null;
+    })) as TUserServerRls<ERoles, (EPermissions | ECorePermissions)[], Metadata_UserServer> | null;
   }
 
   public async getServerUserFromCookies(
     cookies: Cookies
-  ): Promise<TUserServerRls<ERoles, EPermissions, Metadata_UserServer> | null> {
+  ): Promise<TUserServerRls<ERoles, (EPermissions | ECorePermissions)[], Metadata_UserServer> | null> {
     const clientUser = this.getClientUserFromCookies(cookies);
     if (clientUser === null) return null;
     return await this.getServerUser(clientUser);
@@ -383,10 +383,10 @@ export class AuthService<
   public async hasPermissions(
     serverUser: TUserServerRls<
       ERoles,
-      EPermissions,
+      (EPermissions | ECorePermissions),
       Metadata_UserServer
     > | null,
-    permissions: EPermissions[]
+    permissions: (EPermissions | ECorePermissions)[]
   ): Promise<boolean> {
     if (serverUser === null) {
       return false;
@@ -401,7 +401,7 @@ export class AuthService<
 
   // Populate users collection
   private async initUsers(
-    defaultUsers: TUserServerRls<ERoles, EPermissions, Metadata_UserServer>[]
+    defaultUsers: TUserServerRls<ERoles, (EPermissions | ECorePermissions)[], Metadata_UserServer>[]
   ) {
     const userCount = await this.usersCollection.countDocuments();
     if (userCount === 0 && defaultUsers.length > 0) {
@@ -418,7 +418,7 @@ export class AuthService<
       // Insert default users
       await this.usersCollection.insertMany(
         usersWithHashedPasswords as OptionalUnlessRequiredId<
-          TUserServerRls<ERoles, EPermissions, Metadata_UserServer>
+          TUserServerRls<ERoles, (EPermissions | ECorePermissions)[], Metadata_UserServer>
         >[]
       );
       console.log(`Created ${defaultUsers.length} default users`);

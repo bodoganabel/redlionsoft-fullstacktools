@@ -1,8 +1,10 @@
 import { error, json, type RequestHandler } from '@sveltejs/kit';
-import type { z } from 'zod';
+import type { typeToFlattenedError, z } from 'zod';
 import { SEndpointError, type TEndpointError } from '../../common/backend-frontend/endpoints.types';
 import { type TUserServerRls } from '../../backend/auth/user.types';
 import type { AuthService } from 'auth/auth.service';
+import { isProduction } from '../../common';
+import { ECorePermissions } from '../../backend/auth/user.types';
 
 type THandlerParams<
     TQuerySchema extends z.ZodTypeAny,
@@ -46,13 +48,22 @@ export class RedlionsoftEndpointGenerator<TUserServer,
 
                 const queryParams = Object.fromEntries(url.searchParams.entries());
 
+                const user = await this.authService.getServerUserFromCookies(cookies) as TUserServer | null;
+
                 const parseResult = querySchema.safeParse(queryParams);
 
                 if (!parseResult.success) {
-                    return json({ error: { message: 'Invalid query parameters', details: parseResult.error.flatten() } }, { status: 400 });
+
+                    let details: typeToFlattenedError<any, string> | undefined = undefined;
+
+                    if (!isProduction() || ((user as any)?.permissions as (string[]))?.includes(ECorePermissions.DEBUG)) {
+                        details = parseResult.error.flatten();
+                    }
+
+                    return json({ error: { message: 'Invalid request', details } }, { status: 400 });
                 }
 
-                const user = await this.authService.getServerUserFromCookies(cookies) as TUserServer | null;
+
 
                 const data = await handler({
                     query: parseResult.data,
