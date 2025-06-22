@@ -2,14 +2,16 @@ import { error, json, type RequestHandler } from '@sveltejs/kit';
 import type { z } from 'zod';
 import { SEndpointError, type TEndpointError } from '../../common/backend-frontend/endpoints.types';
 import { type TUserServerRls } from '../../backend/auth/user.types';
+import type { AuthService } from 'auth/auth.service';
 
 type THandlerParams<
     TQuerySchema extends z.ZodTypeAny,
+    TUserServer,
 > = {
     query: z.infer<TQuerySchema>, request: Request,
     params: Partial<Record<string, string>>,
     url: URL,
-    user: TUserServerRls<any, any, any> | null
+    user: TUserServer | null
 }
 
 type THandlerReturns<
@@ -18,59 +20,70 @@ type THandlerReturns<
 
 type TEndpointHandler<
     TQuerySchema extends z.ZodTypeAny,
-    TResponseSchema extends z.ZodTypeAny
-> = (handlerParams: THandlerParams<TQuerySchema>) => (Promise<THandlerReturns<TResponseSchema>>);
+    TResponseSchema extends z.ZodTypeAny,
+    TUserServer
+> = (handlerParams: THandlerParams<TQuerySchema, TUserServer>) => (Promise<THandlerReturns<TResponseSchema>>);
 
 
-export function RLS_GET<
-    TQuerySchema extends z.ZodTypeAny,
-    TResponseSchema extends z.ZodTypeAny
->(
-    querySchema: TQuerySchema,
-    responseSchema: TResponseSchema,
-    handler: TEndpointHandler<TQuerySchema, TResponseSchema>,
-    status: number = 200,
-): RequestHandler {
-    return async ({ request, params, url, cookies }) => {
+export class RedlionsoftEndpointGenerator<TUserServer,
+> {
+    constructor(
+        private authService: AuthService,
+    ) { }
 
-        try {
+    RLS_GET<
+        TQuerySchema extends z.ZodTypeAny,
+        TResponseSchema extends z.ZodTypeAny
+    >(
+        querySchema: TQuerySchema,
+        responseSchema: TResponseSchema,
+        handler: TEndpointHandler<TQuerySchema, TResponseSchema, TUserServer>,
+        status: number = 200,
+    ): RequestHandler {
+        return async ({ request, params, url, cookies }) => {
 
-            const queryParams = Object.fromEntries(url.searchParams.entries());
+            try {
 
-            const parseResult = querySchema.safeParse(queryParams);
+                const queryParams = Object.fromEntries(url.searchParams.entries());
 
-            if (!parseResult.success) {
-                return json({ error: { message: 'Invalid query parameters', details: parseResult.error.flatten() } }, { status: 400 });
-            }
+                const parseResult = querySchema.safeParse(queryParams);
 
-
-            const data = await handler({
-                query: parseResult.data,
-                request,
-                params,
-                url,
-                user: null
-            });
-            // Type guard: Check if the returned data is an error object
-            if (data && typeof data === 'object' && 'errorCode' in data) {
-                // If it's an error, return it with appropriate status code
-                return json(data, { status: data.status || 400 });
-            }
-
-            const parsedResponse = responseSchema.parse(data);
-
-            return json(parsedResponse, { status: status });
-
-        } catch (error) {
-            return json({
-                error: {
-                    message: 'Internal server error',
-                    details: JSON.stringify(error)
+                if (!parseResult.success) {
+                    return json({ error: { message: 'Invalid query parameters', details: parseResult.error.flatten() } }, { status: 400 });
                 }
-            }, { status: 500 });
-        }
-    };
+
+                const user = await this.authService.getServerUserFromCookies(cookies) as TUserServer | null;
+
+                const data = await handler({
+                    query: parseResult.data,
+                    request,
+                    params,
+                    url,
+                    user
+                });
+                // Type guard: Check if the returned data is an error object
+                if (data && typeof data === 'object' && 'errorCode' in data) {
+                    // If it's an error, return it with appropriate status code
+                    return json(data, { status: data.status || 400 });
+                }
+
+                const parsedResponse = responseSchema.parse(data);
+
+                return json(parsedResponse, { status: status });
+
+            } catch (error) {
+                return json({
+                    error: {
+                        message: 'Internal server error',
+                        details: JSON.stringify(error)
+                    }
+                }, { status: 500 });
+            }
+        };
+    }
+
 }
+
 /* 
 
 export function RLS_POST<
