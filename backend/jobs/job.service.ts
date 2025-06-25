@@ -9,6 +9,8 @@ import type { AuthService } from "../auth/auth.service";
 import { devOnly } from "../../common/utilities/general";
 
 
+const MINIMUM_FUTURE_JOB_TARGET_DATE =  1 * 1000;
+
 export class JobService<TJobMetadata> {
     private collection!: Collection;
     private authService: AuthService<any, any, any, any>;
@@ -59,7 +61,7 @@ export class JobService<TJobMetadata> {
         } catch (error) {
             if (error instanceof z.ZodError) {
                 console.log('Job validation errors:');
-                console.log(error.errors.map(e => `Field '${e.path.join('.') || '(root)'}': ${e.message}`).join('; '));
+                console.log(error.flatten());
                 console.error(error.format());
             }
             return null;
@@ -73,12 +75,15 @@ export class JobService<TJobMetadata> {
         try {
             await this.initCollection();
 
+            const targetDateAheadFromNow_ms = DateTime.fromISO(jobData.targetDateIso).valueOf() - DateTime.now().valueOf();
+
             // Add user ID and default values
             jobData.userId = jobData.userId.toString();
             jobData.createdAt = jobData.createdAt || DateTime.now().toISO();
             jobData.status = jobData.status || EJobStatuses.PENDING;
             jobData.retriesHappened = jobData.retriesHappened || 0;
             jobData.retriesAllowed = jobData.retriesAllowed || 3;
+            jobData.targetDateIso = targetDateAheadFromNow_ms > MINIMUM_FUTURE_JOB_TARGET_DATE ? jobData.targetDateIso : DateTime.now().plus({ millisecond: MINIMUM_FUTURE_JOB_TARGET_DATE - targetDateAheadFromNow_ms }).toISO();
 
             const validatedJobData = this.validateJobData(jobData);
             if (!validatedJobData) {
