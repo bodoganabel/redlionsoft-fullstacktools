@@ -1,5 +1,5 @@
 import { Collection, ObjectId } from "mongodb";
-import { z } from "zod";
+import { z } from "zod/v4";
 import type {
   BaseDocument,
   ChangeHistoryEntry,

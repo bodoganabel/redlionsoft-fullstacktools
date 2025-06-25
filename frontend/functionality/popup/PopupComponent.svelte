@@ -1,11 +1,6 @@
 <script lang="ts">
-  import {
-    onDestroy,
-    onMount,
-    type ComponentType,
-    type SvelteComponent,
-  } from "svelte";
-  import { popupClose } from "./popup-logic";
+  import { onDestroy, onMount, type ComponentType, type SvelteComponent } from 'svelte';
+  import { popupClose } from './popup-logic';
   export let id: string;
   export let title: string;
   export let message: string;
@@ -14,11 +9,11 @@
   export let isOutsideClickClose: boolean = true;
   export let onClose: (() => void) | undefined;
   export let onAccept: (() => void) | undefined;
-  export let acceptMessage: string = "Ok";
-  export let closeMessage: string = "Cancel";
+  export let acceptMessage: string = 'Ok';
+  export let closeMessage: string = 'Cancel';
   export let isEnterAccepts: boolean = true;
 
-  console.log("componentProps:");
+  console.log('componentProps:');
   console.log(componentProps);
 
   const removePopup = () => {
@@ -36,10 +31,7 @@
   };
 
   const handleOutsideClick = (e: MouseEvent) => {
-    if (
-      isOutsideClickClose &&
-      (e.target as HTMLElement).classList.contains("popup-overlay")
-    ) {
+    if (isOutsideClickClose && (e.target as HTMLElement).classList.contains('popup-overlay')) {
       e.stopPropagation();
       removePopup();
     }
@@ -51,21 +43,21 @@
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Escape" || e.key === "Esc") {
+    if (e.key === 'Escape' || e.key === 'Esc') {
       removePopup();
-    } else if (e.key === "Enter" && isEnterAccepts) {
-      console.log("default component accepted enter");
+    } else if (e.key === 'Enter' && isEnterAccepts) {
+      console.log('default component accepted enter');
       acceptPopup();
       e.preventDefault();
     }
   };
 
   onMount(() => {
-    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
   });
 
   onDestroy(() => {
-    document.removeEventListener("keydown", handleKeyDown);
+    document.removeEventListener('keydown', handleKeyDown);
   });
 </script>
 
@@ -83,13 +75,12 @@
       class="card-header flex justify-between items-center p-4 bg-inherit border-b border-surface-500/30"
     >
       <h2 class="h3">{@html title}</h2>
-      <button
-        class="btn-icon variant-ghost-surface"
-        on:click|stopPropagation={handleClose}>✕</button
+      <button class="btn-icon variant-ghost-surface" on:click|stopPropagation={handleClose}
+        >✕</button
       >
     </header>
 
-    <div class="flex-1 overflow-y-auto p-4">
+    <div class="popup-content m-4 flex-1 overflow-y-auto">
       {#if message}
         <p class="mb-4">{@html message}</p>
       {/if}
@@ -100,19 +91,15 @@
     </div>
 
     {#if onClose !== undefined || onAccept !== undefined}
-      <footer
-        class="card-footer flex justify-end p-4 bg-inherit border-t border-surface-500/30"
-      >
+      <footer class="card-footer flex justify-end p-4 bg-inherit border-t border-surface-500/30">
         {#if onClose !== undefined}
-          <button
-            class="btn variant-ghost-surface"
-            on:click|stopPropagation={handleClose}>{@html closeMessage}</button
+          <button class="btn variant-ghost-surface" on:click|stopPropagation={handleClose}
+            >{@html closeMessage}</button
           >
         {/if}
         {#if onAccept !== undefined}
-          <button
-            class="btn variant-filled-primary ml-2"
-            on:click|stopPropagation={acceptPopup}>{@html acceptMessage}</button
+          <button class="btn variant-filled-primary ml-2" on:click|stopPropagation={acceptPopup}
+            >{@html acceptMessage}</button
           >
         {/if}
       </footer>

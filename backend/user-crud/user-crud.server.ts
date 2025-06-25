@@ -2,12 +2,12 @@ import { json } from "@sveltejs/kit";
 import type { AuthService } from "../auth/auth.service";
 import { UserCrudService } from "./user-crud.server.service";
 import { Database } from "../database";
-import type { z } from "zod";
+import type { z } from "zod/v4";
 
 export const createUCrudEndpoint = async (
   authService: AuthService,
   uCrudResourceName: string,
-  dataSchema: z.ZodType,
+  dataSchema: z.ZodSchema,
   permissions: string[]
 ) => {
   const uCrudService = new UserCrudService(

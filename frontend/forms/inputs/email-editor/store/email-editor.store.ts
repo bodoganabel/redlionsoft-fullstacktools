@@ -1,8 +1,9 @@
 import { get, writable } from 'svelte/store';
 import { extractTemplateVariables, applyTemplateVariables, initializeTemplateVariableValues } from '../../../../utils/template-variables';
 import { DRAFT_HTMLBODY_KEY, DRAFT_IS_HTML_MODE_KEY, DRAFT_SUBJECT_KEY, DRAFT_VARIABLE_VALUES_KEY } from '../email-editor.types';
-import { debouncedSaveDraftHtmlBody, debouncedSaveDraftSubject, debouncedSaveDraftTemplateVariableValues, forceSaveDraftSubjectImmediately, saveDraftIsHtmlMode } from './draft.utils';
-import { AsyncFunctionQueue } from '../../../../../common/utilities/data-structures/queue-functions';
+import { forceSaveDraftSubjectImmediately, saveDraftHtmlBody, saveDraftIsHtmlMode, saveDraftSubject, saveDraftTemplateVariableValues } from './draft.utils';
+import { AsyncFunctionQueue } from '../../../../../common/utilities/data-structures/function-queue';
+import { debounce } from '../../../../../common/utilities/debounce/debounce';
 
 export interface EmailEditorState {
   recipient: string;
@@ -22,12 +23,15 @@ export interface EmailEditorState {
   templateVariableValues: Record<string, string>;
   isHtmlMode: boolean;
   isInitialized: boolean;
+  functionQueue: AsyncFunctionQueue;
 }
 
 const MAX_ATTACHMENT_SIZE_MB = 25;
 const MAX_EMAIL_BODY_SIZE_MB = 20;
 
-const functionQueue = new AsyncFunctionQueue({ autoExecute: false });
+const FQID_LOAD_DRAFT = 'FQID_LOAD_DRAFT';
+
+const functionQueue = new AsyncFunctionQueue();
 
 function createEmailEditorStore() {
   // Debounce timers for variable detection
@@ -50,6 +54,7 @@ function createEmailEditorStore() {
     templateVariableValues: {},
     isHtmlMode: false,
     isInitialized: false, // Flag for disabling premature saving,
+    functionQueue,
   };
 
   const store = writable<EmailEditorState>({ ...initialState });
@@ -75,13 +80,17 @@ function createEmailEditorStore() {
     update((state) => ({ ...state, recipient, recipientError: null }));
   }
 
+  const FQID_UPDATE_SUBJECT = 'FQID_UPDATE_SUBJECT';
+
   function updateSubject(subject: string) {
     // Update the subject immediately
     update((state) => ({ ...state, subject, subjectError: null }));
 
     // Debounce the variable detection
-    debouncedDetectVariables();
-    debouncedSaveDraftSubject(store);
+    debouncedDetectVariables()
+    get(store).functionQueue.push(async () => {
+      await saveDraftSubject(store);
+    }, FQID_UPDATE_SUBJECT, 500);
   }
 
   function updateHtmlBody(htmlBody: string, saveDraft = true) {
@@ -96,21 +105,27 @@ function createEmailEditorStore() {
       bodyError: null
     }));
 
+    const FQID_UPDATE_HTMLBODY = 'FQID_UPDATE_HTMLBODY';
     // Debounce the variable detection
     updateSizeLimit();
     if (saveDraft) {
-      debouncedSaveDraftHtmlBody(store);
+      get(store).functionQueue.push(async () => {
+        await saveDraftHtmlBody(store);
+      }, FQID_UPDATE_HTMLBODY, 500);
     }
     debouncedDetectVariables();
   }
 
+  const FQID_UPDATE_ISHTMLMODE = 'FQID_UPDATE_ISHTMLMODE';
   function updateIsHtmlMode(isHtmlMode: boolean) {
     update((state) => {
       // This triggers reactivity for editor & html textarena to detect change in their value too 
       const updatedState = { ...state, isHtmlMode };
       return updatedState;
     });
-    saveDraftIsHtmlMode(store);
+    get(store).functionQueue.push(async () => {
+      await saveDraftIsHtmlMode(store);
+    }, FQID_UPDATE_ISHTMLMODE, 500);
   }
 
   // Using the utility function instead of local implementation
@@ -124,10 +139,9 @@ function createEmailEditorStore() {
    * Debounced function to detect template variables in both subject and body
    */
   function debouncedDetectVariables() {
-    clearTimeout(debouncedVariableDetectionTimer);
-    debouncedVariableDetectionTimer = setTimeout(() => {
+    debounce(() => {
       detectTemplateVariables();
-    }, 1000); // Increased debounce time to 1000ms for better performance
+    }, 'detectTemplateVariables', 1000);
   }
 
   /**
@@ -186,6 +200,8 @@ function createEmailEditorStore() {
     });
   }
 
+  const FQID_UPDATE_TEMPLATE_VARIABLE_VALUES = 'FQID_UPDATE_TEMPLATE_VARIABLE_VALUES';
+
   function updateTemplateVariableValue(variable: string, value: string) {
     update((state) => {
       const newVariableValues = { ...state.templateVariableValues, [variable]: value };
@@ -194,7 +210,9 @@ function createEmailEditorStore() {
         templateVariableValues: newVariableValues
       };
     });
-    debouncedSaveDraftTemplateVariableValues(store);
+    get(store).functionQueue.push(async () => {
+      await saveDraftTemplateVariableValues(store);
+    }, FQID_UPDATE_TEMPLATE_VARIABLE_VALUES, 500);
   }
 
   function updateAttachedFiles(attachedFiles: File[]) {
@@ -282,13 +300,14 @@ function createEmailEditorStore() {
     return applyTemplateVariables(state.subject, state.templateVariableValues);
   }
 
-  function loadDraft() {
+  function loadDraft(initiatedBy: string) {
 
     const functionToQueue = async () => {
       const rawHtmlBody = localStorage.getItem(DRAFT_HTMLBODY_KEY);
       const rawSubject = localStorage.getItem(DRAFT_SUBJECT_KEY);
       const rawVariableValues = localStorage.getItem(DRAFT_VARIABLE_VALUES_KEY);
       const rawIsHtmlMode = localStorage.getItem(DRAFT_IS_HTML_MODE_KEY);
+
 
       try {
         if (rawIsHtmlMode !== null) {
@@ -309,10 +328,10 @@ function createEmailEditorStore() {
         console.error('Failed to load draft:', error);
       }
       update((state) => ({ ...state, isInitialized: true }));
+      console.log('loadDraft: ', initiatedBy);
     }
 
-    functionQueue.enqueue(functionToQueue);
-    functionQueue.executeQueue();
+    functionQueue.push(functionToQueue, FQID_LOAD_DRAFT);
   }
 
 

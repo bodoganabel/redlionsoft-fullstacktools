@@ -4,7 +4,7 @@
     EFilterOperator,
     type TFilterField,
     type TFilterOperator,
-    type TFilter,
+    type TSubmissionFilter,
     type TFilterTemplateResource,
     type TFilterTemplateData,
   } from './filter.types';
@@ -16,7 +16,7 @@
   export let baseUrl: string; //e.g.: "/app/submissions/api/submissions-filter-templates" - don't forget to create endpoints using ucrud-server.
   const filterTemplateUCrudClient = new UCrudResourceClient<TFilterTemplateData>(baseUrl);
 
-  export let activeFilters: TFilter[] = [
+  export let activeFilters: TSubmissionFilter[] = [
     { field: '*', operator: EFilterOperator.contains, value: '' },
   ];
   export let templates: TFilterTemplateResource[];
@@ -86,8 +86,8 @@
     { value: EFilterOperator.less_than, label: 'is less than' },
   ];
   export let fields: TFilterField[];
-  export let onFilterChange: (filters: TFilter[]) => void | Promise<void> = async (
-    filters: TFilter[]
+  export let onFilterChange: (filters: TSubmissionFilter[]) => void | Promise<void> = async (
+    filters: TSubmissionFilter[]
   ) => {
     activeFilters = filters;
     await onRefetchData();

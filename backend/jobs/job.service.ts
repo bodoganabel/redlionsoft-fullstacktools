@@ -2,7 +2,7 @@ import { Collection, ObjectId } from "mongodb";
 import { json } from "@sveltejs/kit";
 import type { Cookies } from "@sveltejs/kit";
 import { DateTime } from "luxon";
-import { z } from "zod";
+import { z } from "zod/v4";
 import { Database } from "../database";
 import { createServerJobSchema, EJobStatuses, type TServerJob } from "./job.types";
 import type { AuthService } from "../auth/auth.service";
