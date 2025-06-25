@@ -6,25 +6,41 @@ import type { AuthService } from 'auth/auth.service';
 import { isProduction } from '../../common';
 import { ECorePermissions } from '../../backend/auth/user.types';
 
-type THandlerParams<
-    TQuerySchema extends z.ZodTypeAny,
-    TUserServer,
+type THandlerParamsBase<
+TUserServer,
 > = {
-    query: z.infer<TQuerySchema>, request: Request,
-    params: Partial<Record<string, string>>,
-    url: URL,
-    user: TUserServer | null
+    request: Request,
+        params: Partial<Record<string, string>>,
+            url: URL,
+                user: TUserServer | null
 }
+
+type TQueryHandlerParams<TQuerySchema extends z.ZodTypeAny, TUserServer> = THandlerParamsBase<TUserServer> &
+{
+    query: z.infer<TQuerySchema> 
+}
+
+type TBodyHandlerParams<TBodySchema extends z.ZodTypeAny, TUserServer> = THandlerParamsBase<TUserServer> &
+{
+    body: z.infer<TBodySchema> 
+}
+
 
 type THandlerReturns<
     TResponseSchema extends z.ZodTypeAny,
 > = z.infer<TResponseSchema> | TEndpointError;
 
-type TEndpointHandler<
+type TQueryEndpointHandler<
     TQuerySchema extends z.ZodTypeAny,
     TResponseSchema extends z.ZodTypeAny,
     TUserServer
-> = (handlerParams: THandlerParams<TQuerySchema, TUserServer>) => (Promise<THandlerReturns<TResponseSchema>>);
+> = (handlerParams: TQueryHandlerParams<TQuerySchema, TUserServer>) => (Promise<THandlerReturns<TResponseSchema>>);
+
+type TBodyEndpointHandler<
+    TBodySchema extends z.ZodTypeAny,
+    TResponseSchema extends z.ZodTypeAny,
+    TUserServer
+> = (handlerParams: TBodyHandlerParams<TBodySchema, TUserServer>) => (Promise<THandlerReturns<TResponseSchema>>);
 
 
 export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
@@ -44,7 +60,7 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
             requirePermissions?: (EPermissions | ECorePermissions)[],
             responseHeaders?: Record<string, string>,
         },
-        handler: TEndpointHandler<TQuerySchema, TResponseSchema, TUserServer>,
+        handler: TQueryEndpointHandler<TQuerySchema, TResponseSchema, TUserServer>,
         status: number = 200,
     ): RequestHandler {
         return async ({ request, params, url, cookies }) => {
@@ -85,6 +101,84 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
 
                 const data = await handler({
                     query: parseResult.data,
+                    request,
+                    params,
+                    url,
+                    user
+                });
+                // Type guard: Check if the returned data is an error object
+                if (data && typeof data === 'object' && 'errorCode' in data) {
+                    // If it's an error, return it with appropriate status code
+                    return json(data, { status: data.status || 400 });
+                }
+
+                const parsedResponse = responseSchema.parse(data);
+
+                return json(parsedResponse, { status: status, headers: options.responseHeaders || undefined});
+
+            } catch (error) {
+                return json({
+                    error: {
+                        message: 'Internal server error',
+                        details: JSON.stringify(error)
+                    }
+                }, { status: 500 });
+            }
+        };
+    }
+    
+    RLS_POST<
+        TBodySchema extends z.ZodTypeAny,
+        TResponseSchema extends z.ZodTypeAny
+    >(
+        bodySchema: TBodySchema,
+        responseSchema: TResponseSchema,
+        options: {
+            requireAuthentication?: boolean,
+            requirePermissions?: (EPermissions | ECorePermissions)[],
+            responseHeaders?: Record<string, string>,
+        },
+        handler: TBodyEndpointHandler<TBodySchema, TResponseSchema, TUserServer>,
+        status: number = 200,
+    ): RequestHandler {
+        return async ({ request, params, url, cookies }) => {
+
+            try {
+
+                const bodyParams = await request.json();
+
+                const user = await this.authService.getServerUserFromCookies(cookies) as TUserServer | null;
+
+                if (options.requireAuthentication && !user) {
+                    return json({ error: { message: 'Unauthorized' } }, { status: 401 });
+                }
+
+                if (options.requirePermissions && options.requirePermissions.length > 0 && user !== null) {
+                    const hasPermissions = await this.authService.hasPermissions(
+                        user as TUserServerRls<any, any, any>, options.requirePermissions);
+
+                    if (!hasPermissions) {
+                        return json({ error: { message: 'Permission denied', } }, { status: 401 });
+                    }
+                }
+
+                const parseResult = bodySchema.safeParse(bodyParams);
+
+                if (!parseResult.success) {
+
+                    let details: ZodFlattenedError<any, string> | undefined = undefined;
+
+                    if (!isProduction() || ((user as any)?.permissions as (string[]))?.includes(ECorePermissions.DEBUG)) {
+                        details = parseResult.error.flatten();
+                    }
+
+                    return json({ error: { message: 'Invalid request', details } }, { status: 400 });
+                }
+
+
+
+                const data = await handler({
+                    body: parseResult.data,
                     request,
                     params,
                     url,
