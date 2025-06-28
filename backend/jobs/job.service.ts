@@ -8,9 +8,6 @@ import { createServerJobSchema, EJobStatuses, type TServerJob } from "./job.type
 import type { AuthService } from "../auth/auth.service";
 import { devOnly } from "../../common/utilities/general";
 
-
-const MINIMUM_FUTURE_JOB_TARGET_DATE =  1 * 1000;
-
 export class JobService<TJobMetadata> {
     private collection!: Collection;
     private authService: AuthService<any, any, any, any>;
@@ -83,7 +80,7 @@ export class JobService<TJobMetadata> {
             jobData.status = jobData.status || EJobStatuses.PENDING;
             jobData.retriesHappened = jobData.retriesHappened || 0;
             jobData.retriesAllowed = jobData.retriesAllowed || 3;
-            jobData.targetDateIso = targetDateAheadFromNow_ms > MINIMUM_FUTURE_JOB_TARGET_DATE ? jobData.targetDateIso : DateTime.now().plus({ millisecond: MINIMUM_FUTURE_JOB_TARGET_DATE - targetDateAheadFromNow_ms }).toISO();
+            jobData.targetDateIso = jobData.targetDateIso;
 
             const validatedJobData = this.validateJobData(jobData);
             if (!validatedJobData) {
