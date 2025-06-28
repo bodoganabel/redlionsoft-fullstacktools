@@ -25,7 +25,7 @@ export const ServerJobBaseSchema = z.object({
 });
 
 // Default metadata schema (for backward compatibility)
-export const DefaultMetadataSchema = z.record(z.any());
+export const DefaultMetadataSchema = z.record(z.any(), z.any());
 
 /**
  * Creates a job schema with custom metadata schema
