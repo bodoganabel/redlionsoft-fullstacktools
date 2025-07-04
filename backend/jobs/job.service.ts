@@ -72,7 +72,7 @@ export class JobService<TJobMetadata> {
         try {
             await this.initCollection();
 
-            const targetDateAheadFromNow_ms = DateTime.fromISO(jobData.targetDateIso).valueOf() - DateTime.now().valueOf();
+            const targetDateAheadFromNow_ms = DateTime.fromISO(jobData.targetDateIso, { setZone: true }).valueOf() - DateTime.now().valueOf();
 
             // Add user ID and default values
             jobData.userId = jobData.userId.toString();
