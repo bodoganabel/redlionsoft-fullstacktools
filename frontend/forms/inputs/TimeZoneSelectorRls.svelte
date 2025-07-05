@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { timezoneStore, timeZones } from './../../functionality/timezone/timezone.store';
+    import { timezoneStore, timeZones } from '../../functionality/timezone/timezone.store';
+    export let onTimezoneChange: (timezone: string) => void;
 </script>
 
 <div class="timezone-selector mt-4 w-max">
@@ -8,11 +9,16 @@
     id="timezone"
     value={$timezoneStore}
     class="input select mt-2"
-    on:change={(e) =>
+    on:change={async (e) => {
       timezoneStore.set(
         // @ts-ignore
         e.target.value
-      )}
+      )
+      onTimezoneChange(
+        // @ts-ignore
+        e.target.value
+      );
+    }}
   >
     {#each timeZones as { tz, offset }}
       <option value={tz}>
