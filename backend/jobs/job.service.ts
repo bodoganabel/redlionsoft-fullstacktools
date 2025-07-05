@@ -76,7 +76,7 @@ export class JobService<TJobMetadata> {
 
             // Add user ID and default values
             jobData.userId = jobData.userId.toString();
-            jobData.createdAt = jobData.createdAt || DateTime.now().toISO();
+            jobData.createdAt = jobData.createdAt || DateTime.now().toUTC().toISO();
             jobData.status = jobData.status || EJobStatuses.PENDING;
             jobData.retriesHappened = jobData.retriesHappened || 0;
             jobData.retriesAllowed = jobData.retriesAllowed || 3;
@@ -196,7 +196,7 @@ export class JobService<TJobMetadata> {
                 ...newJob,
                 _id: existingJob._id,  // Ensure ID doesn't change
                 userId: existingJob.userId,  // Ensure user doesn't change
-                updatedAt: DateTime.now().toISO()
+                updatedAt: DateTime.now().toUTC().toISO()
             };
 
             const validatedJobData = this.validateJobData(updatedJob);
@@ -312,7 +312,7 @@ export class JobService<TJobMetadata> {
         try {
             await this.initCollection();
 
-            const now = DateTime.now().toISO();
+            const now = DateTime.now().toUTC().toISO();
 
             // Find jobs that are pending and due to run
             const pendingJobs = await this.collection.find({
@@ -335,7 +335,7 @@ export class JobService<TJobMetadata> {
         try {
             await this.initCollection();
 
-            const now = DateTime.now().toISO();
+            const now = DateTime.now().toUTC().toISO();
 
             // Find jobs that are pending and due to run
             const pendingJobs = await this.collection.find({
@@ -351,7 +351,7 @@ export class JobService<TJobMetadata> {
                         const newResultAray = [...job.results || []];
                         newResultAray.push({
                             message: "Too many retries",
-                            dateIso: DateTime.now().toISO()
+                            dateIso: DateTime.now().toUTC().toISO()
                         })
 
 
@@ -387,7 +387,7 @@ export class JobService<TJobMetadata> {
                                 status: result.error === null ? EJobStatuses.COMPLETED : EJobStatuses.PENDING,
                                 results: [...job.results || [], {
                                     message: result.error || result.data,
-                                    dateIso: DateTime.now().toISO()
+                                    dateIso: DateTime.now().toUTC().toISO()
                                 }]
                             }
                         }

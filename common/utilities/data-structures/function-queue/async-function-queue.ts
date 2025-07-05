@@ -53,7 +53,7 @@ export class AsyncFunctionQueue<T = any> {
         const item: QueuedFunction<T> = {
             func,
             id,
-            timestamp: now.toISO(),
+            timestamp: now.toUTC().toISO(),
             executeAfter_ms: delayMs
         };
 

@@ -37,7 +37,7 @@ export class Queue<T> {
     enqueue(item: T): void {
         this.items.push({
             data: item,
-            timestamp: DateTime.now().toISO()
+            timestamp: DateTime.now().toUTC().toISO()
         });
     }
 
@@ -113,7 +113,7 @@ export const FunctionalQueue = {
     enqueue: <T>(queue: QueueItem<T>[], item: T): QueueItem<T>[] => {
         return [...queue, {
             data: item,
-            timestamp: DateTime.now().toISO()
+            timestamp: DateTime.now().toUTC().toISO()
         }];
     },
 

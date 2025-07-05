@@ -42,14 +42,14 @@ export class ExecutionManager<T> {
             this.currentlyExecuting = null;
             this.historyManager.addResult({
                 data: result,
-                timestamp: DateTime.now().toISO(),
+                timestamp: DateTime.now().toUTC().toISO(),
                 id: item.id
             });
         } catch (error) {
             this.currentlyExecuting = null;
             this.historyManager.addResult({
                 error,
-                timestamp: DateTime.now().toISO(),
+                timestamp: DateTime.now().toUTC().toISO(),
                 id: item.id
             });
         }
