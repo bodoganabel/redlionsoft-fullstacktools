@@ -1,6 +1,6 @@
-import { error, json, type RequestHandler } from '@sveltejs/kit';
+import { json, type RequestHandler } from '@sveltejs/kit';
 import type { ZodFlattenedError, z } from 'zod/v4';
-import { SEndpointError, type TEndpointError } from '../../common/backend-frontend/endpoints.types';
+import { type TEndpointError } from '../../common/backend-frontend/endpoints.types';
 import { type TUserServerRls } from '../../backend/auth/user.types';
 import type { AuthService } from 'auth/auth.service';
 import { isProduction } from '../../common';
@@ -67,7 +67,8 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
 
             try {
 
-                const queryParams = Object.fromEntries(url.searchParams.entries());
+                const searchParamsEntries = Array.from(url.searchParams.entries());
+                const queryParams = searchParamsEntries.length > 0 ? Object.fromEntries(searchParamsEntries) : undefined;
 
                 const user = await this.authService.getServerUserFromCookies(cookies) as TUserServer | null;
 
