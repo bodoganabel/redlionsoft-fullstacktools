@@ -1,10 +1,11 @@
 <script lang="ts">
     import { timezoneStore, timeZones } from '../../functionality/timezone/timezone.store';
     export let onTimezoneChange: (timezone: string) => void;
+    export let timezoneText = "Select your timezone"
 </script>
 
-<div class="timezone-selector mt-4 w-max">
-  <label for="timezone" class="font-bold">Select your timezone:</label>
+<div class="timezone-selector mt-4 w-full">
+  <label for="timezone" class="font-bold">{timezoneText}</label>
   <select
     id="timezone"
     value={$timezoneStore}
@@ -26,7 +27,6 @@
       </option>
     {/each}
   </select>
-  <p class="text-sm text-gray-500">Current timezone: {$timezoneStore}</p>
 </div>
 
 <style>
