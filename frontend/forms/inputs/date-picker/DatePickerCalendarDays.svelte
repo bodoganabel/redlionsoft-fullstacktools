@@ -39,9 +39,18 @@
 
   async function handleClick(date: DateTime) {
     if (isSelectable(date)) {
-      onDateSelect(date); // Trigger the callback after the animation
+      // Normalize the selected date to ensure consistent day representation
+      const normalizedDate = DateTime.fromObject({
+        year: date.year,
+        month: date.month,
+        day: date.day,
+      }).setZone('utc',{keepLocalTime: true});
+
+      onDateSelect(normalizedDate); // Use the normalized date
       await scale.set(1.05); // Scale up slightly
       await scale.set(1); // Shrink back to normal
+      console.log('selected a normalizedDate:');
+      console.log(normalizedDate, DateTime.fromISO(normalizedDate.toISO() as string, { setZone: true }).toISO());
     }
   }
 </script>

@@ -20,7 +20,7 @@
         on:click={async () => {
           onSelect(availableDateTime);
           selectedIndex = index;
-        }}>{availableDateTime.setZone(timezone).toLocaleString(format)}</button
+        }}>{availableDateTime.setZone(timezone).toFormat('MMM.dd HH:mm'/* format */)}</button
       >
       {#if selectedIndex === index}
         <button
@@ -28,7 +28,7 @@
           on:click={async () => {
             onConfirmSelection(availableDateTime);
             selectedIndex = index;
-          }}>Confirm</button
+          }}>OK</button
         >
       {/if}
     </div>

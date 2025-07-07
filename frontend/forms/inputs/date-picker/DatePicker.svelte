@@ -26,7 +26,7 @@
   export let selectedDate: DateTime = initialDate;
   export let enabledDates: DateTime[] | null = null; // If null, all dates are enabled
 
-  export let onSelect: (date: DateTime) => void = () => {};
+  export let onSelectUtcDate: (date: DateTime) => void = () => {};
   export let minDate: DateTime | undefined = undefined;
   export let maxDate: DateTime | undefined = undefined;
   export let onMonthChange: (firstDayOfTheMonth: DateTime) => void;
@@ -47,7 +47,7 @@
 
   function onDateSelected(newDate: DateTime) {
     selectedDate = newDate;
-    onSelect(selectedDate);
+    onSelectUtcDate(selectedDate);
     updateCalendar();
   }
 
