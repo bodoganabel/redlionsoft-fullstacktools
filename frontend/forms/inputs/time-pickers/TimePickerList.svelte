@@ -20,7 +20,7 @@
         on:click={async () => {
           onSelect(availableDateTime);
           selectedIndex = index;
-        }}>{availableDateTime.setZone(timezone).toFormat('MMM.dd HH:mm'/* format */)}</button
+        }}>{availableDateTime.setZone(timezone).toFormat('HH:mm'/* format */)}</button
       >
       {#if selectedIndex === index}
         <button
