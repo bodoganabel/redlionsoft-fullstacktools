@@ -4,7 +4,7 @@ import type { Cookies } from "@sveltejs/kit";
 import { DateTime } from "luxon";
 import { z } from "zod/v4";
 import { Database } from "../database";
-import { createServerJobSchema, EJobStatuses, type TServerJob } from "./job.types";
+import { createServerJobSchema, EJobStatuses, JOB_RETRIES_ALLOWED_DEFAULT, type TServerJob } from "./job.types";
 import type { AuthService } from "../auth/auth.service";
 import { devOnly } from "../../common/utilities/general";
 
@@ -79,7 +79,7 @@ export class JobService<TJobMetadata> {
             jobData.createdAt = jobData.createdAt || DateTime.now().toUTC().toISO();
             jobData.status = jobData.status || EJobStatuses.PENDING;
             jobData.retriesHappened = jobData.retriesHappened || 0;
-            jobData.retriesAllowed = jobData.retriesAllowed || 3;
+            jobData.retriesAllowed = jobData.retriesAllowed || JOB_RETRIES_ALLOWED_DEFAULT;
             jobData.targetDateIso = jobData.targetDateIso;
 
             const validatedJobData = this.validateJobData(jobData);
