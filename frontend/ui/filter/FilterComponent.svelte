@@ -15,6 +15,8 @@
 
   export let baseUrl: string; //e.g.: "/app/submissions/api/submissions-filter-templates" - don't forget to create endpoints using ucrud-server.
   const filterTemplateUCrudClient = new UCrudResourceClient<TFilterTemplateData>(baseUrl);
+  export let orderBy: string = '';
+  export let orderDirection: 'asc' | 'desc' = 'desc';
 
   export let activeFilters: TSubmissionFilter[] = [
     { field: '*', operator: EFilterOperator.contains, value: '' },
@@ -139,6 +141,39 @@
         onRemove={() => removeFilter(index)}
       />
     {/each}
+  </div>
+  <div class="mt-2 order-by flex gap-2 items-center">
+    <div class="font-bold">Order by:</div>
+    <input class="input w-max" type="text" list="cars" bind:value={orderBy}
+      on:blur={(e) => {
+        orderBy = 
+        //@ts-ignore
+        e.target.value;
+        onFilterChange(activeFilters);
+      }}/>
+    <datalist id="cars"
+      class="select w-max text-sm"
+    >
+      <option value="">None</option>
+      {#each fields as field}
+        <option value={field.value}>{field.label}</option>
+      {/each}
+    </datalist>
+
+    <select
+      class="select w-max input-small"
+      bind:value={orderDirection}
+      on:change={(e) => {
+        orderDirection = 
+        //@ts-ignore
+        e.target.value;
+        onFilterChange(activeFilters);
+      }}
+    >
+      <option value="asc">Ascending</option>
+      <option value="desc">Descending</option>
+    </select>
+
   </div>
 
   <FilterActions
