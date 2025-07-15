@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { popup } from '../../functionality/popup/popup-logic';
   import { type TSubmissionFilter, type TFilterField, type TFilterOperator } from './filter.types';
   import { debounce } from '../../../common/utilities/debounce/debounce';
   import { onDestroy } from 'svelte';
+    import FilterMagicWordsModal from './FilterMagicWordsModal.svelte';
 
   export let filter: TSubmissionFilter;
   export let onUpdate: () => void;
@@ -42,6 +44,24 @@
     placeholder="Enter value"
     class="input input-small flex-1"
   />
+
+
+
+  <button
+    on:click={async () => { 
+      popup({
+        title: 'Filter magic words',
+        component: FilterMagicWordsModal,
+        onClose: () => {
+          // Do nothing
+        },
+      });
+     }}
+    class="px-2 py-1 variant-filled-secondary"
+    aria-label="Remove filter"
+  >
+    &#x007B;&#x007D;
+  </button>
 
   <button
     on:click={onRemove}
