@@ -94,6 +94,11 @@
     activeFilters = filters;
     await onRefetchData();
   };
+  
+  // Function to handle changes in ordering
+  function handleOrderingChange() {
+    onFilterChange(activeFilters);
+  }
 
   function addFilter() {
     activeFilters = [
@@ -142,37 +147,30 @@
       />
     {/each}
   </div>
-  <div class="mt-2 order-by flex gap-2 items-center">
+  <div class="mt-2 order-by flex flex-wrap gap-2 items-center">
     <div class="font-bold">Order by:</div>
-    <input class="input w-max" type="text" list="cars" bind:value={orderBy}
-      on:blur={(e) => {
-        orderBy = 
-        //@ts-ignore
-        e.target.value;
-        onFilterChange(activeFilters);
-      }}/>
-    <datalist id="cars"
-      class="select w-max text-sm"
-    >
-      <option value="">None</option>
-      {#each fields as field}
-        <option value={field.value}>{field.label}</option>
-      {/each}
-    </datalist>
+    <div class="flex-1 flex gap-2 items-center">
+      <select 
+        class="select w-full md:w-auto" 
+        bind:value={orderBy}
+        on:change={handleOrderingChange}
+      >
+        <option value="">None</option>
+        {#each fields as field}
+          <option value={field.value}>{field.label}</option>
+        {/each}
+      </select>
 
-    <select
-      class="select w-max input-small"
-      bind:value={orderDirection}
-      on:change={(e) => {
-        orderDirection = 
-        //@ts-ignore
-        e.target.value;
-        onFilterChange(activeFilters);
-      }}
-    >
-      <option value="asc">Ascending</option>
-      <option value="desc">Descending</option>
-    </select>
+      <select
+        class="select w-auto"
+        bind:value={orderDirection}
+        on:change={handleOrderingChange}
+        disabled={!orderBy}
+      >
+        <option value="asc">Ascending</option>
+        <option value="desc">Descending</option>
+      </select>
+    </div>
 
   </div>
 
