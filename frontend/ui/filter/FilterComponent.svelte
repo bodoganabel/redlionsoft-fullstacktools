@@ -159,7 +159,6 @@
         {#each fields as field}
           <option value={field.value}>{field.label}</option>
         {/each}
-      </select>
 
       <select
         class="select w-auto"
