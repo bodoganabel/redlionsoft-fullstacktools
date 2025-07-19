@@ -279,16 +279,39 @@ function processQueryValue(value: any): any {
     return value.map(item => processQueryValue(item));
   }
   
-  // Check for logical operators
-  const hasLogicalOperators = Object.keys(value)
-    .filter(isMongoOperator)
-    .some(op => ['$and', '$or', '$nor', '$not'].includes(op));
-  
-  if (hasLogicalOperators) {
-    return processLogicalOperators(value);
+  // For objects, process them based on content
+  if (typeof value === 'object' && value !== null) {
+    // Identify logical operators ($and, $or, $nor, $not)
+    const logicalOperatorKeys = Object.keys(value).filter(k => 
+      isMongoOperator(k) && ['$and', '$or', '$nor', '$not'].includes(k));
+    const regularKeys = Object.keys(value).filter(k => !logicalOperatorKeys.includes(k));
+    
+    // If we have logical operators mixed with regular fields, handle them specially
+    if (logicalOperatorKeys.length > 0) {
+      // First, extract and process the logical operators
+      const result: Record<string, any> = {};
+      
+      // Add logical operators
+      for (const opKey of logicalOperatorKeys) {
+        result[opKey] = processQueryValue(value[opKey]);
+      }
+      
+      // Process and add regular fields as flattened dot notation
+      if (regularKeys.length > 0) {
+        const regularObj: Record<string, any> = {};
+        for (const key of regularKeys) {
+          regularObj[key] = value[key];
+        }
+        // Flatten the regular fields
+        const flattened = flattenObject(regularObj);
+        Object.assign(result, flattened);
+      }
+      
+      return result;
+    }
   }
   
-  // Regular object - flatten it
+  // Regular object - ensure we flatten it properly
   return flattenObject(value);
 }
 
@@ -299,42 +322,60 @@ function processQueryValue(value: any): any {
  * { user: { name: "John" } } → { "user.name": "John" }
  * { scores: [{ math: 90 }] } → { "scores.0.math": 90 }
  */
+/**
+ * Flattens an object into MongoDB dot notation format
+ * This is crucial for MongoDB to properly handle nested fields
+ */
 function flattenObject(obj: Record<string, any>, prefix = ''): Record<string, any> {
-  return Object.keys(obj).reduce((accumulator: Record<string, any>, key: string) => {
-    const prefixKey = prefix ? `${prefix}.${key}` : key;
+  // Starting with an empty object to accumulate flattened paths
+  const result: Record<string, any> = {};
+  
+  // Process each key in the object
+  for (const key of Object.keys(obj)) {
     const value = obj[key];
+    const newKey = prefix ? `${prefix}.${key}` : key;
     
-    // Case 1: Handle primitives and null/undefined
-    if (isPrimitiveOrDate(value)) {
-      accumulator[convertArrayNotationToDotNotation(prefixKey)] = value;
-      return accumulator;
-    }
-    
-    // Case 2: Handle empty objects - preserve them as is
-    if (typeof value === 'object' && value !== null && !Array.isArray(value) && Object.keys(value).length === 0) {
-      accumulator[convertArrayNotationToDotNotation(prefixKey)] = {};
-      return accumulator;
-    }
-    
-    // Case 3: Handle fields with MongoDB operators
-    if (Object.keys(value).some(isMongoOperator) && !key.startsWith('$')) {
-      return processFieldOperators(key, value, prefixKey, accumulator);
-    }
-    
-    // Case 4: Handle top-level MongoDB operators
+    // Special handling for MongoDB operators (starting with $)
     if (isMongoOperator(key)) {
-      accumulator[key] = processQueryValue(value);
-      return accumulator;
+      result[key] = processQueryValue(value);
+      continue;
     }
     
-    // Case 5: Handle arrays
+    // Handle basic primitives and nulls
+    if (isPrimitiveOrDate(value)) {
+      result[convertArrayNotationToDotNotation(newKey)] = value;
+      continue;
+    }
+    
+    // Handle empty objects
+    if (typeof value === 'object' && value !== null && 
+        !Array.isArray(value) && Object.keys(value).length === 0) {
+      result[convertArrayNotationToDotNotation(newKey)] = {};
+      continue;
+    }
+    
+    // Process MongoDB operator objects for fields ($gt, $lt, etc)
+    if (typeof value === 'object' && value !== null && 
+        !Array.isArray(value) && Object.keys(value).some(isMongoOperator)) {
+      // Process fields with MongoDB operators
+      Object.assign(result, processFieldOperators(key, value, newKey, {}));
+      continue;
+    }
+    
+    // Process arrays
     if (Array.isArray(value)) {
-      return processArray(value, prefixKey, accumulator);
+      Object.assign(result, processArray(value, newKey, {}));
+      continue;
     }
     
-    // Case 6: Recursively flatten nested objects
-    return Object.assign(accumulator, flattenObject(value, prefixKey));
-  }, {});
+    // For regular nested objects, recursively flatten
+    if (typeof value === 'object' && value !== null) {
+      // This is the key part - recursively flatten nested objects
+      Object.assign(result, flattenObject(value, newKey));
+    }
+  }
+  
+  return result;
 }
 
 /**
@@ -346,31 +387,6 @@ function flattenObject(obj: Record<string, any>, prefix = ''): Record<string, an
  * @param query The TypeScript-friendly query object
  * @returns A MongoDB-compatible query with proper dot notation
  * 
- * EXAMPLES:
- * 
- * // User type
- * interface User {
- *   name: string;
- *   age: number;
- *   address: { city: string; zip: string };
- *   scores: number[];
- * }
- * 
- * // Type-safe query
- * const query = mongoQueryTypesafe<User>({
- *   name: "John",
- *   age: { $gt: 18 },
- *   "address.city": "New York",
- *   "scores.0": { $gte: 90 }
- * });
- * 
- * // MongoDB formatted query result:
- * // { 
- * //   "name": "John", 
- * //   "age": { "$gt": 18 }, 
- * //   "address.city": "New York", 
- * //   "scores.0": { "$gte": 90 } 
- * // }
  */
 export function mongoQueryTypesafe<T extends Record<string, any>>(query: MongoQuery<T>): Record<string, any> {
   return processQueryValue(query);
