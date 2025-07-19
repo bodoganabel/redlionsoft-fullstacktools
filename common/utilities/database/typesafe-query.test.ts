@@ -280,4 +280,136 @@ describe('mongoQueryTypesafe', () => {
       ]
     });
   });
+
+  it('should handle extremely complex nested structures with multiple operators', () => {
+    // This test creates an extremely complex MongoDB query structure with:
+    // - Multiple levels of nesting
+    // - Logical operators at different levels
+    // - Arrays with operators
+    // - Nested conditions within arrays
+    // - Mixed primitive and object values
+    const query = mongoQueryTypesafe<TestDocument>({
+      // Root level conditions
+      name: { $regex: '^J', $options: 'i' },
+      age: { $gte: 18, $lte: 65 },
+      // Root level logical operator with nested objects
+      $and: [
+        // First condition group - complex object path with array and nested operator
+        { 
+          profile: { 
+            address: { 
+              city: { $in: ['New York', 'San Francisco', 'Seattle'] } 
+            },
+            // Complex array with mixed primitive and operator values
+            phoneNumbers: [
+              { type: 'mobile', number: { $regex: '^\\+1' } },
+              { type: 'work' }
+            ]
+          }
+        },
+        // Second condition group - nested logical operator
+        {
+          $or: [
+            // Nested condition with array access
+            { 
+              history: [{
+                action: 'LOGIN',
+                details: {
+                  changedFields: ['status', 'lastLogin']
+                }
+              }]
+            },
+            // Another nested condition with operators
+            {
+              history: [{
+                timestamp: { $gte: '2025-01-01T00:00:00.000Z' },
+                details: {
+                  notes: { $regex: 'important', $options: 'i' }
+                }
+              }]
+            },
+            // Nested condition with operators in nested fields
+            {
+              history: [{
+                details: {
+                  notes: { $regex: 'password', $options: 'i' }
+                }
+              }]
+            }
+          ]
+        },
+        // Third condition - with $not operator
+        {
+          $nor: [
+            { isActive: false },
+            { 
+              profile: { 
+                email: { $regex: '@spam\\.com$' } 
+              } 
+            }
+          ]
+        }
+      ],
+      // Additional root level complex condition
+      $or: [
+        { tags: { $in: ['premium', 'verified'] } },
+        {
+          metadata: {
+            lastModified: { $gt: new Date('2025-01-01') },
+            modifiedBy: 'admin'
+          }
+        }
+      ],
+      // Ensure nested empty objects and arrays are handled correctly
+      metadata: {
+        settings: {},
+        flags: []
+      }
+    });
+
+    // Expected flattened query result
+    expect(query).toEqual({
+      name: { $regex: '^J', $options: 'i' },
+      age: { $gte: 18, $lte: 65 },
+      $and: [
+        {
+          'profile.address.city': { $in: ['New York', 'San Francisco', 'Seattle'] },
+          'profile.phoneNumbers.0.type': 'mobile',
+          'profile.phoneNumbers.0.number': { $regex: '^\\+1' },
+          'profile.phoneNumbers.1.type': 'work'
+        },
+        {
+          $or: [
+            {
+              'history.0.action': 'LOGIN',
+              'history.0.details.changedFields.0': 'status',
+              'history.0.details.changedFields.1': 'lastLogin'
+            },
+            {
+              'history.0.timestamp': { $gte: '2025-01-01T00:00:00.000Z' },
+              'history.0.details.notes': { $regex: 'important', $options: 'i' }
+            },
+            {
+              'history.0.details.notes': { $regex: 'password', $options: 'i' }
+            }
+          ]
+        },
+        {
+          $nor: [
+            { isActive: false },
+            { 'profile.email': { $regex: '@spam\\.com$' } }
+          ]
+        }
+      ],
+      $or: [
+        { tags: { $in: ['premium', 'verified'] } },
+        {
+          'metadata.lastModified': { $gt: expect.any(Date) },
+          'metadata.modifiedBy': 'admin'
+        }
+      ],
+      'metadata.settings': {},
+      'metadata.flags': []
+    });
+  });
 });
