@@ -31,6 +31,8 @@ describe('mongoQueryTypesafe', () => {
     }>;
     metadata: Record<string, any>;
     createdAt: Date;
+    startDateUtc: string;
+    endDateUtc: string;
   };
 
   it('should handle simple field queries', () => {
@@ -257,6 +259,25 @@ describe('mongoQueryTypesafe', () => {
     expect(query).toEqual({
       tags: [],
       metadata: {}
+    });
+  });
+
+  it('should handle complex nested arrays', () => {
+    const query = mongoQueryTypesafe<TestDocument>({
+      profile: {
+        email: 'banatulljonavalladra@cox.fgw'
+      }, $and: [
+        { startDateUtc: { $gt: '2025-M07-30T12:00:00.000Z' } },
+        { endDateUtc: { $lt: '2025-M07-30T12:00:00.000Z' } }
+      ],
+    });
+
+    expect(query).toEqual({
+      'profile.email': 'banatulljonavalladra@cox.fgw',
+      $and: [
+        { startDateUtc: { $gt: '2025-M07-30T12:00:00.000Z' } },
+        { endDateUtc: { $lt: '2025-M07-30T12:00:00.000Z' } }
+      ]
     });
   });
 });
