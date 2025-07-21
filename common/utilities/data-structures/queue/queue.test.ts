@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Queue, FunctionalQueue, ramdaQueueExamples, QueueItem } from './queue';
-import { DateTime } from 'luxon';
+import { Queue, FunctionalQueue, ramdaQueueExamples, type QueueItem } from './queue';
 
 // Mock DateTime.now() to return a consistent value for testing
 vi.mock('luxon', () => {

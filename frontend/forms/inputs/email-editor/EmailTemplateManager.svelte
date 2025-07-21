@@ -138,6 +138,7 @@
             component: EditEmailTemplate,
             componentProps: {
               originalTemplate: {
+                userId: '',
                 resourceId: '',
                 data: {
                   subject: $emailEditorStore.subject,

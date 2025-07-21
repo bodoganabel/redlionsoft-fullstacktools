@@ -86,7 +86,7 @@ export class UCrudResourceClient<TResourceData> {
         toastSuccess(`${newName} updated successfully`);
         return true;
       }
-      toastError(error?.message || "Failed to update resource");
+      toastError(error?.details || "Failed to update resource");
       return false;
     }
 
@@ -103,7 +103,7 @@ export class UCrudResourceClient<TResourceData> {
         },
       });
       if (!data) {
-        toastError(error?.message || `Failed to overwrite resource '${newName}'`);
+        toastError(error?.details || `Failed to overwrite resource '${newName}'`);
         return false;
       }
     } else {
@@ -118,7 +118,7 @@ export class UCrudResourceClient<TResourceData> {
         },
       });
       if (!data) {
-        toastError(error?.message || `Failed to create resource '${newName}'`);
+        toastError(error?.details || `Failed to create resource '${newName}'`);
         return false;
       }
     }
@@ -131,7 +131,7 @@ export class UCrudResourceClient<TResourceData> {
         body: { resourceId: oldName },
       });
       if (delError) {
-        toastError(delError?.message || `Failed to delete old resource '${oldName}'`);
+        toastError(delError?.details || `Failed to delete old resource '${oldName}'`);
         // Still return true since update succeeded, but warn in UI
       }
     }
@@ -167,7 +167,7 @@ export class UCrudResourceClient<TResourceData> {
     });
 
     if (saveError) {
-      toastError(saveError.message || "Failed to rename resource");
+      toastError(saveError.details || "Failed to rename resource");
       return false;
     }
 
@@ -178,7 +178,7 @@ export class UCrudResourceClient<TResourceData> {
     });
 
     if (deleteError) {
-      toastError(deleteError.message || "Failed to delete old resource");
+      toastError(deleteError.details || "Failed to delete old resource");
       return false;
     }
 
@@ -198,7 +198,7 @@ export class UCrudResourceClient<TResourceData> {
     if (data) {
       return true;
     }
-    toastError(error?.message || "Failed to reorder resources");
+    toastError(error?.details || "Failed to reorder resources");
     return false;
   }
 
@@ -257,7 +257,7 @@ export class UCrudResourceClient<TResourceData> {
       toastSuccess("Resource deleted successfully");
       return true;
     }
-    toastError(error?.message || "Failed to delete resource");
+    toastError(error?.details || "Failed to delete resource");
     return false;
   }
 

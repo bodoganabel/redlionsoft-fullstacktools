@@ -5,7 +5,7 @@
   import { onMount } from 'svelte';
   import type { IQuickloginUser } from './../devconsole.types';
   import { LOCALDB } from '../../localdb/localdb';
-  import { apiRequest, apiRequest_v2 } from '../../../client/api-request';
+  import { apiRequest } from '../../../client/api-request';
 
   export let quickloginUsers: IQuickloginUser[];
 
@@ -38,7 +38,7 @@
 
   async function onLogin() {
     isFetching_login = true;
-    const { data, error } = await apiRequest_v2({
+    const { data, error } = await apiRequest({
       url: '/auth/login',
       method: 'POST',
       body: {
@@ -52,7 +52,7 @@
       toast(`logged in as ${userToLogin.email}`, EToastTypes.SUCCESS);
       window.location.reload();
     } else {
-      toast(error?.message || `failed to log in`, EToastTypes.ERROR);
+      toast(error?.details || `failed to log in`, EToastTypes.ERROR);
     }
   }
 </script>
@@ -97,7 +97,7 @@
       if (data) {
         window.location.reload();
       } else {
-        toast(error?.message || `failed to logout`, EToastTypes.ERROR);
+        toast(error?.details || `failed to logout`, EToastTypes.ERROR);
       }
     }}
     >{#if isFetching_logout}

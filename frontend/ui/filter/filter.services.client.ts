@@ -94,7 +94,7 @@ export async function renameTemplate(
   });
 
   if (saveError) {
-    toastError(saveError.message || "Failed to rename template");
+    toastError(saveError.details || "Failed to rename template");
     return false;
   }
 
@@ -105,7 +105,7 @@ export async function renameTemplate(
   });
 
   if (deleteError) {
-    toastError(deleteError.message || "Failed to delete old template");
+    toastError(deleteError.details || "Failed to delete old template");
     return false;
   }
 
@@ -125,7 +125,7 @@ export async function reorderTemplates(
   if (data) {
     return true;
   }
-  toastError(error?.message || "Failed to reorder templates");
+  toastError(error?.details || "Failed to reorder templates");
   return false;
 }
 
@@ -182,7 +182,7 @@ export async function deleteTemplate(resourceId: string): Promise<boolean> {
         toastSuccess("Template deleted successfully");
         return true;
       }
-      toastError(error?.message || "Failed to delete template");
+      toastError(error?.details || "Failed to delete template");
       return false;
     },
     acceptMessage: "Delete",

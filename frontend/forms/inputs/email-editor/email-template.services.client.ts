@@ -15,7 +15,7 @@ export async function reorderEmailTemplates(
     return true;
   }
   // Standard toast error pattern
-  toastError(error.message || "Failed to reorder email templates");
+  toastError(error.details || "Failed to reorder email templates");
   return false;
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ObjectIdGenerate, SObjectIdClient, ObjectIdClient } from './objectid';
+import { ObjectIdGenerate, SObjectIdClient } from './objectid';
 
 describe('MongoDB ObjectId Implementation', () => {
   describe('ObjectIdGenerate', () => {

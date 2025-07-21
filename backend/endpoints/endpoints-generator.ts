@@ -2,9 +2,9 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 import type { ZodFlattenedError, z } from 'zod/v4';
 import { type TEndpointError } from '../../common/backend-frontend/endpoints.types';
 import { type TUserServerRls } from '../../backend/auth/user.types';
-import type { AuthService } from 'auth/auth.service';
 import { isProduction } from '../../common';
 import { ECorePermissions } from '../../backend/auth/user.types';
+import type { AuthService } from './../auth/auth.service';
 
 type THandlerParamsBase<
 TUserServer,
