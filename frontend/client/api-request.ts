@@ -1,5 +1,6 @@
 
 import type { ApiRequestConfig, ApiRequestOptions, ApiResponse, TEndpointError } from "../../common/backend-frontend/endpoints.types";
+import { toastError } from "../functionality/toast/toast-logic";
 /**
  * Makes an API request and returns a strongly typed response
  * @example
@@ -57,6 +58,10 @@ export async function apiRequest<TData = any, TInputData = any>(
           details: defaultErrorMessage,
           status: response.status || 400,
         };
+      }
+
+      if(error.toastError){
+        toastError(error.toastError);
       }
 
       return {

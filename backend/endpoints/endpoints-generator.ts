@@ -1,10 +1,11 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
-import type { ZodFlattenedError, z } from 'zod/v4';
+import { z } from 'zod/v4';
 import { type TEndpointError } from '../../common/backend-frontend/endpoints.types';
 import { type TUserServerRls } from '../../backend/auth/user.types';
 import { isProduction } from '../../common';
 import { ECorePermissions } from '../../backend/auth/user.types';
 import type { AuthService } from './../auth/auth.service';
+import { isDebugMessageSendable } from './utils';
 
 type THandlerParamsBase<
 TUserServer,
@@ -85,23 +86,24 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
                     }
                 }
 
-                const parseResult = querySchema.safeParse(queryParams);
+                const parsedQuery = querySchema.safeParse(queryParams);
 
-                if (!parseResult.success) {
+                if (!parsedQuery.success) {
 
-                    let details: ZodFlattenedError<any, string> | undefined = undefined;
 
-                    if (!isProduction() || ((user as any)?.permissions as (string[]))?.includes(ECorePermissions.DEBUG)) {
-                        details = parseResult.error.flatten();
-                    }
 
-                    return json({ error: { message: 'Invalid request', details } }, { status: 400 });
+                    const parsedError = parsedQuery.error;
+                    const treeifiedError = z.treeifyError(parsedError);
+
+                    console.log('treeifiedError');
+                    console.log(treeifiedError);
+                    return json({ error: { message: 'Invalid response', details: isDebugMessageSendable(user as TUserServerRls<any, any, any>) ? treeifiedError : undefined } }, { status: 400 });
                 }
 
 
 
                 const data = await handler({
-                    query: parseResult.data,
+                    query: parsedQuery.data,
                     request,
                     params,
                     url,
@@ -113,9 +115,19 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
                     return json(data, { status: data.status || 400 });
                 }
 
-                const parsedResponse = responseSchema.parse(data);
+                const parsedResponse = responseSchema.safeParse(data);
 
-                return json(parsedResponse, { status: status, headers: options.responseHeaders || undefined});
+                if (!parsedResponse.success) {
+
+                    const parsedError = parsedResponse.error;
+                    const treeifiedError = z.treeifyError(parsedError);
+
+                    console.log('treeifiedError');
+                    console.log(treeifiedError);
+                    return json({ error: { message: 'Invalid response', details: isDebugMessageSendable(user as TUserServerRls<any, any, any>) ? treeifiedError : undefined } }, { status: 400 });
+                }
+
+                return json(parsedResponse.data, { status: status, headers: options.responseHeaders || undefined});
 
             } catch (error) {
                 return json({
@@ -167,10 +179,10 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
 
                 if (!parseResult.success) {
 
-                    let details: ZodFlattenedError<any, string> | undefined = undefined;
+                    let details: string | undefined = undefined;
 
                     if (!isProduction() || ((user as any)?.permissions as (string[]))?.includes(ECorePermissions.DEBUG)) {
-                        details = parseResult.error.flatten();
+                        details = z.treeifyError(parseResult.error).errors.toString()
                     }
 
                     return json({ error: { message: 'Invalid request', details } }, { status: 400 });
