@@ -33,3 +33,12 @@ export type ApiRequestOptions = {
     errorMessages?: Record<string, string>;
     defaultErrorMessage?: string;
 };
+
+export enum EGeneralEndpontErrors {
+    UNAUTHORIZED = "UNAUTHORIZED",
+    PERMISSION_DENIED = "PERMISSION_DENIED",
+    INVALID_QUERY = "INVALID_QUERY",
+    INVALID_BODY = "INVALID_BODY",
+    INVALID_RESPONSE = "INVALID_RESPONSE",
+    INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR"
+}
