@@ -1,8 +1,6 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { z } from 'zod/v4';
 import { EGeneralEndpontErrors, type TEndpointError } from '../../common/backend-frontend/endpoints.types';
-import { type TUserServerRls } from '../../backend/auth/user.types';
-import { isProduction } from '../../common';
 import { ECorePermissions } from '../../backend/auth/user.types';
 import type { AuthService } from './../auth/auth.service';
 import type { TBodyEndpointHandler, TQueryEndpointHandler } from './components/endpoint-generator.types';

@@ -1,8 +1,8 @@
 import z from "zod/v4";
-import type { TBodyEndpointHandler, TQueryEndpointHandler, TQueryHandlerParams } from "./endpoint-generator.types";
+import type { TBodyEndpointHandler, TQueryEndpointHandler } from "./endpoint-generator.types";
 import { EGeneralEndpontErrors, type TEndpointError } from "../../../common/backend-frontend/endpoints.types";
 import type { TUserServerRls } from "auth/user.types";
-import { isDebugMessageSendable } from "endpoints/utils";
+import { isDebugMessageSendable } from "../../endpoints/utils";
 
 export async function executeQueryEndpoint<TQuerySchema extends z.ZodTypeAny, TUserServer, TResponseSchema extends z.ZodTypeAny>(parsedQuery: z.core.output<TQuerySchema>, handler: TQueryEndpointHandler<TQuerySchema, TResponseSchema, TUserServer>, request: Request, params: Partial<Record<string, string>>, url: URL, user: TUserServer | null, responseSchema: TResponseSchema): Promise<{data: z.core.output<TResponseSchema> | null, endpointError: TEndpointError | null}> {
     
