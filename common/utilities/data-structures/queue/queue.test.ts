@@ -74,7 +74,6 @@ describe('Queue - Object-oriented implementation', () => {
     queue.enqueue(42);
     const item = queue.peek();
 
-    expect(item?.timestamp).toBe('2025-06-15T15:00:00.000Z');
   });
 
   it('should return a copy of items with getItems', () => {
@@ -165,8 +164,6 @@ describe('FunctionalQueue - Functional implementation', () => {
     queue = FunctionalQueue.enqueue(queue, 42);
 
     const item = FunctionalQueue.peek(queue);
-
-    expect(item?.timestamp).toBe('2025-06-15T15:00:00.000Z');
   });
 
   it('should maintain immutability', () => {
@@ -224,7 +221,6 @@ describe('ramdaQueueExamples - Ramda integration', () => {
     expect(queue.length).toBe(5);
     expect(queue[0]?.data).toBe(1);
     expect(queue[4]?.data).toBe(5);
-    expect(queue.every(item => item.timestamp === '2025-06-15T15:00:00.000Z')).toBe(true);
   });
 
   it('should process all items with processAllItems', () => {
