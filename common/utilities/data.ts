@@ -63,36 +63,47 @@ const B = {
 };
 
 const result = differenceDeep(A, B);
-console.log(result);
+// console.log(result);
 
 
-/* Expects an object like event.details.selectedDateTime.date in a form of a function:
+/**
+ * Extracts the property access path from a function that accesses nested properties.
+ * 
+ * @example
+ * // Returns: "details.selectedDateTime.date"
+ * const path = pathFromNestedProperty((event) => event.details[0].selectedDateTime.date);
+ * 
+ * @remarks
+ * IMPORTANT: This function returns ONLY the property path, NOT including the root object name.
+ * Including root object names in a type-safe way is impossible in TypeScript/JavaScript.
+ * If needed, manually add the root name, but this breaks type safety.
+ * 
+ * @param fn - A function that accesses nested properties of an object
+ * @returns The dot-notation property path (WITHOUT the root object name, e.g. "details.0.selectedDateTime.date")
+ */
 
-(event) => event.details.selectedDateTime.date
-
-and dynamically returns the full path of the nested properties as string:
-
-"event.details.selectedDateTime.date"
-
-The only reason it requires a function instead of just the plain object is to be able to detect the name of the object using proxy - which is not working on object properties (they are passed by value).
-*/
-
-export function getPathOfNestedObjectProperty(fn: any): string {
-  // Extract the parameter name from the function string representation
-  const fnStr = fn.toString();
-  const paramMatch = fnStr.match(/^\s*\(?\s*([^)=\s]+)/);
-  const rootName = paramMatch ? paramMatch[1] : '';
-
+export function pathFromNestedProperty<T>(fn: (obj: T) => any): string {
   const path: string[] = [];
-
-  if (rootName !== '') { path.push(rootName) };
+  
   const proxy = new Proxy({}, {
-    get(target: object, prop: string) {
-      path.push(prop);
+    get(target: object, prop: string | symbol) {
+      if (typeof prop === 'string') {
+        path.push(prop);
+      }
       return proxy;
     }
   });
-  fn(proxy);
-
+  
+  // Call the function with our proxy to capture the property access path
+  fn(proxy as T);
+  
   return path.join('.');
+}
+
+
+export function valueFromPath(obj: any, path: string): any {
+    if (!path || path === '') {
+        return obj;
+    }
+    return path.split('.').reduce((acc: any, prop: string) => acc[prop], obj);
 }
