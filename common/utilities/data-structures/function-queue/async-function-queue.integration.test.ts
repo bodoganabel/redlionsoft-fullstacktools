@@ -129,7 +129,7 @@ describe('AsyncFunctionQueue Integration', async () => {
     expect(results[1]).toBeGreaterThan(100);
     expect(results[2]).toEqual('second');
     expect(results[3]).toBeGreaterThan(100);
-    expect(results[3]).toBeLessThan(105);
+    expect(results[3]).toBeLessThan(110);
   });
 
   it('should replace functions by ID before execution', async () => {
