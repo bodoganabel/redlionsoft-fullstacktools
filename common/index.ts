@@ -1,4 +1,5 @@
 export * from "./validators/validators";
+export * from "./utilities/data";
 
 /**
  * Determines if the application is running in production mode by process.env.NODE_ENV === 'production'.

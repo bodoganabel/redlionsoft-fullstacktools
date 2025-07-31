@@ -107,3 +107,70 @@ export function valueFromPath(obj: any, path: string): any {
     }
     return path.split('.').reduce((acc: any, prop: string) => acc[prop], obj);
 }
+
+/**
+ * Recursively lists all object keys and nested keys from an object as dot-notation paths.
+ * Returns an array of all property paths found at any depth in the object hierarchy,
+ * including array indices.
+ * 
+ * @example
+ * const obj = {
+ *   name: "John",
+ *   details: {
+ *     age: 30,
+ *     address: {
+ *       city: "New York",
+ *       country: "USA"
+ *     }
+ *   },
+ *   layer1: [
+ *     { prop: "something" },
+ *     { prop: { key: "1", another: 4 } }
+ *   ]
+ * };
+ * 
+ * const allPaths = objectKeysRecursive(obj);
+ * // Returns: ["name", "details", "details.age", "details.address", "details.address.city", 
+ * //          "details.address.country", "layer1", "layer1.0.prop", "layer1.1.prop", 
+ * //          "layer1.1.prop.key", "layer1.1.prop.another"]
+ * 
+ * @param obj - The object to extract paths from
+ * @param currentPath - Internal parameter for building the current path (do not pass manually)
+ * @param visited - Internal parameter to prevent infinite recursion (do not pass manually)
+ * @returns Array of all dot-notation paths found in the object hierarchy
+ */
+export function objectKeysRecursive(obj: any, currentPath = '', visited = new WeakSet()): string[] {
+    if (!obj || typeof obj !== 'object' || visited.has(obj)) {
+        return [];
+    }
+    
+    // Mark this object as visited to prevent infinite recursion
+    visited.add(obj);
+    
+    const allPaths: string[] = [];
+    
+    // Handle arrays
+    if (Array.isArray(obj)) {
+        obj.forEach((item, index) => {
+            const indexPath = currentPath ? `${currentPath}.${index}` : `${index}`;
+            
+            if (item && typeof item === 'object') {
+                allPaths.push(...objectKeysRecursive(item, indexPath, visited));
+            }
+        });
+        return allPaths;
+    }
+    
+    // Handle regular objects
+    for (const key of Object.keys(obj)) {
+        const keyPath = currentPath ? `${currentPath}.${key}` : key;
+        allPaths.push(keyPath);
+        
+        const value = obj[key];
+        if (value && typeof value === 'object') {
+            allPaths.push(...objectKeysRecursive(value, keyPath, visited));
+        }
+    }
+    
+    return allPaths;
+}
