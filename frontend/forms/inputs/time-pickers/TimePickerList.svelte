@@ -6,6 +6,7 @@
   export let selectedDateTime: DateTime | null = null;
   export let onConfirmSelection: (date: DateTime) => void = () => {};
   export let timezone: string;
+  export let confirmText: string = "OK";
 
   let selectedIndex = -1;
 </script>
@@ -28,7 +29,7 @@
           on:click={async () => {
             onConfirmSelection(availableDateTime);
             selectedIndex = index;
-          }}>OK</button
+          }}>{confirmText}</button
         >
       {/if}
     </div>
