@@ -308,7 +308,7 @@ export class JobService<TJobMetadata> {
     }
 
 
-    async getPendingJobs(): Promise<TServerJob<TJobMetadata>[]> {
+    async getPendingJobs(submissionId?: string): Promise<TServerJob<TJobMetadata>[]> {
         try {
             await this.initCollection();
 
@@ -317,7 +317,8 @@ export class JobService<TJobMetadata> {
             // Find jobs that are pending and due to run
             const pendingJobs = await this.collection.find({
                 status: EJobStatuses.PENDING,
-                targetDateIso: { $lte: now }
+                targetDateIso: { $lte: now },
+                ...(submissionId ? { submissionId } : {})
             }).toArray();
 
             return pendingJobs as unknown as TServerJob<TJobMetadata>[] | [];
