@@ -1,0 +1,1 @@
+Use these template files when creationg endpoints and client requests for communoicating with the endpoints
