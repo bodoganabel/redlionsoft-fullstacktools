@@ -6,12 +6,12 @@ import { z } from "zod/v4";
 import { Database } from "../database";
 import { createServerJobSchema, EJobStatuses, JOB_RETRIES_ALLOWED_DEFAULT, type TServerJob } from "./job.types";
 import type { AuthService } from "../auth/auth.service";
-import { devOnly } from "../../common/utilities/general";
+import { validate } from "../endpoints/utils";
 
 export class JobService<TJobMetadata> {
     private collection!: Collection;
     private authService: AuthService<any, any, any, any>;
-    private jobSchema: z.ZodType;
+    private jobSchema: z.ZodType<TServerJob<TJobMetadata>>;
     private collectionName = "serverJobs";
     private actionExecutor: (job: TServerJob<TJobMetadata>) => Promise<{ error: null | string, data: null | string }>;
 
@@ -20,7 +20,7 @@ export class JobService<TJobMetadata> {
         actionExecutor: (job: TServerJob<TJobMetadata>) => Promise<{ error: null | string, data: null | string }>,
         options: {
             collectionName?: string;
-            metadataSchema: z.ZodType;
+            metadataSchema: z.ZodType<TJobMetadata>;
         }
     ) {
         this.authService = authService;
@@ -38,37 +38,10 @@ export class JobService<TJobMetadata> {
         }
         return this.collection;
     }
-
-    /**
-     * Validate job data using the schema
-     */
-    private validateJobData(data: unknown): z.infer<typeof this.jobSchema> | null {
-        try {
-            devOnly(() => {
-                console.log("Validating job data:", data);
-            });
-
-            const validated = this.jobSchema.parse(data);
-
-            devOnly(() => {
-                console.log("Job validation passed:", validated);
-            });
-
-            return validated;
-        } catch (error) {
-            if (error instanceof z.ZodError) {
-                console.log('Job validation errors:');
-                console.log(error.flatten());
-                console.error(error.format());
-            }
-            return null;
-        }
-    }
-
     /**
      * Create a new job
      */
-    async createJob(jobData: TServerJob<TJobMetadata>): Promise<Response> {
+    async createJob(jobData: TServerJob<TJobMetadata>): Promise<TServerJob<TJobMetadata> | null> {
         try {
             await this.initCollection();
 
@@ -82,29 +55,17 @@ export class JobService<TJobMetadata> {
             jobData.retriesAllowed = jobData.retriesAllowed || JOB_RETRIES_ALLOWED_DEFAULT;
             jobData.targetDateIso = jobData.targetDateIso;
 
-            const validatedJobData = this.validateJobData(jobData);
+            const {data: validatedJobData, error} = validate<TServerJob<TJobMetadata>>(jobData, this.jobSchema);
             if (!validatedJobData) {
-                return json({
-                    error: {
-                        message: "Invalid job data format",
-                        code: "VALIDATION_ERROR"
-                    }
-                }, { status: 400 });
+                return null;
             }
 
             const result = await this.collection.insertOne(validatedJobData);
 
-            return json({
-                data: { ...validatedJobData, _id: result.insertedId }
-            }, { status: 200 });
+            return { ...validatedJobData, _id: result.insertedId }
         } catch (error) {
             console.error("Failed to create job:", error);
-            return json({
-                error: {
-                    message: "Failed to create job",
-                    code: "INSERT_FAILED"
-                }
-            }, { status: 500 });
+            return null;
         }
     }
 
@@ -173,7 +134,7 @@ export class JobService<TJobMetadata> {
     /**
      * Update an existing job
      */
-    async updateJob(oldJob: TServerJob<TJobMetadata>, newJob: Partial<TServerJob<TJobMetadata>>): Promise<Response> {
+    async updateJob(oldJob: TServerJob<TJobMetadata>, newJob: Partial<TServerJob<TJobMetadata>>): Promise<{error: string | null, data: TServerJob<TJobMetadata> | null}> {
         try {
             await this.initCollection();
             // Find the existing job
@@ -182,12 +143,7 @@ export class JobService<TJobMetadata> {
             });
 
             if (!existingJob) {
-                return json({
-                    error: {
-                        message: "Job not found",
-                        code: "RESOURCE_NOT_FOUND"
-                    }
-                }, { status: 404 });
+                return {error: "Job not found", data: null} ;
             }
 
             // Merge with existing job and validate
@@ -199,14 +155,14 @@ export class JobService<TJobMetadata> {
                 updatedAt: DateTime.now().toUTC().toISO()
             };
 
-            const validatedJobData = this.validateJobData(updatedJob);
+            const {data: validatedJobData, error} = validate<TServerJob<TJobMetadata>>(updatedJob, this.jobSchema);
+            if (error) {
+                return {error: error, data: null};
+            }
+
+            // Ensure validatedJobData is not null (should never happen if validation succeeds)
             if (!validatedJobData) {
-                return json({
-                    error: {
-                        message: "Invalid job data format",
-                        code: "VALIDATION_ERROR"
-                    }
-                }, { status: 400 });
+                return {error: "Validation succeeded but data is null", data: null};
             }
 
             // Update the job
@@ -217,25 +173,15 @@ export class JobService<TJobMetadata> {
             );
 
             if (!result) {
-                return json({
-                    error: {
-                        message: "Failed to update job",
-                        code: "UPDATE_FAILED"
-                    }
-                }, { status: 500 });
+                return {error: "Failed to update job", data: null};
             }
 
-            return json({
-                data: result
-            }, { status: 200 });
+            const freshJob = result.value as TServerJob<TJobMetadata>;
+
+            return {error: null, data: freshJob};
         } catch (error) {
             console.error("Failed to update job:", error);
-            return json({
-                error: {
-                    message: "Failed to update job",
-                    code: "UPDATE_FAILED"
-                }
-            }, { status: 500 });
+            return {error: "Failed to update job", data: null};
         }
     }
 

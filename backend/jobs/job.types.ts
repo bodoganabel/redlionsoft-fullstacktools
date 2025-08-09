@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { ObjectId } from 'bson'
 
 export enum EJobStatuses {
     PENDING = "PENDING",
@@ -10,7 +11,7 @@ export const JOB_RETRIES_ALLOWED_DEFAULT = 1;
 
 // Base schema without metadata
 export const ServerJobBaseSchema = z.object({
-    _id: z.string().optional(),
+    _id: z.custom<ObjectId>(),
     userId: z.string(),
     name: z.string(),
     description: z.string().optional(),
@@ -31,16 +32,16 @@ export const DefaultMetadataSchema = z.record(z.any(), z.any());
 
 /**
  * Creates a job schema with custom metadata schema
- * @template TMetadata The Zod schema type for metadata
+ * @template TMetadata The metadata type that will be validated
  * @param metadataSchema The Zod schema for metadata validation
  * @returns A Zod schema for server jobs with the specified metadata schema
  */
-export function createServerJobSchema<TMetadata extends z.ZodType>(
-    metadataSchema: TMetadata
-) {
+export function createServerJobSchema<TMetadata>(
+    metadataSchema: z.ZodType<TMetadata>
+): z.ZodType<TServerJob<TMetadata>> {
     return ServerJobBaseSchema.extend({
         metadata: metadataSchema,
-    });
+    }) as z.ZodType<TServerJob<TMetadata>>;
 }
 
 // Type for a server job with strongly typed metadata
