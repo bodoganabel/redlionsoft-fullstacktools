@@ -1,7 +1,6 @@
 import { json } from "@sveltejs/kit";
 import type { AuthService } from "../auth/auth.service";
 import { JobService } from "./job.service";
-import { z } from "zod/v4";
 import type { TServerJob } from "./job.types";
 
 
