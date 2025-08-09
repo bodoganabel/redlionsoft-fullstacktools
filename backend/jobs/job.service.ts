@@ -7,6 +7,7 @@ import { Database } from "../database";
 import { createServerJobSchema, EJobStatuses, JOB_RETRIES_ALLOWED_DEFAULT, type TServerJob } from "./job.types";
 import type { AuthService } from "../auth/auth.service";
 import { validate } from "../endpoints/utils";
+import { mongoQueryTypesafe } from '$redlionsoft/common/utilities/database/typesafe-query';
 
 export class JobService<TJobMetadata> {
     private collection!: Collection;
@@ -29,6 +30,9 @@ export class JobService<TJobMetadata> {
         this.actionExecutor = actionExecutor;
     }
 
+    getCollection(): Collection {
+        return this.collection;
+    }
     /**
      * Initialize the collection when needed
      */
@@ -242,18 +246,21 @@ export class JobService<TJobMetadata> {
     }
 
 
-    async getPendingJobs(submissionId?: string): Promise<TServerJob<TJobMetadata>[]> {
+    async getPendingJobs(): Promise<TServerJob<TJobMetadata>[]> {
         try {
             await this.initCollection();
 
             const now = DateTime.now().toUTC().toISO();
 
             // Find jobs that are pending and due to run
-            const pendingJobs = await this.collection.find({
+
+            const mongoQuery = 
+            mongoQueryTypesafe<TServerJob<Partial<TJobMetadata>>>({
                 status: EJobStatuses.PENDING,
                 targetDateIso: { $lte: now },
-                ...(submissionId ? { submissionId } : {})
-            }).toArray();
+            });
+
+            const pendingJobs = await this.collection.find(mongoQuery).toArray();
 
             return pendingJobs as unknown as TServerJob<TJobMetadata>[] | [];
         } catch (error) {
