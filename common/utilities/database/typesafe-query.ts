@@ -1,3 +1,5 @@
+import { ObjectId } from "mongodb";
+
 export type MongoOperator =
   // Comparison operators
   | "$eq" | "$gt" | "$gte" | "$in" | "$lt" | "$lte" | "$ne" | "$nin"
@@ -26,7 +28,7 @@ export type MongoQueryValue<T = any> =
   | null                   // null value
   | undefined              // undefined value
   // Special case handling for common MongoDB operators
-  | { $regex?: string | RegExp; $options?: string; } 
+  | { $regex?: string | RegExp; $options?: string; }
   | { $in?: any[]; } // Allow any array for $in operator
   | { $nin?: any[]; } // Allow any array for $nin operator
   | { [key in Exclude<MongoOperator, "$regex" | "$options" | "$in" | "$nin">]?: any }; // Other operators
@@ -55,22 +57,22 @@ export type MongoQueryValue<T = any> =
  */
 export type MongoQuery<T> = {
   // Allow direct properties from T with proper typing
-  [K in keyof T & string]?: 
-    // Handle arrays with special consideration for null/undefined elements
-    T[K] extends Array<infer U>
-      ? MongoQueryValue<T[K]> | (U extends object ? Array<MongoQuery<U> | null | undefined> : Array<U | null | undefined>)
-      // Handle nested objects
-      : T[K] extends Record<string, any>
-        ? MongoQuery<T[K]> | MongoQueryValue<T[K]>
-        // Handle primitive values
-        : MongoQueryValue<T[K]>;
+  [K in keyof T & string]?:
+  // Handle arrays with special consideration for null/undefined elements
+  T[K] extends Array<infer U>
+  ? MongoQueryValue<T[K]> | (U extends object ? Array<MongoQuery<U> | null | undefined> : Array<U | null | undefined>)
+  // Handle nested objects
+  : T[K] extends Record<string, any>
+  ? MongoQuery<T[K]> | MongoQueryValue<T[K]>
+  // Handle primitive values
+  : MongoQueryValue<T[K]>;
 } & {
   // Allow MongoDB logical operators
   "$and"?: MongoQuery<T>[];
   "$or"?: MongoQuery<T>[];
   "$nor"?: MongoQuery<T>[];
   "$not"?: MongoQuery<T>;
-  
+
   // Allow other MongoDB operators
   "$eq"?: any;
   "$gt"?: any;
@@ -107,17 +109,27 @@ function isMongoOperator(key: string): boolean {
 }
 
 function isPrimitiveOrDate(value: any): boolean {
-  return value === null || 
-         value === undefined || 
-         typeof value !== 'object' || 
-         value instanceof Date;
+
+  const typeofValue = typeof value;
+  // is ObjectId
+  const isValidObjectId = typeofValue !== 'string' && ObjectId.isValid(value);
+  if (isValidObjectId) return true;
+
+  // is Date
+  const instanceofDate = value instanceof Date;
+  if (instanceofDate) return true;
+
+  if (value === null) return true;
+  if (value === undefined) return true;
+  if (typeofValue !== 'object') return true;
+  return false;
 }
 
 
 function containsComplexObjects(array: any[]): boolean {
-  return array.some(item => item !== null && 
-                           typeof item === 'object' && 
-                           !(item instanceof Date));
+  return array.some(item => item !== null &&
+    typeof item === 'object' &&
+    !(item instanceof Date));
 }
 
 /**
@@ -125,7 +137,7 @@ function containsComplexObjects(array: any[]): boolean {
  */
 function processLogicalOperators(value: any): Record<string, any> {
   const result: Record<string, any> = {};
-  
+
   for (const key of Object.keys(value)) {
     if (isMongoOperator(key)) {
       if (['$and', '$or', '$nor'].includes(key)) {
@@ -142,7 +154,7 @@ function processLogicalOperators(value: any): Record<string, any> {
       result[key] = processQueryValue(value[key]);
     }
   }
-  
+
   return result;
 }
 
@@ -161,22 +173,22 @@ function processArray(array: any[], prefixKey: string, accumulator: Record<strin
     accumulator[convertArrayNotationToDotNotation(prefixKey)] = array;
     return accumulator;
   }
-  
+
   // For arrays of primitive values like strings in changedFields
   const isPrimitiveArray = array.every(item => isPrimitiveOrDate(item) || item === null);
   const isTopLevel = !prefixKey.includes('.');
-  
+
   // Keep tags array intact to match tests, but flatten all other arrays
   if ((isPrimitiveArray && isTopLevel) || prefixKey === 'tags') {
     accumulator[convertArrayNotationToDotNotation(prefixKey)] = array;
     return accumulator;
   }
-  
+
   // Process each element in the array
   for (let index = 0; index < array.length; index++) {
     const item = array[index];
     const indexedKey = `${prefixKey}[${index}]`;
-    
+
     if (item === undefined) {
       // Skip undefined elements in arrays completely
       continue;
@@ -202,7 +214,7 @@ function processArray(array: any[], prefixKey: string, accumulator: Record<strin
       }
     }
   }
-  
+
   return accumulator;
 }
 
@@ -217,14 +229,14 @@ function processFieldOperators(key: string, value: any, prefixKey: string, accum
   const hasOperators = Object.keys(value).some(isMongoOperator);
   const hasNonOperators = Object.keys(value).some(k => !isMongoOperator(k));
   const formattedPath = convertArrayNotationToDotNotation(prefixKey);
-  
+
   if (hasOperators && !hasNonOperators) {
     // Pure operator object - e.g., { age: { $gt: 18 } }
     accumulator[formattedPath] = processQueryValue(value);
   } else if (hasOperators && hasNonOperators) {
     // Mixed operators and fields - separate them
     const operatorObject: Record<string, any> = {};
-    
+
     Object.entries(value).forEach(([subKey, subValue]) => {
       if (isMongoOperator(subKey)) {
         // Add operator to the parent field
@@ -235,7 +247,7 @@ function processFieldOperators(key: string, value: any, prefixKey: string, accum
         accumulator[convertArrayNotationToDotNotation(nestedKey)] = processQueryValue(subValue);
       }
     });
-    
+
     // Only add the operator object if it has properties
     if (Object.keys(operatorObject).length > 0) {
       accumulator[formattedPath] = operatorObject;
@@ -244,8 +256,8 @@ function processFieldOperators(key: string, value: any, prefixKey: string, accum
     // No operators - just nested fields
     Object.entries(value).forEach(([subKey, subValue]) => {
       const nestedKey = `${prefixKey}.${subKey}`;
-      if (typeof subValue === 'object' && subValue !== null && !Array.isArray(subValue) && 
-          !isPrimitiveOrDate(subValue) && Object.keys(subValue).length > 0) {
+      if (typeof subValue === 'object' && subValue !== null && !Array.isArray(subValue) &&
+        !isPrimitiveOrDate(subValue) && Object.keys(subValue).length > 0) {
         // Recursively process nested objects
         Object.assign(accumulator, flattenObject({ [subKey]: subValue }, prefixKey));
       } else {
@@ -253,7 +265,7 @@ function processFieldOperators(key: string, value: any, prefixKey: string, accum
       }
     });
   }
-  
+
   return accumulator;
 }
 
@@ -273,29 +285,29 @@ function processQueryValue(value: any): any {
   if (isPrimitiveOrDate(value)) {
     return value;
   }
-  
+
   // Handle arrays
   if (Array.isArray(value)) {
     return value.map(item => processQueryValue(item));
   }
-  
+
   // For objects, process them based on content
   if (typeof value === 'object' && value !== null) {
     // Identify logical operators ($and, $or, $nor, $not)
-    const logicalOperatorKeys = Object.keys(value).filter(k => 
+    const logicalOperatorKeys = Object.keys(value).filter(k =>
       isMongoOperator(k) && ['$and', '$or', '$nor', '$not'].includes(k));
     const regularKeys = Object.keys(value).filter(k => !logicalOperatorKeys.includes(k));
-    
+
     // If we have logical operators mixed with regular fields, handle them specially
     if (logicalOperatorKeys.length > 0) {
       // First, extract and process the logical operators
       const result: Record<string, any> = {};
-      
+
       // Add logical operators
       for (const opKey of logicalOperatorKeys) {
         result[opKey] = processQueryValue(value[opKey]);
       }
-      
+
       // Process and add regular fields as flattened dot notation
       if (regularKeys.length > 0) {
         const regularObj: Record<string, any> = {};
@@ -306,11 +318,11 @@ function processQueryValue(value: any): any {
         const flattened = flattenObject(regularObj);
         Object.assign(result, flattened);
       }
-      
+
       return result;
     }
   }
-  
+
   // Regular object - ensure we flatten it properly
   return flattenObject(value);
 }
@@ -329,52 +341,52 @@ function processQueryValue(value: any): any {
 function flattenObject(obj: Record<string, any>, prefix = ''): Record<string, any> {
   // Starting with an empty object to accumulate flattened paths
   const result: Record<string, any> = {};
-  
+
   // Process each key in the object
   for (const key of Object.keys(obj)) {
     const value = obj[key];
     const newKey = prefix ? `${prefix}.${key}` : key;
-    
+
     // Special handling for MongoDB operators (starting with $)
     if (isMongoOperator(key)) {
       result[key] = processQueryValue(value);
       continue;
     }
-    
+
     // Handle basic primitives and nulls
     if (isPrimitiveOrDate(value)) {
       result[convertArrayNotationToDotNotation(newKey)] = value;
       continue;
     }
-    
+
     // Handle empty objects
-    if (typeof value === 'object' && value !== null && 
-        !Array.isArray(value) && Object.keys(value).length === 0) {
+    if (typeof value === 'object' && value !== null &&
+      !Array.isArray(value) && Object.keys(value).length === 0) {
       result[convertArrayNotationToDotNotation(newKey)] = {};
       continue;
     }
-    
+
     // Process MongoDB operator objects for fields ($gt, $lt, etc)
-    if (typeof value === 'object' && value !== null && 
-        !Array.isArray(value) && Object.keys(value).some(isMongoOperator)) {
+    if (typeof value === 'object' && value !== null &&
+      !Array.isArray(value) && Object.keys(value).some(isMongoOperator)) {
       // Process fields with MongoDB operators
       Object.assign(result, processFieldOperators(key, value, newKey, {}));
       continue;
     }
-    
+
     // Process arrays
     if (Array.isArray(value)) {
       Object.assign(result, processArray(value, newKey, {}));
       continue;
     }
-    
+
     // For regular nested objects, recursively flatten
     if (typeof value === 'object' && value !== null) {
       // This is the key part - recursively flatten nested objects
       Object.assign(result, flattenObject(value, newKey));
     }
   }
-  
+
   return result;
 }
 

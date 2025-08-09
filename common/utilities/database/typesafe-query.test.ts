@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { ObjectId } from 'mongodb';
 import { mongoQueryTypesafe } from './typesafe-query';
 
 describe('mongoQueryTypesafe', () => {
@@ -279,6 +280,31 @@ describe('mongoQueryTypesafe', () => {
         { endDateUtc: { $lt: '2025-M07-30T12:00:00.000Z' } }
       ]
     });
+  });
+
+  it('should handle ObjectId instances as primitives without flattening', () => {
+    const testObjectId = new ObjectId('68974c454a4af37f462e3400');
+    
+    const query = mongoQueryTypesafe<TestDocument & { metadata: { submissionId: ObjectId } }>({
+      name: 'John',
+      metadata: {
+        submissionId: testObjectId
+      }
+    });
+
+    expect(query).toEqual({
+      name: 'John',
+      'metadata.submissionId': testObjectId
+    });
+    
+    // Verify the ObjectId is preserved as-is, not flattened into buffer properties
+    expect(query['metadata.submissionId']).toBeInstanceOf(ObjectId);
+    expect(query['metadata.submissionId']).toBe(testObjectId);
+    
+    // Ensure no buffer properties were created
+    const keys = Object.keys(query);
+    const bufferKeys = keys.filter(key => key.includes('buffer'));
+    expect(bufferKeys).toHaveLength(0);
   });
 
   it('should handle extremely complex nested structures with multiple operators', () => {
