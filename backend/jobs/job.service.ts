@@ -41,7 +41,7 @@ export class JobService<TJobMetadata> {
     /**
      * Create a new job
      */
-    async createJob(jobData: TServerJob<TJobMetadata>): Promise<TServerJob<TJobMetadata> | null> {
+    async createJob(jobData: TServerJob<TJobMetadata>): Promise<{error: string | null, data: TServerJob<TJobMetadata> | null}> {
         try {
             await this.initCollection();
 
@@ -57,33 +57,33 @@ export class JobService<TJobMetadata> {
 
             const {data: validatedJobData, error} = validate<TServerJob<TJobMetadata>>(jobData, this.jobSchema);
             if (!validatedJobData) {
-                return null;
+                return {error: error, data: null};
             }
 
             const result = await this.collection.insertOne(validatedJobData);
+            const insertedJob = await this.collection.findOne({ _id: result.insertedId }) as TServerJob<TJobMetadata> | null;
 
-            return { ...validatedJobData, _id: result.insertedId }
+            if (insertedJob === null) {
+                return {error: "Failed to create job", data: null};
+            }
+
+            return {error: null, data: insertedJob};
         } catch (error) {
             console.error("Failed to create job:", error);
-            return null;
+            return {error: JSON.stringify(error), data: null};
         }
     }
 
     /**
      * Get jobs by various criteria
      */
-    async getJobs(request: Request, cookies: Cookies): Promise<Response> {
+    async getJobs(request: Request, cookies: Cookies): Promise<{error: string | null, data: TServerJob<TJobMetadata>[] | null}> {
         try {
             await this.initCollection();
 
             const user = await this.authService.getServerUserFromCookies(cookies);
             if (!user) {
-                return json({
-                    error: {
-                        message: "Unauthorized",
-                        code: "AUTH_REQUIRED"
-                    }
-                }, { status: 401 });
+                return {error: "Unauthorized", data: null};
             }
 
             const url = new URL(request.url);
@@ -98,12 +98,7 @@ export class JobService<TJobMetadata> {
                 try {
                     query._id = new ObjectId(jobId);
                 } catch (error) {
-                    return json({
-                        error: {
-                            message: "Invalid job ID format",
-                            code: "VALIDATION_ERROR"
-                        }
-                    }, { status: 400 });
+                    return {error: "Invalid job ID format", data: null};
                 }
             }
 
@@ -115,19 +110,12 @@ export class JobService<TJobMetadata> {
                 query.name = { $regex: name, $options: "i" };
             }
 
-            const results = await this.collection.find(query).toArray();
+            const results = await this.collection.find(query).toArray() as TServerJob<TJobMetadata>[];
 
-            return json({
-                data: results
-            }, { status: 200 });
+            return {error: null, data: results};
         } catch (error) {
             console.error("Failed to fetch jobs:", error);
-            return json({
-                error: {
-                    message: "Failed to fetch jobs",
-                    code: "FETCH_ERROR"
-                }
-            }, { status: 500 });
+            return {error: JSON.stringify(error), data: null};
         }
     }
 
