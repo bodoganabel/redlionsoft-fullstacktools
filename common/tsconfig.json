@@ -22,7 +22,9 @@
       "dom.iterable"
     ],
     "outDir": "dist/common",
+    "baseUrl": ".",
     "paths": {
+      "$redlionsoft/*": ["../*"],
       "$src/*": [
         "./src/*"
       ]

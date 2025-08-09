@@ -23,11 +23,12 @@
       "dom.iterable"
     ],
     "outDir": "dist/backend",
+    "baseUrl": ".",
     "paths": {
+      "$redlionsoft/*": ["../*"],
       "$src/*": [
         "./src/*"
       ]
     },
-    "baseUrl": "."
   }
 }
