@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ObjectId } from 'mongodb';
+import { ObjectId } from 'bson';
 import { mongoQueryTypesafe } from './typesafe-query';
 
 describe('mongoQueryTypesafe', () => {

@@ -45,14 +45,15 @@ export class JobService<TJobMetadata> {
     /**
      * Create a new job
      */
-    async createJob(jobData: TServerJob<TJobMetadata>): Promise<{error: string | null, data: TServerJob<TJobMetadata> | null}> {
+    async createJob(jobData:
+         TServerJob<TJobMetadata>): Promise<{error: string | null, data: TServerJob<TJobMetadata> | null}> {
         try {
             await this.initCollection();
 
             const targetDateAheadFromNow_ms = DateTime.fromISO(jobData.targetDateIso, { setZone: true }).valueOf() - DateTime.now().valueOf();
 
             // Add user ID and default values
-            jobData.userId = jobData.userId.toString();
+            jobData.userId = jobData.userId;
             jobData.createdAt = jobData.createdAt || DateTime.now().toUTC().toISO();
             jobData.status = jobData.status || EJobStatuses.PENDING;
             jobData.retriesHappened = jobData.retriesHappened || 0;

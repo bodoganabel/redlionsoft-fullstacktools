@@ -12,7 +12,7 @@ export const JOB_RETRIES_ALLOWED_DEFAULT = 1;
 // Base schema without metadata
 export const ServerJobBaseSchema = z.object({
     _id: z.custom<ObjectId>(),
-    userId: z.string(),
+    userId: z.custom<ObjectId>(),
     name: z.string(),
     description: z.string().optional(),
     createdAt: z.string().optional(),

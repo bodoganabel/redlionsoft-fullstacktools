@@ -55,7 +55,7 @@ export async function executeBodyEndpoint<TBodySchema extends z.ZodTypeAny, TUse
         const treeifiedError = z.treeifyError(parsedError);
 
         console.log('treeifiedError');
-        console.log(treeifiedError);
+        console.log(JSON.stringify(treeifiedError, null, 2));
 
         const endpointError: TEndpointError = {
             details: isDebugMessageSendable(user as TUserServerRls<any, any, any>) ? JSON.stringify(treeifiedError, null, 2) : "",
