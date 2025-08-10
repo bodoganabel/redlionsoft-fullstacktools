@@ -21,7 +21,7 @@ export const DELETE = EndpointGenerator.RLS_BODY_ENDPOINT(SNamexxx_DELETE_Body, 
     return error;
   }
 
-  const data: TNamexxx_POST_Response = {
+  const data: TNamexxx_DELETE_Response = {
     outDELETE: "Success",
   }
 

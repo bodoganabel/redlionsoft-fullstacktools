@@ -69,7 +69,7 @@ export function parseQuery<TQuerySchema extends z.ZodTypeAny>(url: URL, querySch
 }
 export async function parseBody<TBodySchema extends z.ZodTypeAny>(request: Request, bodySchema: TBodySchema): Promise<{ parsedBody: z.infer<TBodySchema> |null, error: TEndpointError | null }> { 
     
-    const body = await request.json();
+    const body = request.body ? await request.json() : undefined;
 
     const parseResult = bodySchema.safeParse(body);
 

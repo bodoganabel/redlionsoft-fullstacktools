@@ -3,6 +3,7 @@ import { ObjectId } from 'bson'
 
 export enum EJobStatuses {
     PENDING = "PENDING",
+    CANCELLED = "CANCELLED",
     COMPLETED = "COMPLETED",
     FAILED = "FAILED"
 };

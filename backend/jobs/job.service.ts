@@ -67,7 +67,6 @@ export class JobService<TJobMetadata> {
 
             const result = await this.collection.insertOne(validatedJobData);
             const insertedJob = await this.collection.findOne({ _id: result.insertedId }) as TServerJob<TJobMetadata> | null;
-
             if (insertedJob === null) {
                 return {error: "Failed to create job", data: null};
             }

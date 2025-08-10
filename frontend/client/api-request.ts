@@ -34,6 +34,10 @@ export async function apiRequest<TData = any, TInputData = any>(
 
   const { defaultErrorMessage = "An unspecified error occurred" } =
     options;
+  console.log('body:');
+  console.log(body);
+  console.log('sus:');
+  console.log(body ? JSON.stringify(body) : undefined);
 
   try {
     const response = await fetch(url + (query ? `?${new URLSearchParams(query).toString()}` : ""), {
@@ -42,6 +46,9 @@ export async function apiRequest<TData = any, TInputData = any>(
       headers,
       body: body ? JSON.stringify(body) : undefined,
     });
+
+    console.log('response:');
+    console.log(response);
 
     if (!response.ok) {
       let error: TEndpointError;
@@ -53,14 +60,14 @@ export async function apiRequest<TData = any, TInputData = any>(
           ...(await response.json()),
         };
       } catch {
-        error = { 
+        error = {
           errorCode: "SERVER_DEFAULT_ERROR",
           details: defaultErrorMessage,
           status: response.status || 400,
         };
       }
 
-      if(error.toastError){
+      if (error.toastError) {
         toastError(error.toastError);
       }
 
