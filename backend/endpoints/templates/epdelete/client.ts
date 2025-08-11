@@ -14,7 +14,7 @@ export async function clientRequestNamexxx_DELETE(body: TNamexxx_DELETE_Body): P
 
     if (error) {
         switch (error.errorCode) {
-            case ENamexxx_GET_ErrorCodes.ID_NOT_FOUND:
+            case ENamexxx_DELETE_ErrorCodes.ID_NOT_FOUND:
                 toastError("Event not found");
                 break;
             default:

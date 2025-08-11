@@ -53,8 +53,8 @@ export function parseQuery<TQuerySchema extends z.ZodTypeAny>(url: URL, querySch
         const parsedError = safeParseResult.error;
         const treeifiedError = z.treeifyError(parsedError);
 
-        console.log('treeifiedError');
-        console.log(treeifiedError);
+        console.log(`treeifiedError at ${import.meta.url}, line 56`);
+        console.log(JSON.stringify(treeifiedError, null, 2));
 
         const error:TEndpointError = {
             details: 'Invalid Query',
@@ -77,8 +77,8 @@ export async function parseBody<TBodySchema extends z.ZodTypeAny>(request: Reque
         const parsedError = parseResult.error;
         const treeifiedError = z.treeifyError(parsedError);
 
-        console.log('treeifiedError');
-        console.log(treeifiedError);
+        console.log(`treeifiedError at ${import.meta.url}, line 80`);
+        console.log(JSON.stringify(treeifiedError, null, 2));
 
         const error:TEndpointError = {
             details: 'Invalid Body',

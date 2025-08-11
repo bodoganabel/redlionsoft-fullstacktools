@@ -20,6 +20,7 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
         TQuerySchema extends z.ZodTypeAny,
         TResponseSchema extends z.ZodTypeAny
     >(
+        endpointOrigin: string, //for identify the endpoint in the logs
         querySchema: TQuerySchema,
         responseSchema: TResponseSchema,
         options: TEndpointOptions<EPermissions>,
@@ -41,7 +42,7 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
                     return parseError(queryParsingError)
                 }
 
-                const { data, endpointError } = await executeQueryEndpoint(parsedQuery!, handler, request, params, url, user, responseSchema)
+                const { data, endpointError } = await executeQueryEndpoint(parsedQuery!, handler, request, params, url, user, responseSchema, endpointOrigin )
 
                 if (endpointError) {
                     return parseError(endpointError)
@@ -72,6 +73,7 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
         TBodySchema extends z.ZodTypeAny,
         TResponseSchema extends z.ZodTypeAny
     >(
+        endpointOrigin: string, //for identify the endpoint in the logs
         bodySchema: TBodySchema,
         responseSchema: TResponseSchema,
         options: {
@@ -97,7 +99,7 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
                     return parseError(bodyParsingError)
                 }
 
-                const { data, endpointError } = await executeBodyEndpoint(parsedBody!, handler, request, params, url, user, responseSchema)
+                const { data, endpointError } = await executeBodyEndpoint(parsedBody!, handler, request, params, url, user, responseSchema, endpointOrigin)
 
                 if (endpointError) {
                     return parseError(endpointError)

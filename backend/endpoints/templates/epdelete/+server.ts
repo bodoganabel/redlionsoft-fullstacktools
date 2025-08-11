@@ -4,7 +4,7 @@ import { ENamexxx_DELETE_ErrorCodes, SNamexxx_DELETE_Body, SNamexxx_DELETE_Respo
 
 
 //+server.ts
-export const DELETE = EndpointGenerator.RLS_BODY_ENDPOINT(SNamexxx_DELETE_Body, SNamexxx_DELETE_Response, { requireAuthentication: true, requirePermissions: [], responseHeaders: { "Content-Type": "application/json" } }, async ({ params, body, user, request, url }) => {
+export const DELETE = EndpointGenerator.RLS_BODY_ENDPOINT(`${import.meta.url}`,SNamexxx_DELETE_Body, SNamexxx_DELETE_Response, { requireAuthentication: true, requirePermissions: [], responseHeaders: { "Content-Type": "application/json" } }, async ({ params, body, user, request, url }) => {
 
 
   const { id } = params;

@@ -4,7 +4,7 @@ import { ENamexxx_PATCH_ErrorCodes, SNamexxx_PATCH_Body, SNamexxx_PATCH_Response
 
 
 //+server.ts
-export const PATCH = EndpointGenerator.RLS_BODY_ENDPOINT(SNamexxx_PATCH_Body, SNamexxx_PATCH_Response, { requireAuthentication: true, requirePermissions: [], responseHeaders: { "Content-Type": "application/json" } }, async ({ params, body, user, request, url }) => {
+export const PATCH = EndpointGenerator.RLS_BODY_ENDPOINT(`${import.meta.url}`, SNamexxx_PATCH_Body, SNamexxx_PATCH_Response, { requireAuthentication: true, requirePermissions: [], responseHeaders: { "Content-Type": "application/json" } }, async ({ params, body, user, request, url }) => {
 
 
   const { id } = params;

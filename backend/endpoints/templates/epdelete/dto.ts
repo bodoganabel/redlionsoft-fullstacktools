@@ -1,4 +1,4 @@
-// dto.ts
+// DELETE dto.ts
 
 import z from "zod/v4";
 

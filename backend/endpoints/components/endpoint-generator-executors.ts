@@ -4,7 +4,7 @@ import { EGeneralEndpontErrors, type TEndpointError } from "../../../common/back
 import type { TUserServerRls } from "auth/user.types";
 import { isDebugMessageSendable } from "../../endpoints/utils";
 
-export async function executeQueryEndpoint<TQuerySchema extends z.ZodTypeAny, TUserServer, TResponseSchema extends z.ZodTypeAny>(parsedQuery: z.core.output<TQuerySchema>, handler: TQueryEndpointHandler<TQuerySchema, TResponseSchema, TUserServer>, request: Request, params: Partial<Record<string, string>>, url: URL, user: TUserServer | null, responseSchema: TResponseSchema): Promise<{data: z.core.output<TResponseSchema> | null, endpointError: TEndpointError | null}> {
+export async function executeQueryEndpoint<TQuerySchema extends z.ZodTypeAny, TUserServer, TResponseSchema extends z.ZodTypeAny>(parsedQuery: z.core.output<TQuerySchema>, handler: TQueryEndpointHandler<TQuerySchema, TResponseSchema, TUserServer>, request: Request, params: Partial<Record<string, string>>, url: URL, user: TUserServer | null, responseSchema: TResponseSchema, endpointOrigin: string): Promise<{data: z.core.output<TResponseSchema> | null, endpointError: TEndpointError | null}> {
     
     const data = await handler({
         query: parsedQuery,
@@ -21,8 +21,9 @@ export async function executeQueryEndpoint<TQuerySchema extends z.ZodTypeAny, TU
         const parsedError = parsedResponse.error;
         const treeifiedError = z.treeifyError(parsedError);
 
-        console.log('treeifiedError');
-        console.log(treeifiedError);
+        console.log(`from Query request: ${endpointOrigin}`)
+        console.log(`treeifiedError at ${import.meta.url}, line 24`);
+        console.log(JSON.stringify(treeifiedError, null, 2));
 
         const endpointError: TEndpointError = {
             details: isDebugMessageSendable(user as TUserServerRls<any, any, any>) ? JSON.stringify(treeifiedError, null, 2) : "",
@@ -37,7 +38,7 @@ export async function executeQueryEndpoint<TQuerySchema extends z.ZodTypeAny, TU
     return { data: parsedResponse.data, endpointError: null }
 }
 
-export async function executeBodyEndpoint<TBodySchema extends z.ZodTypeAny, TUserServer, TResponseSchema extends z.ZodTypeAny>(parsedBody: z.core.output<TBodySchema>, handler: TBodyEndpointHandler<TBodySchema, TResponseSchema, TUserServer>, request: Request, params: Partial<Record<string, string>>, url: URL, user: TUserServer | null, responseSchema: TResponseSchema): Promise<{data: z.core.output<TResponseSchema> | null, endpointError: TEndpointError | null}> {
+export async function executeBodyEndpoint<TBodySchema extends z.ZodTypeAny, TUserServer, TResponseSchema extends z.ZodTypeAny>(parsedBody: z.core.output<TBodySchema>, handler: TBodyEndpointHandler<TBodySchema, TResponseSchema, TUserServer>, request: Request, params: Partial<Record<string, string>>, url: URL, user: TUserServer | null, responseSchema: TResponseSchema, endpointOrigin: string): Promise<{data: z.core.output<TResponseSchema> | null, endpointError: TEndpointError | null}> {
     
     const data = await handler({
         body: parsedBody,
@@ -54,7 +55,8 @@ export async function executeBodyEndpoint<TBodySchema extends z.ZodTypeAny, TUse
         const parsedError = parsedResponse.error;
         const treeifiedError = z.treeifyError(parsedError);
 
-        console.log('treeifiedError');
+        console.log(`from Body request: ${endpointOrigin}`)
+        console.log(`treeifiedError  at ${import.meta.url}, line 57`);
         console.log(JSON.stringify(treeifiedError, null, 2));
 
         const endpointError: TEndpointError = {
