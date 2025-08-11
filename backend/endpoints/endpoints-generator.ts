@@ -36,7 +36,7 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
                     return parseError(authError);
                 }
 
-                const { parsedQuery, error: queryParsingError } = parseQuery<TQuerySchema>(url, querySchema);
+                const { parsedQuery, error: queryParsingError } = parseQuery<TQuerySchema>(url, querySchema, endpointOrigin);
 
                 if (queryParsingError) {
                     return parseError(queryParsingError)
@@ -93,7 +93,7 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
                     return parseError(authError);
                 }
 
-                const { parsedBody, error: bodyParsingError } = await parseBody<TBodySchema>(request, bodySchema);
+                const { parsedBody, error: bodyParsingError } = await parseBody<TBodySchema>(request, bodySchema, endpointOrigin);
 
                 if (bodyParsingError) {
                     return parseError(bodyParsingError)

@@ -4,6 +4,7 @@ import type { TUserServerRls } from "auth/user.types";
 import type { TEndpointOptions } from "./endpoint-generator.types";
 import { EGeneralEndpontErrors, type TEndpointError } from "../../../common/backend-frontend/endpoints.types";
 import z from "zod/v4";
+import { devOnly } from "$redlionsoft/common/utilities/general";
 
 export async function handleAuth<TUserServer, EPermissions>(authService: AuthService, cookies: Cookies, options: TEndpointOptions<EPermissions>): Promise<{ error: TEndpointError | null, user: TUserServer | null }> {
 
@@ -42,7 +43,7 @@ export function parseError(error: TEndpointError): Response {
     }, { status: error.status || 400 })
 }
 
-export function parseQuery<TQuerySchema extends z.ZodTypeAny>(url: URL, querySchema: TQuerySchema): { parsedQuery: z.infer<TQuerySchema> |null, error: TEndpointError | null } {
+export function parseQuery<TQuerySchema extends z.ZodTypeAny>(url: URL, querySchema: TQuerySchema, endpointOrigin: string): { parsedQuery: z.infer<TQuerySchema> | null, error: TEndpointError | null } {
     const searchParamsEntries = Array.from(url.searchParams.entries());
     const queryParams = searchParamsEntries.length > 0 ? Object.fromEntries(searchParamsEntries) : undefined;
 
@@ -53,22 +54,26 @@ export function parseQuery<TQuerySchema extends z.ZodTypeAny>(url: URL, querySch
         const parsedError = safeParseResult.error;
         const treeifiedError = z.treeifyError(parsedError);
 
-        console.log(`treeifiedError at ${import.meta.url}, line 56`);
-        console.log(JSON.stringify(treeifiedError, null, 2));
+        devOnly(() => {
+            console.log(`from Query request: ${endpointOrigin}`);
+            console.log(`treeifiedError at ${import.meta.url}, line 56`);
+            console.log(JSON.stringify(treeifiedError, null, 2));
+            console.log("queryParams:", JSON.stringify(queryParams, null, 2));
+        });
 
-        const error:TEndpointError = {
+        const error: TEndpointError = {
             details: 'Invalid Query',
             errorCode: EGeneralEndpontErrors.INVALID_QUERY,
             status: 400,
             toastError: EGeneralEndpontErrors.INVALID_QUERY
-        } 
+        }
 
-        return {error, parsedQuery: null }
+        return { error, parsedQuery: null }
     }
     return { parsedQuery: safeParseResult.data, error: null }
 }
-export async function parseBody<TBodySchema extends z.ZodTypeAny>(request: Request, bodySchema: TBodySchema): Promise<{ parsedBody: z.infer<TBodySchema> |null, error: TEndpointError | null }> { 
-    
+export async function parseBody<TBodySchema extends z.ZodTypeAny>(request: Request, bodySchema: TBodySchema, endpointOrigin: string): Promise<{ parsedBody: z.infer<TBodySchema> | null, error: TEndpointError | null }> {
+
     const body = request.body ? await request.json() : undefined;
 
     const parseResult = bodySchema.safeParse(body);
@@ -77,17 +82,21 @@ export async function parseBody<TBodySchema extends z.ZodTypeAny>(request: Reque
         const parsedError = parseResult.error;
         const treeifiedError = z.treeifyError(parsedError);
 
-        console.log(`treeifiedError at ${import.meta.url}, line 80`);
-        console.log(JSON.stringify(treeifiedError, null, 2));
+        devOnly(() => {
+            console.log(`from Body request: ${endpointOrigin}`);
+            console.log(`treeifiedError at ${import.meta.url}, line 80`);
+            console.log(JSON.stringify(treeifiedError, null, 2));
+            console.log("body:", JSON.stringify(body, null, 2));
+        });
 
-        const error:TEndpointError = {
+        const error: TEndpointError = {
             details: 'Invalid Body',
             errorCode: EGeneralEndpontErrors.INVALID_BODY,
             status: 400,
             toastError: EGeneralEndpontErrors.INVALID_BODY
-        } 
+        }
 
-        return {error, parsedBody: null }
+        return { error, parsedBody: null }
     }
     return { parsedBody: parseResult.data, error: null }
 }

@@ -3,6 +3,7 @@ import type { TBodyEndpointHandler, TQueryEndpointHandler } from "./endpoint-gen
 import { EGeneralEndpontErrors, type TEndpointError } from "../../../common/backend-frontend/endpoints.types";
 import type { TUserServerRls } from "auth/user.types";
 import { isDebugMessageSendable } from "../../endpoints/utils";
+import { devOnly } from "$redlionsoft/common/utilities/general";
 
 export async function executeQueryEndpoint<TQuerySchema extends z.ZodTypeAny, TUserServer, TResponseSchema extends z.ZodTypeAny>(parsedQuery: z.core.output<TQuerySchema>, handler: TQueryEndpointHandler<TQuerySchema, TResponseSchema, TUserServer>, request: Request, params: Partial<Record<string, string>>, url: URL, user: TUserServer | null, responseSchema: TResponseSchema, endpointOrigin: string): Promise<{data: z.core.output<TResponseSchema> | null, endpointError: TEndpointError | null}> {
     
@@ -21,9 +22,12 @@ export async function executeQueryEndpoint<TQuerySchema extends z.ZodTypeAny, TU
         const parsedError = parsedResponse.error;
         const treeifiedError = z.treeifyError(parsedError);
 
-        console.log(`from Query request: ${endpointOrigin}`)
-        console.log(`treeifiedError at ${import.meta.url}, line 24`);
-        console.log(JSON.stringify(treeifiedError, null, 2));
+        devOnly(() => {
+            console.log(`from Query request: ${endpointOrigin}`)
+            console.log(`treeifiedError at ${import.meta.url}, line 24`);
+            console.log(JSON.stringify(treeifiedError, null, 2));
+            console.log("data:", JSON.stringify(data, null, 2));
+        });
 
         const endpointError: TEndpointError = {
             details: isDebugMessageSendable(user as TUserServerRls<any, any, any>) ? JSON.stringify(treeifiedError, null, 2) : "",
@@ -55,9 +59,12 @@ export async function executeBodyEndpoint<TBodySchema extends z.ZodTypeAny, TUse
         const parsedError = parsedResponse.error;
         const treeifiedError = z.treeifyError(parsedError);
 
-        console.log(`from Body request: ${endpointOrigin}`)
-        console.log(`treeifiedError  at ${import.meta.url}, line 57`);
-        console.log(JSON.stringify(treeifiedError, null, 2));
+        devOnly(() => {
+            console.log(`from Body request: ${endpointOrigin}`)
+            console.log(`treeifiedError  at ${import.meta.url}, line 57`);
+            console.log(JSON.stringify(treeifiedError, null, 2));
+            console.log("data:", JSON.stringify(data, null, 2));
+        });
 
         const endpointError: TEndpointError = {
             details: isDebugMessageSendable(user as TUserServerRls<any, any, any>) ? JSON.stringify(treeifiedError, null, 2) : "",
