@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import { apiRequest } from "$redlionsoft/frontend/client/api-request";
 import { toastError } from "$redlionsoft/frontend/functionality/toast/toast-logic";
 import { ENamexxx_PATCH_ErrorCodes, type TNamexxx_PATCH_Body, type TNamexxx_PATCH_Response } from "./dto";
@@ -15,7 +13,7 @@ export async function clientRequestNamexxx_PATCH(body: TNamexxx_PATCH_Body): Pro
 
     if (error) {
         switch (error.errorCode) {
-            case ENamexxx_GET_ErrorCodes.ID_NOT_FOUND:
+            case ENamexxx_PATCH_ErrorCodes.ID_NOT_FOUND:
                 toastError("Event not found");
                 break;
             default:
