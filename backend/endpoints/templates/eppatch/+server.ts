@@ -1,6 +1,6 @@
-// @ts-nocheck
 import { ENamexxx_PATCH_ErrorCodes, SNamexxx_PATCH_Body, SNamexxx_PATCH_Response, type TNamexxx_PATCH_Response } from "./dto";
-
+import type { TEndpointError } from "$redlionsoft/common/backend-frontend/endpoints.types";
+import { EndpointGenerator } from "$src/backend.base";
 
 
 //+server.ts

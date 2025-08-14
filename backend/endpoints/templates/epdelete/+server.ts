@@ -1,6 +1,6 @@
-// @ts-nocheck
 import { ENamexxx_DELETE_ErrorCodes, SNamexxx_DELETE_Body, SNamexxx_DELETE_Response, type TNamexxx_DELETE_Response } from "./dto";
-
+import type { TEndpointError } from "$redlionsoft/common/backend-frontend/endpoints.types";
+import { EndpointGenerator } from "$src/backend.base";
 
 
 //+server.ts

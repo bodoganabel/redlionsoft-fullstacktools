@@ -1,6 +1,6 @@
-// @ts-nocheck
 import { ENamexxx_PUT_ErrorCodes, SNamexxx_PUT_Body, SNamexxx_PUT_Response, type TNamexxx_PUT_Response } from "./dto";
-
+import type { TEndpointError } from "$redlionsoft/common/backend-frontend/endpoints.types";
+import { EndpointGenerator } from "$src/backend.base";
 
 
 //+server.ts
