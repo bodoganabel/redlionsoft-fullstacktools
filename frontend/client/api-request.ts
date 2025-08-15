@@ -47,8 +47,7 @@ export async function apiRequest<TData = any, TInputData = any>(
       body: body ? JSON.stringify(body) : undefined,
     });
 
-    console.log('response:');
-    console.log(response);
+    const data = await response.json();
 
     if (!response.ok) {
       let error: TEndpointError;
@@ -57,7 +56,7 @@ export async function apiRequest<TData = any, TInputData = any>(
           status: response.status || 400,
           errorCode: "SERVER_DEFAULT_ERROR",
           details: defaultErrorMessage,
-          ...(await response.json()),
+          ...data.error,
         };
       } catch {
         error = {
@@ -78,7 +77,6 @@ export async function apiRequest<TData = any, TInputData = any>(
       };
     }
 
-    const data = await response.json();
     return {
       data,
       error: null,
