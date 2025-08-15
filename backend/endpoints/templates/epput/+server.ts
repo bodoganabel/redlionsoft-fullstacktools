@@ -21,7 +21,7 @@ export const PUT = EndpointGenerator.RLS_BODY_ENDPOINT(`${import.meta.url}`, SNa
     return error;
   }
 
-  const data: TNamexxx_POST_Response = {
+  const data: TNamexxx_PUT_Response = {
     output: "Success",
   }
 

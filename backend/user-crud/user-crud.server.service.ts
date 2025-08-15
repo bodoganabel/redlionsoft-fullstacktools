@@ -47,7 +47,7 @@ export class UserCrudService {
       if (error instanceof z.ZodError) {
         // Human-readable error summary
         console.log('Zod validation errors:');
-        console.log(error.errors.map(e => `Field '${e.path.join('.') || '(root)'}': ${e.message}`).join('; '))
+        console.log(error.format().errors.map((e:any) => `Field '${e.path.join('.') || '(root)'}': ${e.message}`).join('; '))
         console.error(error.format());
         return null;
       }

@@ -21,7 +21,7 @@ export const PATCH = EndpointGenerator.RLS_BODY_ENDPOINT(`${import.meta.url}`, S
     return error;
   }
 
-  const data: TNamexxx_POST_Response = {
+  const data: TNamexxx_PATCH_Response = {
     output: "Success",
   }
 

@@ -40,6 +40,9 @@ export class UCrudResourceClient<TResourceData> {
       data: data,
       resourceId: resourceName,
       createdAt: new Date().toISOString(),
+      order: highestOrder + 1,
+      userId: "",
+      
     };
 
     console.log("newResource:");
