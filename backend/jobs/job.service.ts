@@ -71,6 +71,11 @@ export class JobService<TJobMetadata> {
                 return {error: "Failed to create job", data: null};
             }
 
+            // If job target date is instant, call the executor immediately:
+            if (DateTime.fromISO(insertedJob.targetDateIso, { setZone: true }).valueOf() <= DateTime.now().valueOf()) {
+                await this.actionExecutor(insertedJob);
+            }
+
             return {error: null, data: insertedJob};
         } catch (error) {
             console.error("Failed to create job:", error);
