@@ -57,7 +57,7 @@ export class UserCrudService {
 
   private createChangeHistoryEntry(
     previousData: Record<string, any>,
-    newData: Record<string, any>
+    newData: Record<string, any> | any
   ): ChangeHistoryEntry {
     return {
       timestamp: new Date().toISOString(),
