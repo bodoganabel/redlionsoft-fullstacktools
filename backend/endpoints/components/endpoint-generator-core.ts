@@ -1,10 +1,11 @@
 import { json, type Cookies } from "@sveltejs/kit";
-import type { AuthService } from "auth/auth.service";
-import type { TUserServerRls } from "auth/user.types";
+import type { AuthService } from "../../auth/auth.service";
+import type { TUserServerRls } from "../../auth/user.types";
 import type { TEndpointOptions } from "./endpoint-generator.types";
 import { EGeneralEndpontErrors, type TEndpointError } from "../../../common/backend-frontend/endpoints.types";
-import z from "zod/v4";
 import { devOnly } from "$redlionsoft/common/utilities/general";
+import { logFocusedValidationErrors } from "../../../common/utilities/validation-error-formatter";
+import z from "zod/v4";
 
 export async function handleAuth<TUserServer, EPermissions>(authService: AuthService, cookies: Cookies, options: TEndpointOptions<EPermissions>): Promise<{ error: TEndpointError | null, user: TUserServer | null }> {
 
@@ -52,13 +53,10 @@ export function parseQuery<TQuerySchema extends z.ZodTypeAny>(url: URL, querySch
 
     if (!safeParseResult.success) {
         const parsedError = safeParseResult.error;
-        const treeifiedError = z.treeifyError(parsedError);
 
         devOnly(() => {
-            console.log(`from Query request: ${endpointOrigin}`);
-            console.log(`treeifiedError at ${import.meta.url}, line 56`);
-            console.log(JSON.stringify(treeifiedError, null, 2));
-            console.log("queryParams:", JSON.stringify(queryParams, null, 2));
+            console.log(`🔍 Query validation failed for: ${endpointOrigin}`);
+            logFocusedValidationErrors(parsedError, queryParams, endpointOrigin);
         });
 
         const error: TEndpointError = {
@@ -80,13 +78,10 @@ export async function parseBody<TBodySchema extends z.ZodTypeAny>(request: Reque
 
     if (!parseResult.success) {
         const parsedError = parseResult.error;
-        const treeifiedError = z.treeifyError(parsedError);
 
         devOnly(() => {
-            console.log(`from Body request: ${endpointOrigin}`);
-            console.log(`treeifiedError at ${import.meta.url}, line 80`);
-            console.log(JSON.stringify(treeifiedError, null, 2));
-            console.log("body:", JSON.stringify(body, null, 2));
+            console.log(`🔍 Body validation failed for: ${endpointOrigin}`);
+            logFocusedValidationErrors(parsedError, body, endpointOrigin);
         });
 
         const error: TEndpointError = {
