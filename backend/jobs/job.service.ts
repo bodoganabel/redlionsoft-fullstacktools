@@ -46,7 +46,7 @@ export class JobService<TJobMetadata> {
      * Create a new job
      */
     async createJob(jobData:
-         TServerJob<TJobMetadata>): Promise<{error: string | null, data: TServerJob<TJobMetadata> | null}> {
+        TServerJob<TJobMetadata>): Promise<{ error: string | null, data: TServerJob<TJobMetadata> | null }> {
         try {
             await this.initCollection();
 
@@ -60,39 +60,55 @@ export class JobService<TJobMetadata> {
             jobData.retriesAllowed = jobData.retriesAllowed || JOB_RETRIES_ALLOWED_DEFAULT;
             jobData.targetDateIso = jobData.targetDateIso;
 
-            const {data: validatedJobData, error} = validate<TServerJob<TJobMetadata>>(jobData, this.jobSchema);
+            const { data: validatedJobData, error } = validate<TServerJob<TJobMetadata>>(jobData, this.jobSchema);
             if (!validatedJobData) {
-                return {error: error, data: null};
+                return { error: error, data: null };
             }
 
-            const result = await this.collection.insertOne(validatedJobData);
-            const insertedJob = await this.collection.findOne({ _id: result.insertedId }) as TServerJob<TJobMetadata> | null;
+            const isInstant = DateTime.fromISO(validatedJobData.targetDateIso, { setZone: true }).valueOf() <= DateTime.now().valueOf();
+
+            let jobResult = null;
+            if (isInstant) {
+                const { error:instantJobError, data:instantJobData } = await this.actionExecutor(validatedJobData);
+                
+                if (instantJobError) {
+                    const result = await this.collection.insertOne({ ...validatedJobData, status: EJobStatuses.FAILED });
+                    
+                    return { error: instantJobError, data: null };
+                } else {
+                    const result = await this.collection.insertOne({ ...validatedJobData, status: EJobStatuses.COMPLETED });
+                    jobResult = result;
+                }
+            } else {
+
+                const result = await this.collection.insertOne({ validatedJobData });
+                jobResult = result;
+            }
+            if (!jobResult) {
+                return { error: "Failed to create job", data: null };
+            }
+            const insertedJob = await this.collection.findOne({ _id: jobResult.insertedId }) as TServerJob<TJobMetadata> | null;
             if (insertedJob === null) {
-                return {error: "Failed to create job", data: null};
+                return { error: "Failed to create job", data: null };
             }
 
-            // If job target date is instant, call the executor immediately:
-            if (DateTime.fromISO(insertedJob.targetDateIso, { setZone: true }).valueOf() <= DateTime.now().valueOf()) {
-                await this.actionExecutor(insertedJob);
-            }
-
-            return {error: null, data: insertedJob};
+            return { error: null, data: insertedJob };
         } catch (error) {
             console.error("Failed to create job:", error);
-            return {error: JSON.stringify(error), data: null};
+            return { error: JSON.stringify(error), data: null };
         }
     }
 
     /**
      * Get jobs by various criteria
      */
-    async getJobs(request: Request, cookies: Cookies): Promise<{error: string | null, data: TServerJob<TJobMetadata>[] | null}> {
+    async getJobs(request: Request, cookies: Cookies): Promise<{ error: string | null, data: TServerJob<TJobMetadata>[] | null }> {
         try {
             await this.initCollection();
 
             const user = await this.authService.getServerUserFromCookies(cookies);
             if (!user) {
-                return {error: "Unauthorized", data: null};
+                return { error: "Unauthorized", data: null };
             }
 
             const url = new URL(request.url);
@@ -107,7 +123,7 @@ export class JobService<TJobMetadata> {
                 try {
                     query._id = new ObjectId(jobId);
                 } catch (error) {
-                    return {error: "Invalid job ID format", data: null};
+                    return { error: "Invalid job ID format", data: null };
                 }
             }
 
@@ -121,17 +137,17 @@ export class JobService<TJobMetadata> {
 
             const results = await this.collection.find(query).toArray() as TServerJob<TJobMetadata>[];
 
-            return {error: null, data: results};
+            return { error: null, data: results };
         } catch (error) {
             console.error("Failed to fetch jobs:", error);
-            return {error: JSON.stringify(error), data: null};
+            return { error: JSON.stringify(error), data: null };
         }
     }
 
     /**
      * Update an existing job
      */
-    async updateJob(oldJob: TServerJob<TJobMetadata>, newJob: Partial<TServerJob<TJobMetadata>>): Promise<{error: string | null, data: TServerJob<TJobMetadata> | null}> {
+    async updateJob(oldJob: TServerJob<TJobMetadata>, newJob: Partial<TServerJob<TJobMetadata>>): Promise<{ error: string | null, data: TServerJob<TJobMetadata> | null }> {
         try {
             await this.initCollection();
             // Find the existing job
@@ -140,7 +156,7 @@ export class JobService<TJobMetadata> {
             });
 
             if (!existingJob) {
-                return {error: "Job not found", data: null} ;
+                return { error: "Job not found", data: null };
             }
 
             // Merge with existing job and validate
@@ -152,14 +168,14 @@ export class JobService<TJobMetadata> {
                 updatedAt: DateTime.now().toUTC().toISO()
             };
 
-            const {data: validatedJobData, error} = validate<TServerJob<TJobMetadata>>(updatedJob, this.jobSchema);
+            const { data: validatedJobData, error } = validate<TServerJob<TJobMetadata>>(updatedJob, this.jobSchema);
             if (error) {
-                return {error: error, data: null};
+                return { error: error, data: null };
             }
 
             // Ensure validatedJobData is not null (should never happen if validation succeeds)
             if (!validatedJobData) {
-                return {error: "Validation succeeded but data is null", data: null};
+                return { error: "Validation succeeded but data is null", data: null };
             }
 
             // Update the job
@@ -170,15 +186,15 @@ export class JobService<TJobMetadata> {
             );
 
             if (!result) {
-                return {error: "Failed to update job", data: null};
+                return { error: "Failed to update job", data: null };
             }
 
             const freshJob = result.value as TServerJob<TJobMetadata>;
 
-            return {error: null, data: freshJob};
+            return { error: null, data: freshJob };
         } catch (error) {
             console.error("Failed to update job:", error);
-            return {error: "Failed to update job", data: null};
+            return { error: "Failed to update job", data: null };
         }
     }
 
@@ -259,11 +275,11 @@ export class JobService<TJobMetadata> {
 
             // Find jobs that are pending and due to run
 
-            const mongoQuery = 
-            mongoQueryTypesafe<TServerJob<Partial<TJobMetadata>>>({
-                status: EJobStatuses.PENDING,
-                targetDateIso: { $lte: now },
-            });
+            const mongoQuery =
+                mongoQueryTypesafe<TServerJob<Partial<TJobMetadata>>>({
+                    status: EJobStatuses.PENDING,
+                    targetDateIso: { $lte: now },
+                });
 
             const pendingJobs = await this.collection.find(mongoQuery).toArray();
 
