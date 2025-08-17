@@ -20,6 +20,39 @@ import { logFocusedValidationErrors } from "../../common/utilities/validation-er
  * console.log(data); // Typed as User
  * ```
  */
+
+/**
+ * Extracts the endpoint URL from import.meta.url by removing everything before SvelteKit route patterns.
+ * Handles both grouped routes like src/routes/(private)/ and regular routes like src/routes/
+ * 
+ * @param importMetaUrl - The import.meta.url string from the calling file
+ * @returns The endpoint path starting from the route pattern
+ * 
+ * @example
+ * // For: file:///path/to/project/src/routes/(private)/api/users/+server.ts
+ * // Returns: /api/users
+ * 
+ * // For: file:///path/to/project/src/routes/api/events/+server.ts  
+ * // Returns: /api/events
+ */
+export function extractEndpointFromImportUrl(importMetaUrl: string): string {
+  // Pattern to match src/routes/ optionally followed by grouped route like (private)
+  const routePattern = /.*\/src\/routes\/(?:\([^)]+\)\/)?/;
+  
+  // Remove everything before and including the route pattern
+  const endpointPath = importMetaUrl.replace(routePattern, '/');
+  
+  // Remove file extensions and SvelteKit specific files
+  const result = endpointPath
+    .replace(/\/\+server\.ts$/, '')
+    .replace(/\/client\.ts$/, '')
+    .replace(/\.ts$/, '');
+
+    console.log("result");
+    console.log(result);
+    return result;
+}
+
 export async function apiRequest<TData = any, TInputData = any>(
   config: ApiRequestConfig<TInputData>,
   options: ApiRequestOptions = {}
