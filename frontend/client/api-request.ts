@@ -1,6 +1,7 @@
 
 import type { ApiRequestConfig, ApiRequestOptions, ApiResponse, TEndpointError } from "../../common/backend-frontend/endpoints.types";
 import { toastError } from "../functionality/toast/toast-logic";
+import { logFocusedValidationErrors } from "../../common/utilities/validation-error-formatter";
 /**
  * Makes an API request and returns a strongly typed response
  * @example
@@ -30,14 +31,56 @@ export async function apiRequest<TData = any, TInputData = any>(
     body,
     headers = { "Content-Type": "application/json" },
     credentials = "include",
+    querySchema,
+    bodySchema,
   } = config;
 
   const { defaultErrorMessage = "An unspecified error occurred" } =
     options;
-  console.log('body:');
-  console.log(body);
-  console.log('sus:');
-  console.log(body ? JSON.stringify(body) : undefined);
+
+  // Client-side validation for query parameters
+  if (querySchema && query) {
+    const queryValidation = querySchema.safeParse(query);
+    console.log("queryValidation");
+    if (!queryValidation.success) {
+      console.log(`🔍 Client-side query validation failed for: ${url}`);
+      logFocusedValidationErrors(queryValidation.error, query, `${method} ${url} - Query`);
+      
+      toastError("Invalid query parameters");
+      
+      return {
+        data: null,
+        error: {
+          errorCode: "CLIENT_VALIDATION_ERROR",
+          details: "Query parameters validation failed",
+          status: 400,
+        },
+        status: 400,
+      };
+    }
+  }
+
+  // Client-side validation for body parameters
+  if (bodySchema && body) {
+    const bodyValidation = bodySchema.safeParse(body);
+    console.log("body validation")
+    if (!bodyValidation.success) {
+      console.log(`🔍 Client-side body validation failed for: ${url}`);
+      logFocusedValidationErrors(bodyValidation.error, body, `${method} ${url} - Body`);
+      
+      toastError("Invalid request data");
+      
+      return {
+        data: null,
+        error: {
+          errorCode: "CLIENT_VALIDATION_ERROR",
+          details: "Request body validation failed",
+          status: 400,
+        },
+        status: 400,
+      };
+    }
+  }
 
   try {
     const response = await fetch(url + (query ? `?${new URLSearchParams(query).toString()}` : ""), {

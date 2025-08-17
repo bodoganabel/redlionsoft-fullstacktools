@@ -27,6 +27,8 @@ export type ApiRequestConfig<TInputData = unknown> = {
     query?: TInputData;
     headers?: HeadersInit;
     credentials?: RequestCredentials;
+    querySchema?: z.ZodTypeAny;
+    bodySchema?: z.ZodTypeAny;
 };
 
 export type ApiRequestOptions = {
