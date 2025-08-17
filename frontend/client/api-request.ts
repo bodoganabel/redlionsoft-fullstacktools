@@ -38,19 +38,19 @@ import { logFocusedValidationErrors } from "../../common/utilities/validation-er
 export function extractEndpointFromImportUrl(importMetaUrl: string): string {
   // Pattern to match src/routes/ optionally followed by grouped route like (private)
   const routePattern = /.*\/src\/routes\/(?:\([^)]+\)\/)?/;
-  
+
   // Remove everything before and including the route pattern
   const endpointPath = importMetaUrl.replace(routePattern, '/');
-  
+
   // Remove file extensions and SvelteKit specific files
   const result = endpointPath
     .replace(/\/\+server\.ts$/, '')
     .replace(/\/client\.ts$/, '')
     .replace(/\.ts$/, '');
 
-    console.log("result");
-    console.log(result);
-    return result;
+  console.log("result");
+  console.log(result);
+  return result;
 }
 
 export async function apiRequest<TData = any, TInputData = any>(
@@ -64,57 +64,11 @@ export async function apiRequest<TData = any, TInputData = any>(
     body,
     headers = { "Content-Type": "application/json" },
     credentials = "include",
-    querySchema,
-    bodySchema,
   } = config;
 
   const { defaultErrorMessage = "An unspecified error occurred" } =
     options;
-
-  // Client-side validation for query parameters
-  if (querySchema && query) {
-    const queryValidation = querySchema.safeParse(query);
-    console.log("queryValidation");
-    if (!queryValidation.success) {
-      console.log(`🔍 Client-side query validation failed for: ${url}`);
-      logFocusedValidationErrors(queryValidation.error, query, `${method} ${url} - Query`);
-      
-      toastError("Invalid query parameters");
-      
-      return {
-        data: null,
-        error: {
-          errorCode: "CLIENT_VALIDATION_ERROR",
-          details: "Query parameters validation failed",
-          status: 400,
-        },
-        status: 400,
-      };
-    }
-  }
-
-  // Client-side validation for body parameters
-  if (bodySchema && body) {
-    const bodyValidation = bodySchema.safeParse(body);
-    console.log("body validation")
-    if (!bodyValidation.success) {
-      console.log(`🔍 Client-side body validation failed for: ${url}`);
-      logFocusedValidationErrors(bodyValidation.error, body, `${method} ${url} - Body`);
-      
-      toastError("Invalid request data");
-      
-      return {
-        data: null,
-        error: {
-          errorCode: "CLIENT_VALIDATION_ERROR",
-          details: "Request body validation failed",
-          status: 400,
-        },
-        status: 400,
-      };
-    }
-  }
-
+  
   try {
     const response = await fetch(url + (query ? `?${new URLSearchParams(query).toString()}` : ""), {
       method,
