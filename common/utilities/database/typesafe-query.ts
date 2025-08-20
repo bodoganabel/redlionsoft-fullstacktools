@@ -34,6 +34,29 @@ export type MongoQueryValue<T = any> =
   | { [key in Exclude<MongoOperator, "$regex" | "$options" | "$in" | "$nin">]?: any }; // Other operators
 
 /**
+ * MongoDB operators type for nested objects (excludes the full object type)
+ */
+type MongoOperatorValue = 
+  | null
+  | undefined
+  | { $regex?: string | RegExp; $options?: string }
+  | { $in?: any[] }
+  | { $nin?: any[] }
+  | { $eq?: any }
+  | { $gt?: any }
+  | { $gte?: any }
+  | { $lt?: any }
+  | { $lte?: any }
+  | { $ne?: any }
+  | { $exists?: boolean }
+  | { $type?: string | number }
+  | { $expr?: any }
+  | { $jsonSchema?: any }
+  | { $mod?: [number, number] }
+  | { $text?: { $search: string; $language?: string; $caseSensitive?: boolean; $diacriticSensitive?: boolean } }
+  | { $where?: string | Function };
+
+/**
  * Enforces strict type safety for MongoDB query paths
  * Completely disallows string literals as keys to prevent type safety bypass
  */
@@ -61,9 +84,9 @@ export type MongoQuery<T> = {
   // Handle arrays with special consideration for null/undefined elements
   T[K] extends Array<infer U>
   ? MongoQueryValue<T[K]> | (U extends object ? Array<MongoQuery<U> | null | undefined> : Array<U | null | undefined>)
-  // Handle nested objects
-  : T[K] extends Record<string, any>
-  ? MongoQuery<T[K]> | MongoQueryValue<T[K]>
+  // Handle nested objects - allow partial queries (MongoQuery<T[K]>) or MongoDB operators only (no full object)
+  : NonNullable<T[K]> extends Record<string, any>
+  ? MongoQuery<NonNullable<T[K]>> | MongoOperatorValue
   // Handle primitive values
   : MongoQueryValue<T[K]>;
 } & {
