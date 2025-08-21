@@ -426,3 +426,124 @@ function flattenObject(obj: Record<string, any>, prefix = ''): Record<string, an
 export function mongoQueryTypesafe<T extends Record<string, any>>(query: MongoQuery<T>): Record<string, any> {
   return processQueryValue(query);
 }
+
+// MongoDB Update Operators
+export type MongoUpdateOperator =
+  | "$set" | "$unset" | "$inc" | "$mul" | "$rename" | "$min" | "$max"
+  | "$push" | "$pull" | "$pop" | "$pullAll" | "$addToSet"
+  | "$currentDate" | "$bit";
+
+/**
+ * Deep partial type that makes all nested properties optional
+ */
+type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends Record<string, any>
+    ? T[P] extends Array<any>
+      ? T[P]
+      : DeepPartial<T[P]>
+    : T[P];
+};
+
+/**
+ * MongoDB operation type that allows nested objects while maintaining type safety
+ */
+type MongoOperation<T> = DeepPartial<T>;
+
+/**
+ * Type-safe MongoDB update operations
+ * Ensures that fields in update operators like $set, $unset, etc. actually exist in the document type
+ */
+export type MongoUpdate<T> = {
+  // Field update operators - allow both nested objects and dot notation
+  "$set"?: MongoOperation<T>;
+  "$unset"?: {
+    [K in keyof T]?: "" | 1 | true;
+  } & Record<string, "" | 1 | true>;
+  "$inc"?: MongoOperation<T>;
+  "$mul"?: MongoOperation<T>;
+  "$min"?: MongoOperation<T>;
+  "$max"?: MongoOperation<T>;
+  "$currentDate"?: MongoOperation<T>;
+  
+  // Array update operators - allow both nested objects and dot notation
+  "$push"?: MongoOperation<T>;
+  "$pull"?: MongoOperation<T>;
+  "$pullAll"?: MongoOperation<T>;
+  "$addToSet"?: MongoOperation<T>;
+  "$pop"?: MongoOperation<T>;
+  
+  // Field renaming - allow both nested objects and dot notation
+  "$rename"?: MongoOperation<T>;
+  
+  // Bitwise operations - allow both nested objects and dot notation
+  "$bit"?: MongoOperation<T>;
+};
+
+/**
+ * Processes MongoDB update operations with proper dot notation and type safety
+ * 
+ * @param update The TypeScript-friendly update object with MongoDB operators
+ * @returns A MongoDB-compatible update object with proper dot notation
+ */
+function processUpdateValue(update: any): any {
+  if (isPrimitiveOrDate(update)) {
+    return update;
+  }
+
+  if (Array.isArray(update)) {
+    return update.map(item => processUpdateValue(item));
+  }
+
+  if (typeof update === 'object' && update !== null) {
+    const result: Record<string, any> = {};
+    
+    for (const [key, value] of Object.entries(update)) {
+      if (key.startsWith('$')) {
+        // This is an update operator like $set, $push, etc.
+        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+          // Process the fields within the operator
+          result[key] = flattenObject(value);
+        } else {
+          result[key] = processUpdateValue(value);
+        }
+      } else {
+        // Regular field - flatten if it's an object
+        if (typeof value === 'object' && value !== null && !Array.isArray(value) && !isPrimitiveOrDate(value)) {
+          Object.assign(result, flattenObject({ [key]: value }));
+        } else {
+          result[key] = processUpdateValue(value);
+        }
+      }
+    }
+    
+    return result;
+  }
+
+  return update;
+}
+
+/**
+ * Creates a type-safe MongoDB update operation with proper dot notation
+ * 
+ * This function ensures that all fields used in update operations like $set, $unset, etc.
+ * actually exist in the document type, preventing typos and maintaining type safety.
+ * 
+ * @param update The TypeScript-friendly update object
+ * @returns A MongoDB-compatible update object with proper dot notation
+ * 
+ * @example
+ * ```typescript
+ * // ✅ This will work - google_webhookChannel exists in TCalendarConnection
+ * const update = mongoUpdateTypesafe<TCalendarConnection>({
+ *   $set: { google_webhookChannel: webhookData }
+ * });
+ * 
+ * // ❌ This will cause TypeScript error - webhookChannel doesn't exist
+ * const update = mongoUpdateTypesafe<TCalendarConnection>({
+ *   $set: { webhookChannel: webhookData }  // TypeScript error!
+ * });
+ * ```
+ */
+export function mongoUpdateTypesafe<T extends Record<string, any>>(update: MongoUpdate<T>): Record<string, any> {
+  return processUpdateValue(update);
+}

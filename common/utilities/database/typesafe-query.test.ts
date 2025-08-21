@@ -1,40 +1,44 @@
 import { describe, it, expect } from 'vitest';
 import { ObjectId } from 'bson';
-import { mongoQueryTypesafe } from './typesafe-query';
+import { mongoQueryTypesafe, mongoUpdateTypesafe } from './typesafe-query';
+
+
+// Define a test type that covers various data scenarios
+type TestDocument = {
+  _id: string;
+  name: string;
+  age: number;
+  isActive: boolean;
+  tags: string[];
+  profile: {
+    email: string;
+    address: {
+      city: string;
+      country: string;
+      zipCode: string;
+    };
+    phoneNumbers: Array<{
+      type: string;
+      number: string;
+    }>;
+  };
+  history: Array<{
+    action: string;
+    timestamp: string;
+    details: {
+      changedFields: string[];
+      notes: string;
+    };
+  }>;
+  metadata: Record<string, any>;
+  createdAt: Date;
+  startDateUtc: string;
+  endDateUtc: string;
+};
+
 
 describe('mongoQueryTypesafe', () => {
-  // Define a test type that covers various data scenarios
-  type TestDocument = {
-    _id: string;
-    name: string;
-    age: number;
-    isActive: boolean;
-    tags: string[];
-    profile: {
-      email: string;
-      address: {
-        city: string;
-        country: string;
-        zipCode: string;
-      };
-      phoneNumbers: Array<{
-        type: string;
-        number: string;
-      }>;
-    };
-    history: Array<{
-      action: string;
-      timestamp: string;
-      details: {
-        changedFields: string[];
-        notes: string;
-      };
-    }>;
-    metadata: Record<string, any>;
-    createdAt: Date;
-    startDateUtc: string;
-    endDateUtc: string;
-  };
+  
 
   it('should handle simple field queries', () => {
     const query = mongoQueryTypesafe<TestDocument>({
@@ -438,4 +442,165 @@ describe('mongoQueryTypesafe', () => {
       'metadata.flags': []
     });
   });
+});
+
+describe('mongoUpdateTypesafe', () => {
+  it('should handle $set operations with existing fields', () => {
+    const update = mongoUpdateTypesafe<TestDocument>({
+      $set: {
+        name: 'Updated Name',
+        age: 30,
+        isActive: false
+      }
+    });
+
+    expect(update).toEqual({
+      $set: {
+        name: 'Updated Name',
+        age: 30,
+        isActive: false
+      }
+    });
+  });
+
+  it('should handle $set operations with nested objects using proper flattening', () => {
+    const update = mongoUpdateTypesafe<TestDocument>({
+      $set: {
+        profile: {
+          email: 'new@email.com',
+          address: {
+            city: 'New York',
+            country: 'USA'
+          }
+        }
+      }
+    });
+
+    expect(update).toEqual({
+      $set: {
+        'profile.email': 'new@email.com',
+        'profile.address.city': 'New York',
+        'profile.address.country': 'USA'
+      }
+    });
+  });
+
+  it('should handle $unset operations', () => {
+    const update = mongoUpdateTypesafe<TestDocument>({
+      $unset: {
+        name: "",
+        isActive: 1
+      }
+    });
+
+    expect(update).toEqual({
+      $unset: {
+        name: "",
+        isActive: 1
+      }
+    });
+  });
+
+  it('should handle $inc operations with number fields', () => {
+    const update = mongoUpdateTypesafe<TestDocument>({
+      $inc: {
+        age: 1
+      }
+    });
+
+    expect(update).toEqual({
+      $inc: {
+        age: 1
+      }
+    });
+  });
+
+  it('should handle $push operations with array fields', () => {
+    const update = mongoUpdateTypesafe<TestDocument>({
+      $push: {
+        tags: ['new-tag']
+      }
+    });
+
+    expect(update).toEqual({
+      $push: {
+        tags: 'new-tag'
+      }
+    });
+  });
+
+  it('should handle $currentDate operations', () => {
+    const update = mongoUpdateTypesafe<TestDocument>({
+      $currentDate: {
+        createdAt: true
+      }
+    });
+
+    expect(update).toEqual({
+      $currentDate: {
+        createdAt: true
+      }
+    });
+  });
+
+  it('should handle multiple update operators in one operation', () => {
+    const update = mongoUpdateTypesafe<TestDocument>({
+      $set: {
+        name: 'New Name',
+        isActive: true
+      },
+      $inc: {
+        age: 1
+      },
+      $push: {
+        tags: ['new-tag']
+      }
+    });
+
+    expect(update).toEqual({
+      $set: {
+        name: 'New Name',
+        isActive: true
+      },
+      $inc: {
+        age: 1
+      },
+      $push: {
+        tags: 'new-tag'
+      }
+    });
+  });
+
+  it('should handle nested object updates with complete flattening', () => {
+    const update = mongoUpdateTypesafe<TestDocument>({
+      $set: {
+        profile: {
+          address: {
+            city: 'Los Angeles',
+            country: 'USA',
+            zipCode: '90210'
+          }
+        }
+      }
+    });
+
+    expect(update).toEqual({
+      $set: {
+        'profile.address.city': 'Los Angeles',
+        'profile.address.country': 'USA',
+        'profile.address.zipCode': '90210'
+      }
+    });
+  });
+
+  // Type safety tests (these should cause TypeScript compilation errors)
+  // Uncomment these to test TypeScript error detection:
+  
+  // it('should reject non-existent fields in $set', () => {
+  //   const update = mongoUpdateTypesafe<TestDocument>({
+  //     $set: {
+  //       nonExistentField: 'value'  // Should cause TypeScript error
+  //     }
+  //   });
+  // });
 });
