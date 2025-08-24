@@ -6,7 +6,7 @@
 </script>
 
 {#each quickActions as action}
-  <div class="flex flex gap-1 items-center">
+  <div class="flex gap-1 items-center">
     <button class="variant-outline-primary w-min" on:click={() => {
       const input = action.inputLabel !== undefined ? quickActionInputs[action.inputLabel] : undefined; 
       action.action(input || "")
