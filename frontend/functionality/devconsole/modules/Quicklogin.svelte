@@ -3,7 +3,7 @@
   import Spinner from '../../../elements/SpinnerRls.svelte';
   import { EToastTypes } from './../../toast/toast-logic';
   import { onMount } from 'svelte';
-  import type { IQuickloginUser } from './../devconsole.types';
+  import type { IQuickloginUser, TQuickActions } from './../devconsole.types';
   import { LOCALDB } from '../../localdb/localdb';
   import { apiRequest } from '../../../client/api-request';
 

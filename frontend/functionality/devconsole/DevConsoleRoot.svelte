@@ -2,11 +2,13 @@
   import DevConsoleModal from './DevConsoleModal.svelte';
   import IconCode from '../../icons/IconCode.svelte';
   import { isProduction } from '../../../common/index';
-  import type { IQuickloginUser } from './devconsole.types';
+  import type { IQuickloginUser, TQuickActions } from './devconsole.types';
   import { popup } from '../popup/popup-logic';
   import { onDestroy, onMount } from 'svelte';
 
   export let quickloginUsers: IQuickloginUser[];
+  export let quickActions: TQuickActions[];
+    
 
   const isDevelopment = !isProduction();
 
@@ -37,7 +39,7 @@
     popup({
       title: 'Devconsole',
       component: DevConsoleModal,
-      componentProps: { quickloginUsers },
+      componentProps: { quickloginUsers, quickActions },
     });
   }
 </script>
