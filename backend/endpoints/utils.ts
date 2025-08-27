@@ -14,7 +14,7 @@ export function validate<T>(data: T, schema: z.ZodType<T>): { data: T | null, er
         const focusedErrors = extractFocusedValidationErrors(treeifiedError, data);
         const errorMessage = focusedErrors.map(err => 
             `${err.path}: expected ${err.expectedType}, got ${typeof err.actualValue === 'string' ? `"${err.actualValue}"` : err.actualValue}`
-        ).join('; ');
+        ).join('; ') + `\nProblematic object: \n${schema.description} oid: ${(data as any)?._id}`;
         return { data: null, error: errorMessage };
     }
     return { data: validated.data, error: null };
