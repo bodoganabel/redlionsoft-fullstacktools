@@ -56,7 +56,7 @@ export function parseQuery<TQuerySchema extends z.ZodTypeAny>(url: URL, querySch
 
         devOnly(() => {
             console.log(`🔍 Query validation failed for: ${endpointOrigin}`);
-            logFocusedValidationErrors(parsedError, queryParams, endpointOrigin);
+            logFocusedValidationErrors({zodError:parsedError, originalInput:queryParams, origin:endpointOrigin});
         });
 
         const error: TEndpointError = {
@@ -81,7 +81,7 @@ export async function parseBody<TBodySchema extends z.ZodTypeAny>(request: Reque
 
         devOnly(() => {
             console.log(`🔍 Body validation failed for: ${endpointOrigin}`);
-            logFocusedValidationErrors(parsedError, body, endpointOrigin);
+            logFocusedValidationErrors({zodError:parsedError, originalInput:body, origin: endpointOrigin});
         });
 
         const error: TEndpointError = {

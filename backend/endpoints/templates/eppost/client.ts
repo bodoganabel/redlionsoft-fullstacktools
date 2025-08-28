@@ -12,15 +12,6 @@ export async function clientRequestNamexxx_POST(body: TNamexxx_POST_Body): Promi
     });
 
     if (error) {
-        switch (error.errorCode) {
-            case ENamexxx_POST_ErrorCodes.ID_NOT_FOUND:
-                toastError("Event not found");
-                break;
-            default:
-                toastError("An error occurred while processing the request.");
-                break;
-        }
-        toastError(error.details);
         return null;
     }
 

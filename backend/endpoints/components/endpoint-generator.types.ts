@@ -24,19 +24,19 @@ export type TBodyHandlerParams<TBodySchema extends z.ZodTypeAny, TUserServer> = 
 
 export type THandlerReturns<
     TResponseSchema extends z.ZodTypeAny,
-> = z.infer<TResponseSchema> | TEndpointError;
+> = z.infer<TResponseSchema>;
 
 export type TQueryEndpointHandler<
     TQuerySchema extends z.ZodTypeAny,
     TResponseSchema extends z.ZodTypeAny,
     TUserServer
-> = (handlerParams: TQueryHandlerParams<TQuerySchema, TUserServer>) => (Promise<THandlerReturns<TResponseSchema>>);
+> = (handlerParams: TQueryHandlerParams<TQuerySchema, TUserServer>) => (Promise<THandlerReturns<TResponseSchema> | TEndpointError>);
 
 export type TBodyEndpointHandler<
     TBodySchema extends z.ZodTypeAny,
     TResponseSchema extends z.ZodTypeAny,
     TUserServer
-> = (handlerParams: TBodyHandlerParams<TBodySchema, TUserServer>) => (Promise<THandlerReturns<TResponseSchema>>);
+> = (handlerParams: TBodyHandlerParams<TBodySchema, TUserServer>) => (Promise<THandlerReturns<TResponseSchema> | TEndpointError>);
 
 
 export type TEndpointOptions<EPermissions> = {

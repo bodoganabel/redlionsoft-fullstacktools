@@ -66,8 +66,9 @@ export function extractFocusedValidationErrors(
  * Formats focused validation errors into a tree-like JSON structure
  */
 export function formatFocusedValidationErrors(
-  errors: FocusedValidationError[],
+  {errors,origin, originalInput}:{errors: FocusedValidationError[],
   origin: string,
+  originalInput: any}
 ): string {
   if (errors.length === 0) {
     return `✅ ${origin}: No validation errors`;
@@ -77,7 +78,7 @@ export function formatFocusedValidationErrors(
   const errorTree = transformErrorsToTree(errors);
   
   const stringifiedErrors = 
-  `${header}\n${JSON.stringify(errorTree, null, 2)}`;
+    `${header}\n${JSON.stringify(errorTree, null, 2)}\n OriginalInput: ${JSON.stringify(originalInput)}`;
   console.error(stringifiedErrors);
   return stringifiedErrors;
 }
@@ -104,9 +105,9 @@ function formatValue(value: any): string {
  * Main function to process Zod validation errors and log focused errors
  */
 export function logFocusedValidationErrors(
-  zodError: any, // Accept any ZodError-like object to handle different zod versions
+  {zodError, origin, originalInput}: {zodError: any, // Accept any ZodError-like object to handle different zod versions
   originalInput: any,
-  origin: string,
+  origin: string},
 ): void {
   // Use Zod's format method to get structured error tree
   const treeifiedError = zodError.format ? zodError.format() : zodError;
@@ -115,6 +116,6 @@ export function logFocusedValidationErrors(
   const focusedErrors = extractFocusedValidationErrors(treeifiedError, originalInput);
   
   // Format and log
-  const formattedOutput = formatFocusedValidationErrors(focusedErrors, origin);
+  const formattedOutput = formatFocusedValidationErrors({errors:focusedErrors, origin, originalInput});
   console.log(formattedOutput);
 }

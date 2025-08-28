@@ -52,7 +52,7 @@ describe('Focused Validation Error Formatter', () => {
 
       // Should extract all problematic fields
       expect(focusedErrors.length).toBeGreaterThan(0);
-      
+
       // Check that we get the expected error paths
       const errorPaths = focusedErrors.map(err => err.path);
       expect(errorPaths).toContain('name');
@@ -89,8 +89,8 @@ describe('Focused Validation Error Formatter', () => {
       }
     ];
 
-    const formatted = formatFocusedValidationErrors(focusedErrors, 'Test Validation');
-    
+    const formatted = formatFocusedValidationErrors({ errors: focusedErrors, origin: 'Test Validation', originalInput: {} });
+
     expect(formatted).toContain('❌ Test Validation Errors (2 issues)');
     expect(formatted).toContain('"name"');
     expect(formatted).toContain('"actualValue": 123');
@@ -131,7 +131,7 @@ describe('Focused Validation Error Formatter', () => {
   });
 
   it('should handle empty validation errors gracefully', () => {
-    const formatted = formatFocusedValidationErrors([], 'Test');
+    const formatted = formatFocusedValidationErrors({ errors: [], origin: 'Test', originalInput: {}});
     expect(formatted).toBe('✅ Test: No validation errors');
   });
 });
