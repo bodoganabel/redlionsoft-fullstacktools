@@ -1,2 +1,5 @@
 node_modules
 dist
+
+# Debug logs
+test-logs
