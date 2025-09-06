@@ -72,20 +72,21 @@ describe('debounce utility', () => {
         const secondFunction = () => { results.push('called2'); };
 
         // Schedule both functions with different IDs and delays
-        debounce(firstFunction, 'function-a', 15);
-        debounce(secondFunction, 'function-b', 30);
+        // Use larger delay difference to ensure clear separation
+        debounce(firstFunction, 'function-a', 20);
+        debounce(secondFunction, 'function-b', 50);
 
         // Initially neither should be called
         expect(results).toStrictEqual([]);
 
         // Wait enough time for first function to execute but not the second
-        await delay(20);
+        await delay(30);
 
         // First function should execute, second should still be waiting
         expect(results).toStrictEqual(['called']);
 
         // Wait enough time for second function
-        await delay(15);
+        await delay(30);
 
         // Now both functions should have executed exactly once
         expect(results).toStrictEqual(['called', 'called2']);

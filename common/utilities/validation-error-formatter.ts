@@ -12,7 +12,6 @@ export interface FocusedValidationError {
   actualValue: any;
   /** The expected type or constraint that was violated */
   expectedType: string;
-  /** The validation error message */
 }
 
 /**
