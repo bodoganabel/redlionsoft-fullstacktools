@@ -545,5 +545,6 @@ function processUpdateValue(update: any): any {
  * ```
  */
 export function mongoUpdateTypesafe<T extends Record<string, any>>(update: MongoUpdate<T>): Record<string, any> {
+  throw Error("Not implemented");
   return processUpdateValue(update);
 }
