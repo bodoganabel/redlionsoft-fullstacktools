@@ -79,7 +79,6 @@ export async function executeBodyEndpoint<TBodySchema extends z.ZodTypeAny, TUse
             details: isDebugMessageSendable(user as TUserServerRls<any, any, any>) ? parsedError.message : "",
             errorCode: EGeneralEndpontErrors.INVALID_RESPONSE,
             status: 400,
-            toastError: EGeneralEndpontErrors.INVALID_RESPONSE
         }
 
         return { endpointError, data: null };
