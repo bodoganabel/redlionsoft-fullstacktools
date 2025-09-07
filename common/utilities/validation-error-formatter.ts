@@ -39,10 +39,29 @@ export function extractFocusedValidationErrors(
       const actualValue = currentPath ? valueFromPath(originalInput, currentPath) : originalInput;
       
       errorNode._errors.forEach((error: any) => {
+        // Enhanced error message to include full path context
+        let errorMessage = error;
+        if (typeof error === 'string' && error.includes("can't access property")) {
+          // Extract the property name from the error and add full path context
+          const propertyMatch = error.match(/can't access property "([^"]+)"/);
+          if (propertyMatch) {
+            const missingProperty = propertyMatch[1] || '';
+            const fullPath = currentPath ? `${currentPath}.${missingProperty}` : missingProperty;
+            errorMessage = `required property missing`;
+            // Update the path to include the missing property
+            focusedErrors.push({
+              path: fullPath,
+              actualValue: undefined,
+              expectedType: errorMessage,
+            });
+            return; // Skip the normal push below
+          }
+        }
+        
         focusedErrors.push({
           path: currentPath || 'root',
           actualValue,
-          expectedType: error,
+          expectedType: errorMessage,
         });
       });
     }
@@ -73,11 +92,40 @@ export function formatFocusedValidationErrors(
     return `✅ ${origin}: No validation errors`;
   }
   
-  const header = `❌ ${origin} Errors (${errors.length} issue${errors.length > 1 ? 's' : ''}):`;
-  const errorTree = transformErrorsToTree(errors);
+  // Create a tree structure that mirrors the original object shape
+  const errorTree: any = {};
   
-  const stringifiedErrors = 
-    `${header}\n${JSON.stringify(errorTree, null, 2)}\n OriginalInput: ${JSON.stringify(originalInput)}`;
+  errors.forEach(error => {
+    const pathParts = error.path.split('.');
+    let current = errorTree;
+    
+    // Navigate to the correct nested position
+    for (let i = 0; i < pathParts.length - 1; i++) {
+      const part = pathParts[i];
+      if (part && !current[part]) {
+        current[part] = {};
+      }
+      if (part) {
+        current = current[part];
+      }
+    }
+    
+    // Set the error message at the final path
+    const finalKey = pathParts[pathParts.length - 1];
+    if (finalKey) {
+      // Clean up the error message by removing "Invalid input: " prefix
+      let cleanMessage = error.expectedType;
+      if (cleanMessage.startsWith('Invalid input: ')) {
+        cleanMessage = cleanMessage.replace('Invalid input: ', '');
+      }
+      if (cleanMessage.startsWith('Invalid option: ')) {
+        cleanMessage = cleanMessage.replace('Invalid option: ', '');
+      }
+      current[finalKey] = cleanMessage;
+    }
+  });
+  
+  const stringifiedErrors = JSON.stringify(errorTree, null, 2);
   console.error(stringifiedErrors);
   return stringifiedErrors;
 }
@@ -107,14 +155,18 @@ export function logFocusedValidationErrors(
   {zodError, origin, originalInput}: {zodError: any, // Accept any ZodError-like object to handle different zod versions
   originalInput: any,
   origin: string},
-): void {
+): string {
   // Use Zod's format method to get structured error tree
   const treeifiedError = zodError.format ? zodError.format() : zodError;
   
   // Extract focused errors
   const focusedErrors = extractFocusedValidationErrors(treeifiedError, originalInput);
+
+  console.log('🔥🔥🔥🔥🔥focusedErrors:');
+  console.log(focusedErrors);
   
   // Format and log
   const formattedOutput = formatFocusedValidationErrors({errors:focusedErrors, origin, originalInput});
   console.log(formattedOutput);
+  return formattedOutput;
 }
