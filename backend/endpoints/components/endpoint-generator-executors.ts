@@ -38,7 +38,6 @@ export async function executeQueryEndpoint<TQuerySchema extends z.ZodTypeAny, TU
             details: isDebugMessageSendable(user as TUserServerRls<any, any, any>) ? parsedError.message : "",
             errorCode: EGeneralEndpontErrors.INVALID_RESPONSE,
             status: 400,
-            toastError: EGeneralEndpontErrors.INVALID_RESPONSE
         }
 
         return { endpointError, data: null };
