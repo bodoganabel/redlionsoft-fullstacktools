@@ -4,19 +4,20 @@
 
 	export let targetDate = DateTime.now();
 	export let className = '';
+	export let expiredText = "Time's Up!";
 
 	let days = 0;
 	let hours = 0;
 	let minutes = 0;
 	let seconds = 0;
 	let isExpired = false;
-	let intervalId = null;
+	let intervalId: any = null;
 
 	function updateCountdown() {
 		const now = DateTime.now();
-		const diff = targetDate.diff(now, ['days', 'hours', 'minutes', 'seconds']);
-
-		if (diff.milliseconds <= 0) {
+		
+		// Check if target date is in the past
+		if (targetDate <= now) {
 			days = 0;
 			hours = 0;
 			minutes = 0;
@@ -29,6 +30,8 @@
 			return;
 		}
 
+		const diff = targetDate.diff(now, ['days', 'hours', 'minutes', 'seconds']);
+		
 		days = Math.floor(diff.days);
 		hours = Math.floor(diff.hours);
 		minutes = Math.floor(diff.minutes);
@@ -58,7 +61,7 @@
 	{#if isExpired}
 		<div class="card variant-filled-error p-6 text-center">
 			<h3 class="h3 text-white">Time's Up!</h3>
-			<p class="text-white/80">The countdown has expired</p>
+			<p class="text-white/80">{expiredText}</p>
 		</div>
 	{:else}
 		<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
