@@ -17,6 +17,9 @@ importers:
       jwt-decode:
         specifier: ^4.0.0
         version: 4.0.0
+      luxon:
+        specifier: ^3.7.2
+        version: 3.7.2
       mongodb:
         specifier: ^6.7.0
         version: 6.10.0
@@ -45,6 +48,9 @@ importers:
       '@types/jsonwebtoken':
         specifier: 9.0.7
         version: 9.0.7
+      '@types/luxon':
+        specifier: ^3.7.1
+        version: 3.7.1
       '@types/node':
         specifier: 20.14.7
         version: 20.14.7
@@ -587,6 +593,9 @@ packages:
 
   '@types/jsonwebtoken@9.0.7':
     resolution: {integrity: sha512-ugo316mmTYBl2g81zDFnZ7cfxlut3o+/EQdaP7J8QN2kY6lJ22hmQYCK5EHcJHbrW+dkCGSCPgbG8JtYj6qSrg==}
+
+  '@types/luxon@3.7.1':
+    resolution: {integrity: sha512-H3iskjFIAn5SlJU7OuxUmTEpebK6TKB8rxZShDslBMZJ5u9S//KM1sbdAisiSrqwLQncVjnpi2OK2J51h+4lsg==}
 
   '@types/minimist@1.2.5':
     resolution: {integrity: sha512-hov8bUuiLiyFPGyFPE1lwWhmzYbirOXQNNo40+y3zow8aFVTeyn3VWL0VFFfdNddA8S4Vf0Tc062rzyNr7Paag==}
@@ -1382,6 +1391,10 @@ packages:
 
   lru-cache@4.1.5:
     resolution: {integrity: sha512-sWZlbEP2OsHNkXrMl5GYk/jKk70MBng6UU4YI/qGDYbgf6YbP4EvmqISbXCoJiRKs+1bSpFHVgQxvJ17F2li5g==}
+
+  luxon@3.7.2:
+    resolution: {integrity: sha512-vtEhXh/gNjI9Yg1u4jX/0YVPMvxzHuGgCm6tC5kZyb08yjGWGnqAjGJvcXbqQR2P3MyMEFnRbpcdFS6PBcLqew==}
+    engines: {node: '>=12'}
 
   magic-string@0.30.13:
     resolution: {integrity: sha512-8rYBO+MsWkgjDSOvLomYnzhdwEG51olQ4zL5KXnNJWV5MNmrb4rTZdrtkhxjnD/QyZUqR/Z/XDsUs/4ej2nx0g==}
@@ -2707,6 +2720,8 @@ snapshots:
     dependencies:
       '@types/node': 20.14.7
 
+  '@types/luxon@3.7.1': {}
+
   '@types/minimist@1.2.5': {}
 
   '@types/node@12.20.55': {}
@@ -3568,6 +3583,8 @@ snapshots:
     dependencies:
       pseudomap: 1.0.2
       yallist: 2.1.2
+
+  luxon@3.7.2: {}
 
   magic-string@0.30.13:
     dependencies:

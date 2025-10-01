@@ -1,0 +1,114 @@
+<script lang="ts">
+	import { DateTime } from 'luxon';
+	import { onMount, onDestroy } from 'svelte';
+
+	export let targetDate = DateTime.now();
+	export let className = '';
+
+	let days = 0;
+	let hours = 0;
+	let minutes = 0;
+	let seconds = 0;
+	let isExpired = false;
+	let intervalId = null;
+
+	function updateCountdown() {
+		const now = DateTime.now();
+		const diff = targetDate.diff(now, ['days', 'hours', 'minutes', 'seconds']);
+
+		if (diff.milliseconds <= 0) {
+			days = 0;
+			hours = 0;
+			minutes = 0;
+			seconds = 0;
+			isExpired = true;
+			if (intervalId) {
+				clearInterval(intervalId);
+				intervalId = null;
+			}
+			return;
+		}
+
+		days = Math.floor(diff.days);
+		hours = Math.floor(diff.hours);
+		minutes = Math.floor(diff.minutes);
+		seconds = Math.floor(diff.seconds);
+		isExpired = false;
+	}
+
+	onMount(() => {
+		updateCountdown();
+		if (!isExpired) {
+			intervalId = setInterval(updateCountdown, 1000);
+		}
+	});
+
+	onDestroy(() => {
+		if (intervalId) {
+			clearInterval(intervalId);
+		}
+	});
+
+	function formatNumber(num: number): string {
+		return num.toString().padStart(2, '0');
+	}
+</script>
+
+<div class="w-full max-w-2xl mx-auto {className}">
+	{#if isExpired}
+		<div class="card variant-filled-error p-6 text-center">
+			<h3 class="h3 text-white">Time's Up!</h3>
+			<p class="text-white/80">The countdown has expired</p>
+		</div>
+	{:else}
+		<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+			<!-- Days -->
+			<div class="transition-transform duration-200 hover:scale-105">
+				<div class="card variant-filled-primary p-4 text-center">
+					<div class="text-2xl sm:text-3xl font-bold text-white font-mono">
+						{formatNumber(days)}
+					</div>
+					<div class="text-xs sm:text-sm text-white/80 uppercase tracking-wide">
+						{days === 1 ? 'Day' : 'Days'}
+					</div>
+				</div>
+			</div>
+
+			<!-- Hours -->
+			<div class="transition-transform duration-200 hover:scale-105">
+				<div class="card variant-filled-secondary p-4 text-center">
+					<div class="text-2xl sm:text-3xl font-bold text-white font-mono">
+						{formatNumber(hours)}
+					</div>
+					<div class="text-xs sm:text-sm text-white/80 uppercase tracking-wide">
+						{hours === 1 ? 'Hour' : 'Hours'}
+					</div>
+				</div>
+			</div>
+
+			<!-- Minutes -->
+			<div class="transition-transform duration-200 hover:scale-105">
+				<div class="card variant-filled-tertiary p-4 text-center">
+					<div class="text-2xl sm:text-3xl font-bold text-white font-mono">
+						{formatNumber(minutes)}
+					</div>
+					<div class="text-xs sm:text-sm text-white/80 uppercase tracking-wide">
+						{minutes === 1 ? 'Minute' : 'Minutes'}
+					</div>
+				</div>
+			</div>
+
+			<!-- Seconds -->
+			<div class="transition-transform duration-200 hover:scale-105">
+				<div class="card variant-filled-warning p-4 text-center">
+					<div class="text-2xl sm:text-3xl font-bold text-white font-mono">
+						{formatNumber(seconds)}
+					</div>
+					<div class="text-xs sm:text-sm text-white/80 uppercase tracking-wide">
+						{seconds === 1 ? 'Second' : 'Seconds'}
+					</div>
+				</div>
+			</div>
+		</div>
+	{/if}
+</div>
