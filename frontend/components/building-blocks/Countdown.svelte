@@ -5,6 +5,10 @@
 	export let targetDate = DateTime.now();
 	export let className = '';
 	export let expiredText = "Time's Up!";
+	export let textDays = 'Days';
+	export let textHours = 'Hours';
+	export let textMinutes = 'Minutes';
+	export let textSeconds = 'Seconds';
 
 	let days = 0;
 	let hours = 0;
@@ -60,55 +64,54 @@
 <div class="w-full max-w-2xl mx-auto {className}">
 	{#if isExpired}
 		<div class="card variant-filled-error p-6 text-center">
-			<h3 class="h3 text-white">Time's Up!</h3>
-			<p class="text-white/80">{expiredText}</p>
+			<h3 class="font-bold text-white/80">{expiredText}</h3>
 		</div>
 	{:else}
 		<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
 			<!-- Days -->
 			<div class="transition-transform duration-200 hover:scale-105">
-				<div class="card variant-filled-primary p-4 text-center">
+				<div class="card preset-filled-primary-500 px-1 py-2 text-center flex flex-col justify-center items-center shadow-2xl ">
 					<div class="text-2xl sm:text-3xl font-bold text-white font-mono">
 						{formatNumber(days)}
 					</div>
-					<div class="text-xs sm:text-sm text-white/80 uppercase tracking-wide">
-						{days === 1 ? 'Day' : 'Days'}
+					<div class="text-sm! sm:text-md! text-white/80 tracking-wide">
+						{textDays}
 					</div>
 				</div>
 			</div>
 
 			<!-- Hours -->
 			<div class="transition-transform duration-200 hover:scale-105">
-				<div class="card variant-filled-secondary p-4 text-center">
+				<div class="card preset-filled-primary-500 px-1 py-2 text-center flex flex-col justify-center items-center shadow-2xl ">
 					<div class="text-2xl sm:text-3xl font-bold text-white font-mono">
 						{formatNumber(hours)}
 					</div>
-					<div class="text-xs sm:text-sm text-white/80 uppercase tracking-wide">
-						{hours === 1 ? 'Hour' : 'Hours'}
+					<div class="text-sm! sm:text-md! text-white/80 tracking-wide">
+						{textHours}
 					</div>
 				</div>
 			</div>
 
 			<!-- Minutes -->
 			<div class="transition-transform duration-200 hover:scale-105">
-				<div class="card variant-filled-tertiary p-4 text-center">
+				<div class="card preset-filled-primary-500 px-1 py-2 text-center flex flex-col justify-center items-center shadow-2xl ">
 					<div class="text-2xl sm:text-3xl font-bold text-white font-mono">
 						{formatNumber(minutes)}
 					</div>
-					<div class="text-xs sm:text-sm text-white/80 uppercase tracking-wide">
-						{minutes === 1 ? 'Minute' : 'Minutes'}
+					<div class="text-sm! sm:text-md! text-white/80 tracking-wide">
+						{textMinutes}
 					</div>
 				</div>
 			</div>
 
 			<!-- Seconds -->
 			<div class="transition-transform duration-200 hover:scale-105">
-				<div class="card variant-filled-warning p-4 text-center">
+				<div class="card preset-filled-primary-500 px-1 py-2 text-center flex flex-col justify-center items-center shadow-2xl ">
 					<div class="text-2xl sm:text-3xl font-bold text-white font-mono">
 						{formatNumber(seconds)}
 					</div>
-					<div class="text-xs sm:text-sm text-white/80 uppercase tracking-wide">
-						{seconds === 1 ? 'Second' : 'Seconds'}
+					<div class="text-sm! sm:text-md! text-white/80 tracking-wide">
+						{textSeconds}
 					</div>
 				</div>
 			</div>
