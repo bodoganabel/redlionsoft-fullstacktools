@@ -3,7 +3,7 @@
 	import { onMount, onDestroy } from 'svelte';
 
 	export let targetDate = DateTime.now();
-	export let className = '';
+	export let classes = '';
 	export let expiredText = "Time's Up!";
 	export let textDays = 'Days';
 	export let textHours = 'Hours';
@@ -16,6 +16,33 @@
 	let seconds = 0;
 	let isExpired = false;
 	let intervalId: any = null;
+
+	// Animation states for scale effect
+	let daysAnimating = false;
+	let hoursAnimating = false;
+	let minutesAnimating = false;
+	let secondsAnimating = false;
+
+	function triggerAnimation(type: 'days' | 'hours' | 'minutes' | 'seconds') {
+		switch (type) {
+			case 'days':
+				daysAnimating = true;
+				setTimeout(() => daysAnimating = false, 200);
+				break;
+			case 'hours':
+				hoursAnimating = true;
+				setTimeout(() => hoursAnimating = false, 200);
+				break;
+			case 'minutes':
+				minutesAnimating = true;
+				setTimeout(() => minutesAnimating = false, 200);
+				break;
+			case 'seconds':
+				secondsAnimating = true;
+				setTimeout(() => secondsAnimating = false, 200);
+				break;
+		}
+	}
 
 	function updateCountdown() {
 		const now = DateTime.now();
@@ -36,10 +63,29 @@
 
 		const diff = targetDate.diff(now, ['days', 'hours', 'minutes', 'seconds']);
 		
-		days = Math.floor(diff.days);
-		hours = Math.floor(diff.hours);
-		minutes = Math.floor(diff.minutes);
-		seconds = Math.floor(diff.seconds);
+		const newDays = Math.floor(diff.days);
+		const newHours = Math.floor(diff.hours);
+		const newMinutes = Math.floor(diff.minutes);
+		const newSeconds = Math.floor(diff.seconds);
+
+		// Trigger animations when values change
+		if (newDays !== days) {
+			days = newDays;
+			triggerAnimation('days');
+		}
+		if (newHours !== hours) {
+			hours = newHours;
+			triggerAnimation('hours');
+		}
+		if (newMinutes !== minutes) {
+			minutes = newMinutes;
+			triggerAnimation('minutes');
+		}
+		if (newSeconds !== seconds) {
+			seconds = newSeconds;
+			triggerAnimation('seconds');
+		}
+
 		isExpired = false;
 	}
 
@@ -61,7 +107,7 @@
 	}
 </script>
 
-<div class="w-full max-w-2xl mx-auto {className}">
+<div class="w-full max-w-2xl mx-auto {classes}">
 	{#if isExpired}
 		<div class="card variant-filled-error p-6 text-center">
 			<h3 class="font-bold text-white/80">{expiredText}</h3>
@@ -69,7 +115,7 @@
 	{:else}
 		<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
 			<!-- Days -->
-			<div class="transition-transform duration-200 hover:scale-105">
+			<div class="transition-transform duration-200 hover:scale-105 {daysAnimating ? 'scale-105' : ''}">
 				<div class="card preset-filled-primary-500 px-1 py-2 text-center flex flex-col justify-center items-center shadow-2xl ">
 					<div class="text-2xl sm:text-3xl font-bold text-white font-mono">
 						{formatNumber(days)}
@@ -81,7 +127,7 @@
 			</div>
 
 			<!-- Hours -->
-			<div class="transition-transform duration-200 hover:scale-105">
+			<div class="transition-transform duration-200 hover:scale-105 {hoursAnimating ? 'scale-105' : ''}">
 				<div class="card preset-filled-primary-500 px-1 py-2 text-center flex flex-col justify-center items-center shadow-2xl ">
 					<div class="text-2xl sm:text-3xl font-bold text-white font-mono">
 						{formatNumber(hours)}
@@ -93,7 +139,7 @@
 			</div>
 
 			<!-- Minutes -->
-			<div class="transition-transform duration-200 hover:scale-105">
+			<div class="transition-transform duration-200 hover:scale-105 {minutesAnimating ? 'scale-105' : ''}">
 				<div class="card preset-filled-primary-500 px-1 py-2 text-center flex flex-col justify-center items-center shadow-2xl ">
 					<div class="text-2xl sm:text-3xl font-bold text-white font-mono">
 						{formatNumber(minutes)}
@@ -105,7 +151,7 @@
 			</div>
 
 			<!-- Seconds -->
-			<div class="transition-transform duration-200 hover:scale-105">
+			<div class="transition-transform duration-200 hover:scale-105 {secondsAnimating ? 'scale-105' : ''}">
 				<div class="card preset-filled-primary-500 px-1 py-2 text-center flex flex-col justify-center items-center shadow-2xl ">
 					<div class="text-2xl sm:text-3xl font-bold text-white font-mono">
 						{formatNumber(seconds)}
