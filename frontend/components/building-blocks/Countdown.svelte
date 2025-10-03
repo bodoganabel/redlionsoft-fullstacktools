@@ -7,8 +7,8 @@
 	export let expiredText = "Time's Up!";
 	export let textDays = 'Days';
 	export let textHours = 'Hours';
-	export let textMinutes = 'Minutes';
-	export let textSeconds = 'Seconds';
+	export let textMinutes = 'Min';
+	export let textSeconds = 'Sec';
 
 	let days = 0;
 	let hours = 0;
