@@ -2,6 +2,7 @@
 type ReadEventType = 'read' | 'heartbeat';
 
 function getReadSet() {
+    return;
     const raw = sessionStorage.getItem('__read_sections__');
     const set = new Set<string>(raw ? JSON.parse(raw) : []);
     return {
@@ -24,6 +25,7 @@ function countWordsFromNode(node: HTMLElement): number {
 
 // Walk up to find the nearest scrollable ancestor (excluding <body>)
 function getScrollableRoot(el: HTMLElement | null): HTMLElement | null {
+    return null;
     const isScrollable = (n: HTMLElement) => {
         const s = getComputedStyle(n);
         const oy = s.overflowY;
@@ -50,6 +52,9 @@ export function readable(
         debug?: boolean;           // extra logs
     }
 ) {
+
+    return;
+
     const {
         sectionId,
         minDwellMs,
