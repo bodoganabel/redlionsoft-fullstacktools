@@ -2,14 +2,13 @@
 type ReadEventType = 'read' | 'heartbeat';
 
 function getReadSet() {
-    // Persist across SPA navigations & reloads for the current browser session
     const raw = sessionStorage.getItem('__read_sections__');
     const set = new Set<string>(raw ? JSON.parse(raw) : []);
     return {
-        has(key: string) { return set.has(key); },
-        add(key: string) {
-            if (!set.has(key)) {
-                set.add(key);
+        has: (k: string) => set.has(k),
+        add(k: string) {
+            if (!set.has(k)) {
+                set.add(k);
                 sessionStorage.setItem('__read_sections__', JSON.stringify([...set]));
             }
         }
@@ -17,77 +16,90 @@ function getReadSet() {
 }
 
 function countWordsFromNode(node: HTMLElement): number {
-    // innerText approximates *visible* text (ignores display:none, etc.)
     const text = (node.innerText || '').trim();
     if (!text) return 0;
-    // Count tokens that look like words (handles unicode letters & numbers)
     const matches = text.match(/[\p{L}\p{N}’'-]+/gu);
     return matches ? matches.length : 0;
+}
+
+// Walk up to find the nearest scrollable ancestor (excluding <body>)
+function getScrollableRoot(el: HTMLElement | null): HTMLElement | null {
+    const isScrollable = (n: HTMLElement) => {
+        const s = getComputedStyle(n);
+        const oy = s.overflowY;
+        const ox = s.overflowX;
+        const canScrollY = (oy === 'auto' || oy === 'scroll') && n.scrollHeight > n.clientHeight;
+        const canScrollX = (ox === 'auto' || ox === 'scroll') && n.scrollWidth > n.clientWidth;
+        return canScrollY || canScrollX;
+    };
+    let cur: HTMLElement | null = el?.parentElement ?? null;
+    while (cur && cur !== document.body) {
+        if (isScrollable(cur)) return cur;
+        cur = cur.parentElement;
+    }
+    return null;
 }
 
 export function readable(
     node: HTMLElement,
     opts: {
         sectionId: string;
-        /**
-         * Optional: override minimum dwell (ms). If omitted, we compute:
-         * max(4000, 0.6 * (words/220 wpm) * 60_000), capped at 20_000.
-         */
         minDwellMs?: number;
-        /**
-         * Optional: heartbeat interval (ms). Default 10_000.
-         */
         heartbeatMs?: number;
-        /**
-         * Optional: intersection threshold to consider "in view". Default 0.5.
-         */
-        threshold?: number;
-    } = { sectionId: '' }
+        threshold?: number;        // % of element that must be visible (0..1)
+        debug?: boolean;           // extra logs
+    }
 ) {
-    const { sectionId, minDwellMs, heartbeatMs = 10_000, threshold = 0.5 } = opts;
+    const {
+        sectionId,
+        minDwellMs,
+        heartbeatMs = 10_000,
+        threshold = 0.25,
+        debug = true
+    } = opts ?? ({} as any);
+
     if (!sectionId) {
-        console.warn('[tracking] readable action requires a sectionId');
+        console.warn('[tracking] readable requires a sectionId');
     }
 
     let inView = false;
-    let readFired = false; // in-memory guard for this component instance
+    let readFired = false;
     let dwellTimer: number | null = null;
     let heartbeatTimer: number | null = null;
     let lastEngaged = Date.now();
 
-    // Compute words automatically from visible text
+    // Auto word count
     const words = countWordsFromNode(node);
-    console.log('[tracking] wordCount', {
-        sectionId,
-        words,
-        path: location.pathname,
-        ts: new Date().toISOString()
-    });
-
-    // Adaptive dwell based on words
     const base = 4_000;
     const adaptive = Math.min(20_000, Math.max(base, (words / 220) * 60_000 * 0.6));
     const dwellMs = typeof minDwellMs === 'number' ? Math.max(base, minDwellMs) : adaptive;
 
+    console.log('[tracking] wordCount', {
+        sectionId,
+        words,
+        path: location.pathname,
+        ts: new Date().toISOString(),
+        dwellMs
+    });
+
+    // Session debounce
     const readKey = `${location.pathname}::${sectionId}`;
     const persisted = getReadSet();
-
-    // If we've already recorded this section in this session, keep readFired true.
     if (persisted.has(readKey)) {
         readFired = true;
+        debug && console.log('[tracking][debug]', sectionId, 'already read in this session');
     }
 
-    // Engagement tracking (updates timestamp on user actions)
+    // Engagement signals
     const touchEngagement = () => (lastEngaged = Date.now());
     const engageEvents = ['scroll', 'mousemove', 'keydown', 'touchstart', 'wheel'];
     for (const e of engageEvents) {
         window.addEventListener(e, touchEngagement, { passive: true });
     }
     document.addEventListener('visibilitychange', touchEngagement);
-
     const engagedRecently = () => Date.now() - lastEngaged < 15_000;
 
-    function logEvent(type: ReadEventType) {
+    const logEvent = (type: ReadEventType) => {
         console.log(`[tracking] ${type}`, {
             sectionId,
             type,
@@ -96,48 +108,76 @@ export function readable(
             dwellMs,
             ts: new Date().toISOString()
         });
+    };
+
+    // Pick IO root: nearest scrollable ancestor (if any), else viewport
+    const root = getScrollableRoot(node);
+    if (debug) {
+        console.log('[tracking][debug]', sectionId, 'IO root =', root ? root : 'viewport');
     }
 
     const io = new IntersectionObserver(
         (entries) => {
             for (const entry of entries) {
                 const ratio = entry.intersectionRatio;
+                const isIntersecting =
+                    // Some browsers prefer entry.isIntersecting; keep both checks
+                    entry.isIntersecting || ratio > 0;
 
+                if (debug) {
+                    console.log('[tracking][debug] IO', {
+                        sectionId,
+                        ratio: Number(ratio.toFixed(3)),
+                        isIntersecting,
+                        threshold,
+                        rootMargin: '0px 0px -40% 0px'
+                    });
+                }
+
+                // Entered "in view"
                 if (ratio >= threshold && !inView) {
                     inView = true;
 
-                    // Start dwell timer that may trigger the one-time "read"
                     if (!readFired && !persisted.has(readKey)) {
                         dwellTimer = window.setTimeout(() => {
                             if (engagedRecently() && document.visibilityState === 'visible') {
                                 readFired = true;
-                                persisted.add(readKey); // debounce across the session
+                                persisted.add(readKey);
                                 logEvent('read');
+                            } else if (debug) {
+                                console.log('[tracking][debug]', sectionId, 'dwell met but not engaged/visible');
                             }
                         }, dwellMs) as unknown as number;
+                        debug && console.log('[tracking][debug]', sectionId, 'dwell timer started', dwellMs, 'ms');
                     }
 
-                    // Start heartbeat while visible & engaged
                     heartbeatTimer = window.setInterval(() => {
                         if (engagedRecently() && document.visibilityState === 'visible') {
                             logEvent('heartbeat');
+                        } else if (debug) {
+                            console.log('[tracking][debug]', sectionId, 'skip heartbeat (not engaged/visible)');
                         }
                     }, heartbeatMs) as unknown as number;
                 }
 
+                // Exited "in view"
                 if (ratio < threshold && inView) {
                     inView = false;
                     if (dwellTimer) { clearTimeout(dwellTimer); dwellTimer = null; }
                     if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+                    debug && console.log('[tracking][debug]', sectionId, 'left view → timers cleared');
                 }
             }
         },
-        { threshold: [0, threshold, 1] }
+        {
+            root,                        // <- auto-detected scroll container or null (viewport)
+            threshold: [0, threshold, 1],
+            rootMargin: '0px 0px -40% 0px' // require ~60% of element inside the viewport
+        }
     );
 
     io.observe(node);
 
-    // Clean up on page hide and destroy
     const onPageHide = () => {
         if (dwellTimer) { clearTimeout(dwellTimer); dwellTimer = null; }
         if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
@@ -145,16 +185,10 @@ export function readable(
     window.addEventListener('pagehide', onPageHide);
 
     return {
-        update(newOpts: typeof opts) {
-            // Optional: allow live tuning of threshold/heartbeat via binding
-            // (not strictly necessary for basic usage)
-        },
         destroy() {
             io.disconnect();
             onPageHide();
-            for (const e of engageEvents) {
-                window.removeEventListener(e, touchEngagement);
-            }
+            for (const e of engageEvents) window.removeEventListener(e, touchEngagement);
             document.removeEventListener('visibilitychange', touchEngagement);
             window.removeEventListener('pagehide', onPageHide);
         }
