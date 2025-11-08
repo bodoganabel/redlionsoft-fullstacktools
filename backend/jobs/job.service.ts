@@ -81,7 +81,7 @@ export class JobService<TJobMetadata> {
                 }
             } else {
 
-                const result = await this.collection.insertOne({ validatedJobData });
+                const result = await this.collection.insertOne({ ...validatedJobData });
                 jobResult = result;
             }
             if (!jobResult) {
