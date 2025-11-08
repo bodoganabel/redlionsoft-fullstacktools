@@ -181,7 +181,7 @@ export class JobService<TJobMetadata> {
             // Update the job
             const result = await this.collection.findOneAndUpdate(
                 { _id: existingJob._id },
-                { $set: validatedJobData },
+                { $set: {...validatedJobData} },
                 { returnDocument: "after" }
             );
 
