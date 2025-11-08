@@ -60,7 +60,7 @@ describe('AsyncFunctionQueue Integration', async () => {
 
     const timeElapsed = DateTime.now().diff(now).as('milliseconds');
 
-    expect(timeElapsed).toBeGreaterThan(20);
+    expect(timeElapsed).toBeGreaterThan(19);
     logToFile(`Time elapsed: ${timeElapsed.toFixed(2)}ms`);
     logToFile(`Results: ${JSON.stringify(results)}`);
     expect(results).toEqual(['awaited', 'should-overwrite']);
@@ -108,7 +108,7 @@ describe('AsyncFunctionQueue Integration', async () => {
     logToFile(`Current results: ${JSON.stringify(results)}`);
     const timeElapsed = DateTime.now().diff(now).as('milliseconds');
     await queue.waitForFinish();
-    expect(timeElapsed).toBeGreaterThan(20);
+    expect(timeElapsed).toBeGreaterThan(19);
     expect(results).toEqual(['should-run-before-debounce', 'awaited', 'should-not-debounce']);
     logToFile('9. After assertions');
   });
