@@ -258,13 +258,14 @@ export class AuthService<
         > = this.parse_serverUserTo_clientUser(
           user as TUserServerRls<ERoles, (EPermissions | ECorePermissions)[], Metadata_UserServer>
         );
-        // Generate a JWT token with the user as the payload
+        // Generate a JWT token with the user as the payload (3 months expiration)
         const clientUserAsPayloadToken = this.jwt.signToken(
-          clientUser as Object
+          clientUser as Object,
+          '90d'
         );
 
         cookies.set("auth", clientUserAsPayloadToken, {
-          maxAge: 3600,
+          maxAge: 7776000, // 3 months in seconds
           path: "/",
           httpOnly: true,
         });
