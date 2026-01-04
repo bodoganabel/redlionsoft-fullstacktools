@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import { apiRequest } from "$redlionsoft/frontend/client/api-request";
 import { toastError } from "$redlionsoft/frontend/functionality/toast/toast-logic";
 import { ENamexxx_PUT_ErrorCodes, type TNamexxx_PUT_Body, type TNamexxx_PUT_Response } from "./dto";
