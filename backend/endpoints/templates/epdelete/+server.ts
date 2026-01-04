@@ -4,22 +4,20 @@ import { EndpointGenerator } from "$src/backend.base";
 
 
 //+server.ts
-export const DELETE = EndpointGenerator.RLS_BODY_ENDPOINT(`${import.meta.url}`,SNamexxx_DELETE_Body, SNamexxx_DELETE_Response, { requireAuthentication: true, requirePermissions: [], responseHeaders: { "Content-Type": "application/json" } }, async ({ params, body, user, request, url }) => {
+export const DELETE = EndpointGenerator.RLS_BODY_ENDPOINT(`${import.meta.url}`, SNamexxx_DELETE_Body, SNamexxx_DELETE_Response, { requireAuthentication: true, requirePermissions: [], responseHeaders: { "Content-Type": "application/json" } }, async ({ params, body, user, request, url }) => {
 
 
   const { id } = params;
 
-  if (id === undefined) {
-    const error: TEndpointError
-      = {
-      errorCode: ENamexxx_DELETE_ErrorCodes.ID_NOT_FOUND,
-      details: "Error",
-      status: 401,
-      toastError: "Autotoast",
-    }
-
-    return error;
+  const error: TEndpointError
+    = {
+    errorCode: ENamexxx_DELETE_ErrorCodes.ID_NOT_FOUND,
+    details: "Not implemented yet",
+    status: 401,
+    toastError: "Not implemented yet",
   }
+
+  return error;
 
   const data: TNamexxx_DELETE_Response = {
     outDELETE: "Success",

@@ -9,17 +9,15 @@ export const PATCH = EndpointGenerator.RLS_BODY_ENDPOINT(`${import.meta.url}`, S
 
   const { id } = params;
 
-  if (id === undefined) {
-    const error: TEndpointError
+  const error: TEndpointError
       = {
       errorCode: ENamexxx_PATCH_ErrorCodes.ID_NOT_FOUND,
-      details: "Error",
+      details: "Not implemented yet",
       status: 401,
-      toastError: "Autotoast",
+      toastError: "Not implemented yet",
     }
-
+  
     return error;
-  }
 
   const data: TNamexxx_PATCH_Response = {
     output: "Success",
