@@ -4,7 +4,7 @@ import { ENamexxx_DELETE_ErrorCodes, type TNamexxx_DELETE_Body, type TNamexxx_DE
 import { clientBase } from "$src/client.base";
 
 
-export async function clientRequestNamexxx_DELETE(body: TNamexxx_DELETE_Body): Promise<any | null> {
+export async function clientRequestNamexxx_DELETE(body: TNamexxx_DELETE_Body): Promise<TNamexxx_DELETE_Response | null> {
 
     const { data, error } = await apiRequest<TNamexxx_DELETE_Response, TNamexxx_DELETE_Body>({
         url: clientBase.automaticApiUrl(import.meta.url),

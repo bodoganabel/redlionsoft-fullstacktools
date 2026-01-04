@@ -4,7 +4,7 @@ import { ENamexxx_GET_ErrorCodes, type TNamexxx_GET_Query, type TNamexxx_GET_Res
 import { clientBase } from "$src/client.base";
 
 
-export async function clientRequestNamexxx_GET(query: TNamexxx_GET_Query): Promise<any | null> {
+export async function clientRequestNamexxx_GET(query: TNamexxx_GET_Query): Promise<TNamexxx_GET_Response | null> {
 
     const { data, error } = await apiRequest<TNamexxx_GET_Response, TNamexxx_GET_Query>({
         url: clientBase.automaticApiUrl(import.meta.url),

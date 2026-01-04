@@ -4,7 +4,7 @@ import { ENamexxx_POST_ErrorCodes, type TNamexxx_POST_Body, type TNamexxx_POST_R
 import { clientBase } from "$src/client.base";
 
 
-export async function clientRequestNamexxx_POST(body: TNamexxx_POST_Body): Promise<any | null> {
+export async function clientRequestNamexxx_POST(body: TNamexxx_POST_Body): Promise<TNamexxx_POST_Response | null> {
 
     const { data, error } = await apiRequest<TNamexxx_POST_Response, TNamexxx_POST_Body>({
         url: clientBase.automaticApiUrl(import.meta.url),

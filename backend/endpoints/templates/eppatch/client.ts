@@ -4,7 +4,7 @@ import { ENamexxx_PATCH_ErrorCodes, type TNamexxx_PATCH_Body, type TNamexxx_PATC
 import { clientBase } from "$src/client.base";
 
 
-export async function clientRequestNamexxx_PATCH(body: TNamexxx_PATCH_Body): Promise<any | null> {
+export async function clientRequestNamexxx_PATCH(body: TNamexxx_PATCH_Body): Promise<TNamexxx_PATCH_Response | null> {
 
     const { data, error } = await apiRequest<TNamexxx_PATCH_Response, TNamexxx_PATCH_Body>({
         url: clientBase.automaticApiUrl(import.meta.url),
