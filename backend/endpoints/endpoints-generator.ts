@@ -15,7 +15,7 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
     constructor(
         private authService: AuthService,
     ) { }
-
+        
     RLS_QUERY_ENDPOINT<
         TQuerySchema extends z.ZodTypeAny,
         TResponseSchema extends z.ZodTypeAny
