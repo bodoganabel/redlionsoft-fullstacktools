@@ -95,7 +95,7 @@ export class AuthService<
       ...props,
       email: (props.email.toLowerCase()),
       password: this.hashPassword(props.password),
-      created_at: DateTime.now().toUTC().toISO() as string,
+      created_at: DateTime.utc().toISO() as string,
     };
 
     try {
@@ -168,7 +168,7 @@ export class AuthService<
 
     const token = await this.temporaryTokensService.addToken(
       { email },
-      DateTime.now().plus({ minutes: this.passwordResetExpires_min }),
+      DateTime.utc().plus({ minutes: this.passwordResetExpires_min }),
       { email }
     );
     if (token === null) {
@@ -412,7 +412,7 @@ export class AuthService<
           ...user,
           _id: user._id ? new ObjectId(user._id) : new ObjectId(),
           password: this.hashPassword(user.password),
-          created_at: user.created_at || (DateTime.now().toUTC().toISO() as string),
+          created_at: user.created_at || (DateTime.utc().toISO() as string),
         };
       });
 

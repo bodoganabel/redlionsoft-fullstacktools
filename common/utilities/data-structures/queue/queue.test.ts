@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Queue, FunctionalQueue, ramdaQueueExamples, type QueueItem } from './queue';
 
-// Mock DateTime.now() to return a consistent 
+// Mock DateTime.utc() to return a consistent 
 
 describe('Queue - Object-oriented implementation', () => {
   let queue: Queue<number>;

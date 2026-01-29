@@ -2,7 +2,7 @@
 	import { DateTime } from 'luxon';
 	import { onMount, onDestroy } from 'svelte';
 
-	export let targetDate = DateTime.now();
+	export let targetDate = DateTime.utc();
 	export let classes = '';
 	export let expiredText = "Time's Up!";
 	export let textDays = 'Days';
@@ -45,7 +45,7 @@
 	}
 
 	function updateCountdown() {
-		const now = DateTime.now();
+		const now = DateTime.utc();
 		
 		// Check if target date is in the past
 		if (targetDate <= now) {

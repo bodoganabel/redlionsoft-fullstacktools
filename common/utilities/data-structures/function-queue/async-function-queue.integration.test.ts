@@ -52,13 +52,13 @@ describe('AsyncFunctionQueue Integration', async () => {
 
   it('should allow debouncing -  overwriting even when the execution delay is already running', async () => {
     const results: string[] = [];
-    const now = DateTime.now();
+    const now = DateTime.utc();
     queue.push(async () => { results.push('should-be-debounced'); }, 'to-update', 10);
     queue.push(async () => { results.push('awaited'); }, 'awaited', 10);
     queue.push(async () => { results.push('should-overwrite'); }, 'to-update', 10);
     await queue.waitForFinish();
 
-    const timeElapsed = DateTime.now().diff(now).as('milliseconds');
+    const timeElapsed = DateTime.utc().diff(now).as('milliseconds');
 
     expect(timeElapsed).toBeGreaterThan(19);
     logToFile(`Time elapsed: ${timeElapsed.toFixed(2)}ms`);
@@ -75,7 +75,7 @@ describe('AsyncFunctionQueue Integration', async () => {
     fs.writeFileSync(path.join(logDir, 'debug.log'), '');
 
     const results: string[] = [];
-    const now = DateTime.now();
+    const now = DateTime.utc();
 
     logToFile('1. Starting test');
     logToFile('2. Pushing to-update');
@@ -106,7 +106,7 @@ describe('AsyncFunctionQueue Integration', async () => {
 
     logToFile('8. Before assertions');
     logToFile(`Current results: ${JSON.stringify(results)}`);
-    const timeElapsed = DateTime.now().diff(now).as('milliseconds');
+    const timeElapsed = DateTime.utc().diff(now).as('milliseconds');
     await queue.waitForFinish();
     expect(timeElapsed).toBeGreaterThan(19);
     expect(results).toEqual(['should-run-before-debounce', 'awaited', 'should-not-debounce']);
@@ -115,13 +115,13 @@ describe('AsyncFunctionQueue Integration', async () => {
 
   it('should execute with delays', async () => {
     const results: (string | number)[] = [];
-    const now = DateTime.now();
+    const now = DateTime.utc();
     queue.push(async () => {
-      const timeElapsed = DateTime.now().diff(now).as('milliseconds');
+      const timeElapsed = DateTime.utc().diff(now).as('milliseconds');
       results.push(`first`, timeElapsed);
     }, undefined, 101);
     queue.push(async () => {
-      const timeElapsed = DateTime.now().diff(now).as('milliseconds');
+      const timeElapsed = DateTime.utc().diff(now).as('milliseconds');
       results.push(`second`, timeElapsed);
     });
     await queue.waitForFinish();

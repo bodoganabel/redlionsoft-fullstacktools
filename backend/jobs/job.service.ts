@@ -50,11 +50,11 @@ export class JobService<TJobMetadata> {
         try {
             await this.initCollection();
 
-            const targetDateAheadFromNow_ms = DateTime.fromISO(jobData.targetDateIso, { setZone: true }).valueOf() - DateTime.now().valueOf();
+            const targetDateAheadFromNow_ms = DateTime.fromISO(jobData.targetDateIso, { setZone: true }).valueOf() - DateTime.utc().valueOf();
 
             // Add user ID and default values
             jobData.userId = jobData.userId;
-            jobData.createdAt = jobData.createdAt || DateTime.now().toUTC().toISO();
+            jobData.createdAt = jobData.createdAt || DateTime.utc().toISO();
             jobData.status = jobData.status || EJobStatuses.PENDING;
             jobData.retriesHappened = jobData.retriesHappened || 0;
             jobData.retriesAllowed = jobData.retriesAllowed || JOB_RETRIES_ALLOWED_DEFAULT;
@@ -65,7 +65,7 @@ export class JobService<TJobMetadata> {
                 return { error: error, data: null };
             }
 
-            const isInstant = DateTime.fromISO(validatedJobData.targetDateIso, { setZone: true }).valueOf() <= DateTime.now().valueOf();
+            const isInstant = DateTime.fromISO(validatedJobData.targetDateIso, { setZone: true }).valueOf() <= DateTime.utc().valueOf();
 
             let jobResult = null;
             if (isInstant) {
@@ -165,7 +165,7 @@ export class JobService<TJobMetadata> {
                 ...newJob,
                 _id: existingJob._id,  // Ensure ID doesn't change
                 userId: existingJob.userId,  // Ensure user doesn't change
-                updatedAt: DateTime.now().toUTC().toISO()
+                updatedAt: DateTime.utc().toISO()
             };
 
             const { data: validatedJobData, error } = validate<TServerJob<TJobMetadata>>(updatedJob, this.jobSchema);
@@ -271,7 +271,7 @@ export class JobService<TJobMetadata> {
         try {
             await this.initCollection();
 
-            const now = DateTime.now().toUTC().toISO();
+            const now = DateTime.utc().toISO();
 
             // Find jobs that are pending and due to run
 
@@ -298,7 +298,7 @@ export class JobService<TJobMetadata> {
         try {
             await this.initCollection();
 
-            const now = DateTime.now().toUTC().toISO();
+            const now = DateTime.utc().toISO();
 
             // Find jobs that are pending and due to run
             const pendingJobs = await this.collection.find({
@@ -314,7 +314,7 @@ export class JobService<TJobMetadata> {
                         const newResultAray = [...job.results || []];
                         newResultAray.push({
                             message: "Too many retries",
-                            dateIso: DateTime.now().toUTC().toISO()
+                            dateIso: DateTime.utc().toISO()
                         })
 
 
@@ -350,7 +350,7 @@ export class JobService<TJobMetadata> {
                                 status: result.error === null ? EJobStatuses.COMPLETED : EJobStatuses.PENDING,
                                 results: [...job.results || [], {
                                     message: result.error || result.data,
-                                    dateIso: DateTime.now().toUTC().toISO()
+                                    dateIso: DateTime.utc().toISO()
                                 }]
                             }
                         }

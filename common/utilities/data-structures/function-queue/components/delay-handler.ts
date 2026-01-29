@@ -78,6 +78,6 @@ export class DelayHandler<T> {
 
     createExecuteAfterTimestamp(delayMs: number): number | undefined {
         if (delayMs <= 0) return undefined;
-        return DateTime.now().plus({ milliseconds: delayMs }).toMillis();
+        return DateTime.utc().plus({ milliseconds: delayMs }).toMillis();
     }
 }

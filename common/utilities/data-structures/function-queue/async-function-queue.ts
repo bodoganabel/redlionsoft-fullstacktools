@@ -48,12 +48,12 @@ export class AsyncFunctionQueue<T = any> {
      * Add an async function to the execution queue
      */
     push(func: () => Promise<T>, id?: string, delayMs?: number): number {
-        const now = DateTime.now();
+        const now = DateTime.utc();
 
         const item: QueuedFunction<T> = {
             func,
             id,
-            timestamp: now.toUTC().toISO(),
+            timestamp: now.toISO(),
             executeAfter_ms: delayMs
         };
 

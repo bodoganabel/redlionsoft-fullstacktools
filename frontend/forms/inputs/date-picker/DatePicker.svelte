@@ -22,7 +22,7 @@
     'December',
   ];
 
-  export let initialDate: DateTime = DateTime.now();
+  export let initialDate: DateTime = DateTime.utc();
   export let selectedDate: DateTime = initialDate;
   export let enabledDates: DateTime[] | null = null; // If null, all dates are enabled
 
@@ -52,15 +52,15 @@
   }
 
   function setToToday() {
-    onDateSelected(DateTime.now());
+    onDateSelected(DateTime.utc());
   }
 
   function setToTomorrow() {
-    onDateSelected(DateTime.now().plus({ days: 1 }));
+    onDateSelected(DateTime.utc().plus({ days: 1 }));
   }
 
   function setToCurrentOrMinimal() {
-    onDateSelected(minDate === undefined ? DateTime.now() : minDate);
+    onDateSelected(minDate === undefined ? DateTime.utc() : minDate);
   }
 
   function prevMonth() {

@@ -52,7 +52,7 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
 
             } catch (error) {
 
-                console.error(DateTime.now().setZone('UTC').toISO(), error);
+                console.error(DateTime.utc().toISO(), error);
                 const errorResponse: TEndpointError = {
                     details: 'Internal server error',
                     errorCode: EGeneralEndpontErrors.INTERNAL_SERVER_ERROR,
@@ -109,7 +109,7 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
 
             } catch (error) {
 
-                console.error(DateTime.now().setZone('UTC').toISO(), error);
+                console.error(DateTime.utc().toISO(), error);
                 const errorResponse: TEndpointError = {
                     details: 'Internal server error',
                     errorCode: EGeneralEndpontErrors.INTERNAL_SERVER_ERROR,

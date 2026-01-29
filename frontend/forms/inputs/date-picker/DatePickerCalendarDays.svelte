@@ -62,7 +62,7 @@
     <button
       class="day p-1 flex justify-center items-center aspect-square text-center rounded-lg cursor-pointer font-semibold scale-animation border-solid border-surface-800 transition-shadow"
       style:transform={`scale(${isActive(date) ? $scale : 1})`}
-      class:border-2={date && date.hasSame(DateTime.now(), 'day')
+      class:border-2={date && date.hasSame(DateTime.utc(), 'day')
         ? '1px solid currentColor'
         : undefined}
       class:variant-glass-surface={date !== null && !isActive(date) && isSelectable(date)}
@@ -71,7 +71,7 @@
       class:bg-primary-500={isActive(date)}
       class:text-white={isActive(date)}
       on:click={() => date && handleClick(date)}
-      class:underline={date && date.hasSame(DateTime.now(), 'day')}
+      class:underline={date && date.hasSame(DateTime.utc(), 'day')}
     >
       {date ? date.day : ''}
     </button>

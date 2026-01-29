@@ -9,7 +9,7 @@
   export let senderName: string = 'You';
   
   // Format current time as Gmail would show it
-  const now = DateTime.now();
+  const now = DateTime.utc();
   const emailDate = now.toFormat('MMM d, yyyy, h:mm a');
   
   // Extract initials for avatar
