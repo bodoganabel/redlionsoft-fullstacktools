@@ -12,4 +12,4 @@ Frontend only Schema will be named SBill_FE, infered type will be named TBill_FE
 Backend only Schema will be named SBill_BE, inferred type will be named TBill_BE
 Shared Schema will be named SBill, inferred type will be named TBill
 
-Reference implementation: Saleskapocs-app project/analytics
+Reference implementation: Saleskapocs-app project/saleskapocs-analytics
