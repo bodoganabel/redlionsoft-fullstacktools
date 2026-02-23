@@ -33,19 +33,19 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
                 const { user, error: authError } = await handleAuth<TUserServer, EPermissions>(this.authService, cookies, options);
 
                 if (authError) {
-                    return parseError(authError);
+                    return parseError(authError, options.responseHeaders);
                 }
 
                 const { parsedQuery, error: queryParsingError } = parseQuery<TQuerySchema>(url, querySchema, endpointOrigin);
 
                 if (queryParsingError) {
-                    return parseError(queryParsingError)
+                    return parseError(queryParsingError, options.responseHeaders)
                 }
 
                 const { data, endpointError } = await executeQueryEndpoint(parsedQuery!, handler, request, params, url, user, responseSchema, endpointOrigin )
 
                 if (endpointError) {
-                    return parseError(endpointError)
+                    return parseError(endpointError, options.responseHeaders)
                 }
 
                 return json(data, { status: status, headers: options.responseHeaders || undefined });
@@ -57,7 +57,7 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
                     details: 'Internal server error',
                     errorCode: EGeneralEndpontErrors.INTERNAL_SERVER_ERROR,
                 };
-                return parseError(errorResponse);
+                return parseError(errorResponse, options.responseHeaders);
 
                 return json({
                     error: {
@@ -90,19 +90,19 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
                 const { user, error: authError } = await handleAuth<TUserServer, EPermissions>(this.authService, cookies, options);
 
                 if (authError) {
-                    return parseError(authError);
+                    return parseError(authError, options.responseHeaders);
                 }
 
                 const { parsedBody, error: bodyParsingError } = await parseBody<TBodySchema>(request, bodySchema, endpointOrigin);
 
                 if (bodyParsingError) {
-                    return parseError(bodyParsingError)
+                    return parseError(bodyParsingError, options.responseHeaders)
                 }
 
                 const { data, endpointError } = await executeBodyEndpoint(parsedBody!, handler, request, params, url, user, responseSchema, endpointOrigin)
 
                 if (endpointError) {
-                    return parseError(endpointError)
+                    return parseError(endpointError, options.responseHeaders)
                 }
 
                 return json(data, { status: status, headers: options.responseHeaders || undefined });
@@ -114,7 +114,7 @@ export class RedlionsoftEndpointGenerator<TUserServer, EPermissions
                     details: 'Internal server error',
                     errorCode: EGeneralEndpontErrors.INTERNAL_SERVER_ERROR,
                 };
-                return parseError(errorResponse);
+                return parseError(errorResponse, options.responseHeaders);
             }
         };
     }

@@ -38,10 +38,10 @@ export async function handleAuth<TUserServer, EPermissions>(authService: AuthSer
 
 }
 
-export function parseError(error: TEndpointError): Response {
+export function parseError(error: TEndpointError, headers?: Record<string, string>): Response {
     return json({
         error: { ...error, status: undefined }
-    }, { status: error.status || 400 })
+    }, { status: error.status || 400, headers: headers || undefined })
 }
 
 export function parseQuery<TQuerySchema extends z.ZodTypeAny>(url: URL, querySchema: TQuerySchema, endpointOrigin: string): { parsedQuery: z.infer<TQuerySchema> | null, error: TEndpointError | null } {
